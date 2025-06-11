@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 )
 
 type Admin struct {
@@ -15,7 +16,7 @@ func (a Admin) CreateGame() int {
 	minn := 100000
 	maxx := 999999
 	n := rand.Intn(maxx-minn+1) + minn
-	fmt.Println(a.Name, "created game", n)
+	fmt.Println(a.Name, "created game", strconv.Itoa(n))
 	return n
 
 }
