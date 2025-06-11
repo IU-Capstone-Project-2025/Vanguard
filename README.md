@@ -1,2 +1,2 @@
 # Vanguard
-An interactive learning platform that allows users to create and play real-time quizzes. Hosts can easily design engaging quizzes, while participants join from any device and compete for the top spot on the leaderboard. 
+An interactive learning platform that allows users to create and play real-time quizzes. Teachers, trainers, or event hosts can easily design engaging quizzes, while participants join from any device and compete for the top spot on the leaderboard. With gamification elements like timers, points, and live feedback, this project makes learning fun and dynamic. The platform supports provides detailed performance analytics. Perfect for classrooms, corporate training, and social events, it turns assessments into an exciting, game-like experience
