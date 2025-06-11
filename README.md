@@ -1,2 +1,28 @@
-# Vanguard
-An interactive learning platform that allows users to create and play real-time quizzes. Teachers, trainers, or event hosts can easily design engaging quizzes, while participants join from any device and compete for the top spot on the leaderboard. With gamification elements like timers, points, and live feedback, this project makes learning fun and dynamic. The platform supports provides detailed performance analytics. Perfect for classrooms, corporate training, and social events, it turns assessments into an exciting, game-like experience
+# 📚 Vanguard
+
+Vanguard is an interactive learning platform that allows users to create and participate in real-time quizzes. Designed for teachers, trainers, and event hosts, it brings engagement and gamification to learning and assessments.
+
+## ✨ Features
+
+- 🎨 Create and host dynamic quizzes in real time
+- 📱 Participants can join from any device via a simple interface
+- 🧠 Gamified experience with timers, points, and live feedback
+- 📊 Detailed performance analytics for insights and evaluation
+- 🏆 Leaderboard for competitive fun
+- 👥 Ideal for classrooms, corporate training, and social events
+
+## 🚀 Getting Started with Docker Compose
+
+### 1. Clone the repository
+```sh
+git clone https://github.com/IU-Capstone-Project-2025/Vanguard.git
+cd Vanguard
+```
+
+### 2. Build and start the services
+```sh
+docker compose up --build -d
+```
+
+### 3. Access the platform
+- React frontend: http://localhost:3000

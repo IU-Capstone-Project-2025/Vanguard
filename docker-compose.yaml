@@ -1,0 +1,37 @@
+services:
+  python-backend:
+    build:
+      context: backend-python
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - go-backend
+
+  react-frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/app:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - python-backend
+
+  go-backend:
+    build:
+      context: backend-go
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+
+networks:
+  default:
+    driver: bridge
