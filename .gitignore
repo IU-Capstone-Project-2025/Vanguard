@@ -25,6 +25,32 @@ profile.cov
 go.work
 go.work.sum
 
+# React Native workspace file
+
+# dependencies
+front/app/node_modules
+front/app/.pnp
+front/app/.pnp.js
+front/app/package-lock.json
+
+# testing
+front/app/coverage
+
+# production
+front/app/build
+
+# misc
+front/app/.DS_Store
+front/app/.env.local
+front/app/.env.development.local
+front/app/.env.test.local
+front/app/.env.production.local
+
+front/app/npm-debug.log*
+front/app/yarn-debug.log*
+front/app/yarn-error.log*
+
+
 # env file
 .env
 
