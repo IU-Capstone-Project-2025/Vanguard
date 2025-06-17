@@ -7,11 +7,13 @@ const CreateSessionPage = () => {
     const [selectedQuiz, setSelectedQuiz] = useState(null);
     const quizzes = ["Quiz 1", "Quiz 2"]; // Placeholder, should be dynamic in real app
     const [search, setSearch] = useState("");
+    const [SessionCode, setSessionCode] = useState("R4M4Z4NN"); // Mocked session code, should be generated dynamically
 
     const handlePlay = () => {
         if (selectedQuiz) {
             // Logic to start the session with selectedQuiz
-            navigate('/play'); // You may pass quiz info as state or param
+
+            navigate(`/ask-to-join/${SessionCode}`); // You may pass quiz info as state or param
         }
     };
 
