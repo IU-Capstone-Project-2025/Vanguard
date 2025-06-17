@@ -18,7 +18,7 @@ const HomePage = () => {
                                 className="play-button"
                                 onClick={
                                     (e) => {
-                                         navigate('/play')
+                                         navigate('/join')
                                     }
                                 }
                             >
