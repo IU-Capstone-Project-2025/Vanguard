@@ -1,0 +1,68 @@
+:root {
+    --orange: #D38E5A;
+    --bage: #F9F3EB;
+    --dark: #2A2B2B;
+    --light-gray: #C6BDB3;
+    --gray: #5D5C5D;
+}
+
+.jua-regular {
+  font-family: "Jua", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+* {
+    font-family: Jua;
+}
+
+
+
+.homepage-main-content {
+    position: relative;
+    background-color: var(--orange);
+    display: flex;
+
+    .left-side {
+        width: 50%;
+        display: block;
+        align-items: center;
+        justify-content: center;
+
+        .title {
+            position: relative;
+            display: block;
+            text-align: center;
+            justify-items: center;
+            margin: 25% 15% 25% 30%;
+            
+            h1 {
+                text-align: start;
+                font-family: Jua, sans-serif;
+                font-size: 64px;
+                color: var(--bage);
+            }
+
+            .button-group {
+                margin: 5vw 0;
+                display: flex;
+                justify-content: left;
+                
+                button {
+                    background-color: var(--dark);
+                    color: var(--bage);
+                    border-radius: 15px;
+                    padding: 1vw;
+                    min-width: 10vw;
+                    margin-right:2vw;
+                    font-size: 36px;
+                    border: none;
+                }
+            }
+        }
+    }
+
+    .right-side {
+        width: 50%;
+    }
+}
+
