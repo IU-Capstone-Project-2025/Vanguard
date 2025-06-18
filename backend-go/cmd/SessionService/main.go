@@ -17,7 +17,7 @@ func main() {
 	log := setupLogger(envLocal)
 	server, err := httpServer.InitHttpServer(log, "localhost", "8000", "amqp://guest:guest@localhost:5672/", "localhost:6379")
 	if err != nil {
-		fmt.Println(" пизду для эту хуйню")
+		log.Error("initHttpServer", "InitHttpServer", err)
 		return
 	}
 	server.Start()
