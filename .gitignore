@@ -28,27 +28,27 @@ go.work.sum
 # React Native workspace file
 
 # dependencies
-front/app/node_modules
-front/app/.pnp
-front/app/.pnp.js
-front/app/package-lock.json
+frontend/app/node_modules
+frontend/app/.pnp
+frontend/app/.pnp.js
+frontend/app/package-lock.json
 
 # testing
-front/app/coverage
+frontend/app/coverage
 
 # production
-front/app/build
+frontend/app/build
 
 # misc
-front/app/.DS_Store
-front/app/.env.local
-front/app/.env.development.local
-front/app/.env.test.local
-front/app/.env.production.local
+frontend/app/.DS_Store
+frontend/app/.env.local
+frontend/app/.env.development.local
+frontend/app/.env.test.local
+frontend/app/.env.production.local
 
-front/app/npm-debug.log*
-front/app/yarn-debug.log*
-front/app/yarn-error.log*
+frontend/app/npm-debug.log*
+frontend/app/yarn-debug.log*
+frontend/app/yarn-error.log*
 
 
 # env file
