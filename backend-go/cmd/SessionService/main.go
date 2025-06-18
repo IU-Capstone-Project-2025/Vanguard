@@ -1,52 +1,48 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"time"
-	"xxx/SessionService/Storage/Redis"
-	models2 "xxx/SessionService/models"
+	"log/slog"
+	"os"
+	"xxx/SessionService/httpServer"
+)
+
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
 )
 
 func main() {
-	cfg := models2.Config{
-		Addr:        "localhost:6379",
-		DB:          0,
-		MaxRetries:  5,
-		DialTimeout: 10 * time.Second,
-		Timeout:     5 * time.Second,
-	}
-	db, err := Redis.NewRedisClient(context.Background(), cfg)
+	log := setupLogger(envLocal)
+	server, err := httpServer.InitHttpServer(log, "localhost", "8000", "amqp://guest:guest@localhost:5672/", "localhost:6379")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(" пизду для эту хуйню")
+		return
 	}
-	session := &models2.Session{
-		ID:    "1",
-		Code:  "11",
-		State: "123",
-	}
-	err = db.SaveSession(session)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println("save session success")
-	}
+	server.Start()
+}
 
-	res, err := db.LoadSession(session.ID)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(res)
+func setupLogger(env string) *slog.Logger {
+	var log *slog.Logger
 
-	err = db.EditSessionState(session.ID, "idi nah")
+	file, err := os.OpenFile("cmd/SessionService/session.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Failed to open log file")
 	}
-
-	res, err = db.LoadSession(session.ID)
-	if err != nil {
-		fmt.Println(err)
+	switch env {
+	case envLocal:
+		log = slog.New(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case envDev:
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case envProd:
+		log = slog.New(
+			slog.NewJSONHandler(file, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
 	}
-	fmt.Println(res)
-
+	return log
 }

@@ -9,7 +9,7 @@ import (
 
 type Cache interface {
 	SaveSession(session *models.Session) error
-	LoadSession(sessionID string) (*models.Session, error)
+	LoadSession(code string, sessionID string) (*models.Session, error)
 	DeleteSession(sessionID string) error
 	EditSessionState(sessionID string, state string) error
 	CodeExist(code string) bool
@@ -19,7 +19,7 @@ type Redis struct {
 	Client *redis.Client
 }
 
-func NewRedisClient(ctx context.Context, cfg models.Config) (Redis, error) {
+func NewRedisClient(ctx context.Context, cfg models.Config) (*Redis, error) {
 	db := redis.NewClient(&redis.Options{
 		Addr:         cfg.Addr,
 		Password:     cfg.Password,
@@ -32,9 +32,9 @@ func NewRedisClient(ctx context.Context, cfg models.Config) (Redis, error) {
 
 	if err := db.Ping(ctx).Err(); err != nil {
 		fmt.Printf("failed to connect to redis server: %s\n", err.Error())
-		return Redis{}, err
+		return &Redis{}, err
 	}
-	r := Redis{Client: db}
+	r := &Redis{Client: db}
 	return r, nil
 }
 

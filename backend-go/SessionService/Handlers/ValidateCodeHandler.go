@@ -10,10 +10,11 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	req := r.URL.Query().Get("code")
-	flag := h.Manager.ValidateCode(req)
+	code := r.URL.Query().Get("code")
+	UserId := r.URL.Query().Get("user_id")
+	flag := h.Manager.ValidateCode(code)
 	if flag {
-		userToken := h.Manager.GenerateToken(req)
+		userToken := h.Manager.GenerateUserToken(code, UserId, "User")
 		err := json.NewEncoder(w).Encode(userToken)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
