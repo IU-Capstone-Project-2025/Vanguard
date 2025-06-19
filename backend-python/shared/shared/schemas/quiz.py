@@ -1,5 +1,7 @@
+from datetime import datetime
 from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -59,3 +61,12 @@ class QuizCreate(BaseModel):
     is_public: bool = False
     tags: Annotated[List[str], Field(max_length=10)] = []
     questions: Annotated[List[Question], Field(min_length=1, max_length=100)]
+
+
+class QuizResponse(QuizCreate):
+    id: UUID
+    owner_id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

@@ -1,6 +1,6 @@
 import logging
-
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from sqlalchemy import text
 
@@ -9,6 +9,7 @@ from shared.db.database import async_session_maker
 from quiz_app.api.endpoints.quiz import router as quiz_router
 from quiz_app.core.config import settings
 from quiz_app.core.logging import setup_logging
+from quiz_app.exceptions.handlers import register_exception_handlers
 
 setup_logging(debug=settings.DEBUG)
 logger = logging.getLogger("app")
@@ -38,3 +39,5 @@ app = FastAPI(
 )
 
 app.include_router(quiz_router)
+
+register_exception_handlers(app)
