@@ -1,51 +1,31 @@
-import logging
-from abc import ABC, abstractmethod
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
-from shared.db.database import async_session_maker
-from shared.repositories import UserRepository, QuizRepository
-
-logger = logging.getLogger("app")
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
-class IUnitOfWork(ABC):
-    @abstractmethod
-    async def __aenter__(self):
-        ...
+class UnitOfWork:
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
+        self.session_factory = session_factory
 
-    @abstractmethod
-    async def __aexit__(self, *args):
-        ...
+    @asynccontextmanager
+    async def transaction(self) -> AsyncGenerator[AsyncSession, None]:
+        """Provide a transactional scope around a series of operations"""
+        session: AsyncSession = self.session_factory()
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
-    @abstractmethod
-    async def commit(self):
-        ...
-
-    @abstractmethod
-    async def rollback(self):
-        ...
-
-
-class UnitOfWork(IUnitOfWork):
-    def __init__(self):
-        self.session_factory = async_session_maker
-
-    async def __aenter__(self):
-        self.session = self.session_factory()
-        self.user = UserRepository(self.session)
-        self.quiz = QuizRepository(self.session)
-        logger.debug("UoW session started")
-        return self
-
-    async def __aexit__(self, *args):
-        await self.rollback()
-        await self.session.close()
-        self.session = None
-        logger.debug("UoW session closed")
-
-    async def commit(self):
-        await self.session.commit()
-        logger.debug("UoW committed")
-
-    async def rollback(self):
-        await self.session.rollback()
-        logger.debug("UoW rolled back")
+    @asynccontextmanager
+    async def readonly(self) -> AsyncGenerator[AsyncSession, None]:
+        """Provide a read-only session (no transaction)"""
+        session: AsyncSession = self.session_factory()
+        try:
+            yield session
+        finally:
+            await session.close()
