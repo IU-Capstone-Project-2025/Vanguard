@@ -1,98 +1,59 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Generic, TypeVar, Optional, cast
+from collections.abc import Sequence
+from typing import Generic, TypeVar, cast
 
-from sqlalchemy import insert, select, delete
+from sqlalchemy import Select, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeBase
 
-ModelType = TypeVar("ModelType", bound=DeclarativeBase)
-
-
-class AbstractRepository(ABC, Generic[ModelType]):
-    """Abstract base class defining the repository interface."""
-
-    @abstractmethod
-    async def find_all(self) -> List[ModelType]:
-        """Retrieve all records."""
-        ...
-
-    @abstractmethod
-    async def find_one(self) -> Optional[ModelType]:
-        """Retrieve a single record."""
-        ...
-
-    @abstractmethod
-    async def add(self, data: Dict[str, Any]) -> ModelType:
-        """Add a new record."""
-        ...
-
-    @abstractmethod
-    async def update(self, data: Dict[str, Any]) -> Optional[ModelType]:
-        """Update an existing record."""
-        ...
-
-    @abstractmethod
-    async def delete(self) -> bool:
-        """Delete a record."""
-        ...
+T = TypeVar("T")
+IdType = TypeVar("IdType")
 
 
-class SQLAlchemyRepository(AbstractRepository[ModelType], Generic[ModelType]):
-    """Generic SQLAlchemy repository implementation."""
-    model: ModelType
-
+class BaseRepository(ABC, Generic[T]):
     def __init__(self, session: AsyncSession):
-        self.session = session
-        if self.model is None:
-            raise NotImplementedError("Repository must have a 'model' class attribute defined.")
+        self._session = session
 
-    async def find_all(
-            self,
-            skip: int = 0,
-            limit: int | None = None,
-            order_by: Dict[str, str] | None = None,
-            **filter_by: Any
-    ) -> List[ModelType]:
-        stmt = select(self.model).filter_by(**filter_by)
+    @property
+    @abstractmethod
+    def model(self) -> type[T]:
+        """Return the model class for this repository"""
+        raise NotImplementedError
 
-        if order_by:
-            for column, direction in order_by.items():
-                sort_column = getattr(self.model, column)
-                if direction.lower() == "desc":
-                    stmt = stmt.order_by(sort_column.desc())
-                else:
-                    stmt = stmt.order_by(sort_column.asc())
+    async def create(self, entity: T) -> T:
+        """Persist a new entity"""
+        self._session.add(entity)
+        await self._session.flush()
+        await self._session.refresh(entity)
+        return entity
 
-        if limit is not None and limit > 0:
-            stmt = stmt.limit(limit)
-            if skip > 0:
-                stmt = stmt.offset(skip)
+    async def get(self, _id: IdType) -> T | None:
+        """Get entity by primary key"""
+        return await self._session.get(self.model, _id)
 
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+    async def get_many(self, *ids: IdType) -> Sequence[T]:
+        """Get multiple entities by primary keys"""
+        stmt = select(self.model).where(self.model.id.in_(ids))
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
 
-    async def find_one(self, **filter_by: Any) -> Optional[ModelType]:
-        stmt = select(self.model).filter_by(**filter_by)
-        result = await self.session.execute(stmt)
-        return result.scalars().first()
+    async def find(self, stmt: Select) -> Sequence[T]:
+        """Execute a custom SELECT query"""
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
 
-    async def add(self, data: Dict[str, Any]) -> ModelType:
-        stmt = insert(self.model).values(**data).returning(self.model)
-        result = await self.session.execute(stmt)
-        return result.scalars().first()
+    async def update(self, entity: T) -> T:
+        """Update an existing entity"""
+        await self._session.flush()
+        await self._session.refresh(entity)
+        return entity
 
-    async def update(self, data: Dict[str, Any], **filter_by: Any) -> Optional[ModelType]:
-        obj = await self.find_one(**filter_by)
-        if not obj:
-            return None
+    async def delete(self, entity: T) -> None:
+        """Delete an entity"""
+        await self._session.delete(entity)
 
-        for field, value in data.items():
-            if hasattr(obj, field):
-                setattr(obj, field, value)
-        return obj
-
-    async def delete(self, **filter_by: Any) -> bool:
-        stmt = delete(self.model).filter_by(**filter_by)
-        result = await self.session.execute(stmt)
-        rowcount = cast(int, result.rowcount)  # IDE thinks `rowcount` is method for some reason
-        return rowcount > 0
+    async def delete_many(self, *ids: IdType) -> int:
+        """Delete multiple entities by primary keys"""
+        stmt = delete(self.model).where(self.model.id.in_(ids))
+        result = await self._session.execute(stmt)
+        rowcount = cast(int, result.rowcount)  # Number of rows deleted
+        return rowcount
