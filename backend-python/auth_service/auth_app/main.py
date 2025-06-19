@@ -1,6 +1,6 @@
 import logging
-
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from sqlalchemy import text
 

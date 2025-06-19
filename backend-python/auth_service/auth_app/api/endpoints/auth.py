@@ -1,7 +1,20 @@
-from fastapi import APIRouter
+from datetime import datetime, UTC
 
-router = APIRouter(prefix="/api", tags=["auth-service"])
+from fastapi import APIRouter, status
 
-@router.get("/auth")
-async def auth():
-    return {"status": "Working auth service"}
+from auth_app.core.config import settings
+
+router = APIRouter(tags=["auth-service"])
+
+@router.get(
+    "/health",
+    status_code=status.HTTP_200_OK,
+    summary="Auth Service Health Check",
+    response_description="Service status and dependencies"
+)
+async def health_check():
+    return {
+        "status": "OK",
+        "version": settings.APP_VERSION,
+        "timestamp": datetime.now(UTC).isoformat()
+    }
