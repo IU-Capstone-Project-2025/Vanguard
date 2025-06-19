@@ -27,7 +27,7 @@ const AskToJoinSession = () => {
     };
 
   const handlePlayClick = () => {
-      navigate(`/session/${sessionCode}`);
+      navigate(`/sessionAdmin/${sessionCode}`);
   };
 
   return (

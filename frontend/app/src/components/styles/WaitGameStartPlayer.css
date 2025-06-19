@@ -1,0 +1,66 @@
+.wait-player-container {
+  background-color: var(--orange);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wait-player-panel {
+  padding: 4vw;
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.wait-player-panel h1 {
+  font-size: 48px;
+  color: var(--bage);
+  margin-bottom: 3vw;
+}
+
+.players-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 1vw;
+}
+
+.player-box {
+  background-color: var(--light-gray);
+  color: var(--dark);
+  padding: 0.8vw 1.2vw;
+  border-radius: 10px;
+  font-size: 20px;
+  min-width: 100px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 2vw;
+  margin-bottom: 3vw;
+}
+
+.button-group button {
+  background-color: var(--dark);
+  color: var(--bage);
+  font-size: 24px;
+  padding: 1vw 2vw;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.3s;
+}
+
+.button-group button:hover {
+  transform: scale(1.05);
+  background-color: var(--gray);
+}
