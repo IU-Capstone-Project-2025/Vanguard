@@ -36,6 +36,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      SECRET_KEY: M7oif5ZAON9wGNDRw9X8-Q
       PYTHONPATH: ./app
       DB_URL: postgresql+asyncpg://postgres:postgres_password@postgres:5432/kahoot_clone
     depends_on:
