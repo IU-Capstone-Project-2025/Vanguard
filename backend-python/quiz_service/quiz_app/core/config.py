@@ -5,7 +5,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DB_URL: str
+    APP_NAME: str = "Quiz Service API"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = False
 
 
 settings = Settings()

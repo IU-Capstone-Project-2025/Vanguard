@@ -11,8 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY shared /shared
 RUN pip install /shared
 
-COPY quiz_service/app ./app
+COPY quiz_service/quiz_app ./quiz_app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "quiz_app.main:app", "--host", "0.0.0.0", "--port", "8000"]
