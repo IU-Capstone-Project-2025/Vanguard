@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from shared.db.database import async_session_maker
 
+from quiz_app.init_sample_data import init_sample_data
 from quiz_app.api.endpoints.quiz import router as quiz_router
 from quiz_app.core.config import settings
 from quiz_app.core.logging import setup_logging
@@ -26,6 +27,9 @@ async def lifespan(_: FastAPI):
     except Exception as e:
         logger.exception("Failed to connect to the database.")
         raise e
+
+    await init_sample_data()
+    logger.info("Sample user and quiz was successfully initialized.")
 
     yield
 
