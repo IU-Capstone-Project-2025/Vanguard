@@ -1,25 +1,70 @@
+import os
+
+import asyncio
 import pytest
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from quiz_app.main import app
-from quiz_app.api.dependencies.dependencies import get_uow
 from shared.db.models import Base, Quiz, User
 from shared.repositories import UserRepository, QuizRepository
 from shared.utils.unitofwork import UnitOfWork
 
-DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+from quiz_app.api.dependencies.dependencies import get_uow
+from quiz_app.main import app
+
+ADMIN_DB_URL = os.environ.get("ADMIN_DB_URL")
+TEST_DB_URL = os.getenv("TEST_DB_URL")
+
+# Session-wide: create and drop test DB
+@pytest.fixture(scope="session", autouse=True)
+async def create_test_database():
+    admin_engine = create_async_engine(ADMIN_DB_URL, isolation_level="AUTOCOMMIT")
+    async with admin_engine.connect() as conn:
+        await conn.execute(text("DROP DATABASE IF EXISTS test_kahoot_clone"))
+        await conn.execute(text("CREATE DATABASE test_kahoot_clone"))
+    await admin_engine.dispose()
+
+    yield
+
+    # Final teardown: drop test DB
+    admin_engine = create_async_engine(ADMIN_DB_URL, isolation_level="AUTOCOMMIT")
+    async with admin_engine.connect() as conn:
+        await conn.execute(text("DROP DATABASE IF EXISTS test_kahoot_clone"))
+    await admin_engine.dispose()
+
+# Function-scoped: clean tables between each test
+@pytest.fixture(scope="function", autouse=True)
+async def clean_test_database():
+    engine = create_async_engine(TEST_DB_URL)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    await engine.dispose()
+
+# Create event loop for entire test session
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+# Session-scoped engine for all tests
+@pytest.fixture(scope="session")
+async def test_engine():
+    engine = create_async_engine(TEST_DB_URL, echo=False)
+    yield engine
+    await engine.dispose()
 
 @pytest.fixture
-async def uow_test():
-    engine = create_async_engine(DATABASE_URL, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+async def session_maker(test_engine):
+    session_maker = async_sessionmaker(bind=test_engine, expire_on_commit=False)
+    yield session_maker
+    await test_engine.dispose()
 
-    uow = UnitOfWork(async_session_maker)
-
-    return uow
+@pytest.fixture
+async def uow_test(session_maker):
+    return UnitOfWork(session_maker)
 
 @pytest.fixture
 async def test_client(uow_test):
