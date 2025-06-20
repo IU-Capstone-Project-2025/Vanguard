@@ -11,7 +11,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		return
 	}
 	code := r.URL.Query().Get("code")
-	UserId := r.URL.Query().Get("user_id")
+	UserId := r.URL.Query().Get("userId")
 	flag := h.Manager.ValidateCode(code)
 	if flag {
 		userToken := h.Manager.GenerateUserToken(code, UserId, "User")

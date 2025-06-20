@@ -1,7 +1,9 @@
 package Rabbit
 
 import (
+	"context"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"xxx/Shared"
 )
 
 type Rabbit struct {
@@ -10,7 +12,9 @@ type Rabbit struct {
 }
 
 type Broker interface {
-	PublishEvent(interface{}) error
+	PublishQuestionStart(ctx context.Context, SessionCode string, payload interface{}) error
+	PublishSessionEnd(ctx context.Context, payload interface{}) error
+	PublishSessionStart(ctx context.Context, payload interface{}) error
 }
 
 func NewRabbit(rmq_host string) (*Rabbit, error) {
@@ -22,17 +26,18 @@ func NewRabbit(rmq_host string) (*Rabbit, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = ch.ExchangeDeclare(
+		Shared.SessionExchange, // имя
+		"topic",                // тип
+		true,                   // durable
+		false,                  // auto-delete
+		false,                  // internal
+		false,                  // no-wait
+		nil,                    // arguments
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Rabbit{conn, ch}, nil
-}
-
-// PublishEvent will publish to brocker some event
-func (r *Rabbit) PublishEvent(payload interface{}) error {
-	//TODO implement function
-	return nil
-}
-
-// SessionCreated will sent message that session created
-func (r *Rabbit) SessionCreated(payload interface{}) error {
-	//TODO implement function
-	return nil
 }

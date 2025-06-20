@@ -45,6 +45,7 @@ func (HttpServer *HttpServer) registerHandlers() error {
 	router.HandleFunc("/create", HttpServer.CreateSessionHandler).Methods("GET")
 	router.HandleFunc("/validate", HttpServer.ValidateCodeHandler).Methods("GET")
 	router.HandleFunc("/Next", HttpServer.NextQestionHandler).Methods("GET")
+	router.HandleFunc("/StartSession", HttpServer.StartSessionHandler).Methods("GET")
 	HttpServer.logger.Info("registerHandlers", "msg", "Listening on "+HttpServer.Host+":"+HttpServer.Port)
 	err := http.ListenAndServe(HttpServer.Host+":"+HttpServer.Port, router)
 	if err != nil {

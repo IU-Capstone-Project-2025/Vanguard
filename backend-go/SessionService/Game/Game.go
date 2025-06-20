@@ -2,8 +2,11 @@ package Game
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"io/ioutil"
+	"net/http"
 	"xxx/SessionService/Rabbit"
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
@@ -15,7 +18,8 @@ type Manager interface {
 	ValidateCode(code string) bool
 	GenerateUserToken(code string, UserId string, UserType string) *models.UserToken
 	NewSession() (*models.Session, error)
-	PublishEvent(payload interface{}) error
+	SessionStart(code string) error
+	NextQuestion(code string) error
 }
 
 type SessionManager struct {
@@ -73,10 +77,6 @@ func (manager *SessionManager) NewSession() (*models.Session, error) {
 	if err != nil {
 		return &models.Session{}, err
 	}
-	err = manager.rabbit.PublishEvent(session)
-	if err != nil {
-		return &models.Session{}, err
-	}
 	return session, nil
 }
 
@@ -96,8 +96,36 @@ func (manager *SessionManager) GenerateUserToken(code string, UserId string, Use
 	}
 }
 
-func (manager *SessionManager) PublishEvent(payload interface{}) error {
-	err := manager.rabbit.PublishEvent(payload)
+func (manager *SessionManager) SessionStart(quizUUID string) error {
+	url := fmt.Sprintf("http://quiz:8001/%s", quizUUID)
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("error to get quiz from service %s %s", quizUUID, err.Error())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("quiz session status code: %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error on SessionStart with read body %s, %s", quizUUID, err.Error())
+	}
+
+	var quiz models.Quiz
+	if err := json.Unmarshal(body, &quiz); err != nil {
+		return fmt.Errorf("error on SessionStart with unmarshal json %s %s", quizUUID, err.Error())
+	}
+	err = manager.rabbit.PublishSessionStart(context.Background(), quiz)
+	if err != nil {
+		return fmt.Errorf("error on SessionStart with publish quiz to rabbit %s %s", quizUUID, err.Error())
+	}
+	return nil
+}
+
+func (manager *SessionManager) NextQuestion(code string) error {
+	err := manager.rabbit.PublishQuestionStart(context.Background(), code, "aboba")
 	if err != nil {
 		return err
 	}

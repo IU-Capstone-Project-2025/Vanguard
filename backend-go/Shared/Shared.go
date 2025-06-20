@@ -1,6 +1,6 @@
 package Shared
 
-const WsEndpoint string = "/ws/hui"
+const WsEndpoint string = "/ws/server"
 const CodeLength int = 6
 const (
 	SessionExchange         = "session.events"

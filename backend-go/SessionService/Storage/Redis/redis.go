@@ -9,8 +9,8 @@ import (
 
 type Cache interface {
 	SaveSession(session *models.Session) error
-	LoadSession(code string, sessionID string) (*models.Session, error)
-	DeleteSession(sessionID string) error
+	LoadSession(code string) (*models.Session, error)
+	DeleteSession(code string) error
 	EditSessionState(sessionID string, state string) error
 	CodeExist(code string) bool
 }
@@ -41,7 +41,7 @@ func NewRedisClient(ctx context.Context, cfg models.Config) (*Redis, error) {
 // SaveSession store session in Redis
 func (r *Redis) SaveSession(session *models.Session) error {
 	ctx := context.Background()
-	key := "session:" + session.ID
+	key := "session:" + session.Code
 	err := r.Client.HSet(ctx, key, map[string]interface{}{
 		"id":    session.ID,
 		"code":  session.Code,
@@ -54,15 +54,18 @@ func (r *Redis) SaveSession(session *models.Session) error {
 }
 
 // LoadSession Load session by its Id from Redis
-func (r *Redis) LoadSession(code string, sessionID string) (*models.Session, error) {
+func (r *Redis) LoadSession(code string) (*models.Session, error) {
 	key := "session:" + code
 	ctx := context.Background()
 	res, err := r.Client.HGetAll(ctx, key).Result()
 	if err != nil {
 		return nil, err
 	}
+	if len(res) == 0 {
+		return nil, fmt.Errorf("session with code %s not found in Redis", code)
+	}
 	session := &models.Session{
-		ID:    sessionID,
+		ID:    res["id"],
 		Code:  res["code"],
 		State: res["state"],
 	}
