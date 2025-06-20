@@ -59,7 +59,7 @@ class QuizCreate(BaseModel):
     title: Annotated[str, Field(max_length=200)]
     description: Optional[str] = None
     is_public: bool = False
-    tags: Annotated[List[str], Field(max_length=10)] = []
+    # tags: Annotated[List[str], Field(max_length=10)] = []
     questions: Annotated[List[Question], Field(min_length=1, max_length=100)]
 
 
