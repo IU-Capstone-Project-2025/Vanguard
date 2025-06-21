@@ -24,11 +24,6 @@ const HomePage = () => {
                     <div className="button-group">
                         <button id="play"
                                 className="play-button"
-                                onClick={
-                                    (e) => {
-                                         navigate('/join')
-                                    }
-                                }
                                 onClick={handlePlayClick}
                             >
                             <span>Play</span>
