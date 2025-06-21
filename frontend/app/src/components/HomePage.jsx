@@ -6,6 +6,14 @@ import { useNavigate } from "react-router-dom";
 const HomePage = () => {
     const navigate = useNavigate()
 
+    const handlePlayClick = () => {
+        navigate('/play')
+    }
+
+    const handleCreateClick = () => {
+        navigate('/create')
+    }
+
     return (
         <div className="homepage-main-content">
             <div className="left-side">
@@ -16,21 +24,13 @@ const HomePage = () => {
                     <div className="button-group">
                         <button id="play"
                                 className="play-button"
-                                onClick={
-                                    (e) => {
-                                         navigate('/play')
-                                    }
-                                }
+                                onClick={handlePlayClick}
                             >
                             <span>Play</span>
                         </button>
                         <button id='create'
                                 className="create-button"
-                                onClick={
-                                    (e) => {
-                                        navigate('/create')
-                                    }
-                                }    
+                                onClick={handleCreateClick}
                             >
                             <span>Create</span>
                         </button>

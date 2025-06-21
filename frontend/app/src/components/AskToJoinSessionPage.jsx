@@ -3,12 +3,15 @@ import { useState } from "react";
 import {QRCodeSVG} from "qrcode.react";
 import { useParams } from "react-router-dom";
 import "./styles/AskToJoinSession.css"; // we'll style separately
+import { useNavigate } from "react-router-dom";
 
 const AskToJoinSession = () => {
   // Mocked backend data
   const { sessionCode } = useParams();
   const [joinLink, setJoinLink] = React.useState(`https://yourapp.com/join/${sessionCode}`);
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
+
 
 
   const handleCopyClick = async () => {
@@ -23,6 +26,10 @@ const AskToJoinSession = () => {
         }
     };
 
+  const handlePlayClick = () => {
+      navigate(`/sessionAdmin/${sessionCode}`);
+  };
+
   return (
     <div className="ask-join-container">
       <div className="ask-left">
@@ -36,7 +43,7 @@ const AskToJoinSession = () => {
                     {copied && <p>Link copied!</p>}
                 </span>
                 </div>
-            <button className="play-button">▶ Play</button>
+            <button className="play-button" onClick={handlePlayClick}>▶ Play</button>
         </div>
       </div>
       <div className="ask-right">
