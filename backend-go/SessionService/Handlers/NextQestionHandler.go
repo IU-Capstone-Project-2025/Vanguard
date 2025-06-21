@@ -2,6 +2,7 @@ package Handlers
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"net/http"
 	"xxx/SessionService/models"
 )
@@ -17,17 +18,18 @@ import (
 // @Success 201 "Successfully moved to the next question"
 // @Failure 405 {object} models.ErrorResponse "Method not allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /next [get]
+// @Router /session/{id}/nextQuestion [post]
 func (h *SessionManagerHandler) NextQuestionHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodPost {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Method not allowed"})
 		return
 	}
 
-	req := r.URL.Query().Get("code")
-	err := h.Manager.NextQuestion(req)
+	vars := mux.Vars(r)
+	code := vars["code"]
+	err := h.Manager.NextQuestion(code)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)

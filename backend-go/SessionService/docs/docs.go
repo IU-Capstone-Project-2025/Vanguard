@@ -15,9 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/create": {
-            "get": {
-                "description": "Creates a new session and returns an admin token for the specified user by userId.",
+        "/join": {
+            "post": {
+                "description": "Validates a session code and returns a user token for the specified user if the code is valid.",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,25 +27,33 @@ const docTemplate = `{
                 "tags": [
                     "sessions"
                 ],
-                "summary": "Create a new session and get an admin token",
+                "summary": "Validate session code",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "userId",
-                        "in": "query",
-                        "required": true
+                        "description": " Create Session req",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ValidateCodeReq"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Admin token in JSON format",
+                        "description": "User token in JSON format",
                         "schema": {
                             "$ref": "#/definitions/xxx_SessionService_models.UserToken"
                         }
                     },
+                    "400": {
+                        "description": "Invalid code",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
                     "405": {
-                        "description": "Method not allowed, only GET is allowed",
+                        "description": "Only GET method is allowed",
                         "schema": {
                             "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
                         }
@@ -59,8 +67,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/next": {
-            "get": {
+        "/session/{id}/nextQuestion": {
+            "post": {
                 "description": "Advances to the next question in the session identified by the provided code.",
                 "consumes": [
                     "application/json"
@@ -100,8 +108,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/sessions": {
+            "post": {
+                "description": "Creates a new session and returns an admin token for the specified user by userId.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Create a new session and get an admin token",
+                "parameters": [
+                    {
+                        "description": " Create Session req",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.CreateSessionReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin token in JSON format",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
+                        }
+                    },
+                    "405": {
+                        "description": "Method not allowed, only GET is allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/start": {
-            "get": {
+            "post": {
                 "description": "Starts a session using the provided session ID.",
                 "consumes": [
                     "application/json"
@@ -140,66 +194,20 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/validate": {
-            "get": {
-                "description": "Validates a session code and returns a user token for the specified user if the code is valid.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "sessions"
-                ],
-                "summary": "Validate session code",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session code",
-                        "name": "code",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "userId",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "User token in JSON format",
-                        "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid code",
-                        "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
-                        }
-                    },
-                    "405": {
-                        "description": "Only GET method is allowed",
-                        "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
+        "xxx_SessionService_models.CreateSessionReq": {
+            "type": "object",
+            "properties": {
+                "quizId": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
         "xxx_SessionService_models.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -224,6 +232,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "userType": {
+                    "type": "string"
+                }
+            }
+        },
+        "xxx_SessionService_models.ValidateCodeReq": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "userId": {
                     "type": "string"
                 }
             }

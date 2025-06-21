@@ -13,21 +13,27 @@ import (
 // @Tags sessions
 // @Accept  json
 // @Produce  json
-// @Param   userId   query    string  true  "User ID"
+// @Param   request  body  models.CreateSessionReq  true  " Create Session req"
 // @Success 200 {object} models.UserToken "Admin token in JSON format"
 // @Failure 405 {object} models.ErrorResponse "Method not allowed, only GET is allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /create [get]
+// @Router /sessions [post]
 func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodPost {
 		h.logger.Info("CreateSessionHandler", "Request Method", r.Method)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Only GET method is allowed"})
 	}
-	UserId := r.URL.Query().Get("userId")
+	var req models.CreateSessionReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Bad Request"})
+		return
+	}
 	session, err := h.Manager.NewSession()
-	AdminToken := h.Manager.GenerateUserToken(session.Code, UserId, "Admin")
+	AdminToken := h.Manager.GenerateUserToken(session.Code, req.UserId, "Admin")
 	if err != nil {
 		h.logger.Error("error With CreateSession", "CreateSessionHandler", err)
 		w.Header().Set("Content-Type", "application/json")
@@ -36,6 +42,13 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	err = h.Manager.SessionStart(req.UserId)
+	if err != nil {
+		h.logger.Error("error With CreateSession", "CreateSessionHandler", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
+	}
 	err = json.NewEncoder(w).Encode(AdminToken)
 	if err != nil {
 		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)

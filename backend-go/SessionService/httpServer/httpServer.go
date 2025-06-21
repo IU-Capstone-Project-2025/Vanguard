@@ -45,10 +45,10 @@ func (HttpServer *HttpServer) Stop() {
 func (HttpServer *HttpServer) registerHandlers() error {
 	router := mux.NewRouter()
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
-	router.HandleFunc("/create", HttpServer.CreateSessionHandler).Methods("GET")
-	router.HandleFunc("/validate", HttpServer.ValidateCodeHandler).Methods("GET")
-	router.HandleFunc("/next", HttpServer.NextQuestionHandler).Methods("GET")
-	router.HandleFunc("/start", HttpServer.StartSessionHandler).Methods("GET")
+	router.HandleFunc("/sessions", HttpServer.CreateSessionHandler).Methods("POST")
+	router.HandleFunc("/join", HttpServer.ValidateCodeHandler).Methods("POST")
+	router.HandleFunc("/session/{id}/nextQuestion", HttpServer.NextQuestionHandler).Methods("POST")
+	router.HandleFunc("/start", HttpServer.StartSessionHandler).Methods("POST")
 	HttpServer.logger.Info("registerHandlers", "msg", "Listening on "+HttpServer.Host+":"+HttpServer.Port)
 	err := http.ListenAndServe(HttpServer.Host+":"+HttpServer.Port, router)
 	if err != nil {
