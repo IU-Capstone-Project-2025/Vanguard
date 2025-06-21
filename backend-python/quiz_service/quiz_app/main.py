@@ -39,7 +39,8 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     debug=settings.DEBUG,
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path="/api/quiz"
 )
 
 app.include_router(quiz_router)
