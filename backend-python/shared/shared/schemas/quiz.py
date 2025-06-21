@@ -3,6 +3,8 @@ from enum import Enum
 from typing import Annotated, List, Literal, Optional, Union
 from uuid import UUID
 
+from shared.schemas.tag import TagResponse
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -59,8 +61,18 @@ class QuizCreate(BaseModel):
     title: Annotated[str, Field(max_length=200)]
     description: Optional[str] = None
     is_public: bool = False
-    # tags: Annotated[List[str], Field(max_length=10)] = []
+    tags: Annotated[List[str], Field(max_length=10)] = []
     questions: Annotated[List[Question], Field(min_length=1, max_length=100)]
+
+
+class QuizUpdate(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    title: Optional[Annotated[str, Field(max_length=200)]] = None
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
+    tags: Optional[Annotated[List[str], Field(max_length=10)]] = None
+    questions: Optional[Annotated[List[Question], Field(min_length=1, max_length=100)]] = None
 
 
 class QuizResponse(QuizCreate):
@@ -68,5 +80,16 @@ class QuizResponse(QuizCreate):
     owner_id: UUID
     created_at: datetime
     updated_at: datetime
+    tags: List[TagResponse]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class QuizFilterMode(str, Enum):
+    """Defines the base visibility filter for quizzes."""
+    ALL_PUBLIC = "all_public"
+    ALL_MINE = "all_mine"
+    MINE_PUBLIC = "mine_public"
+    MINE_PRIVATE = "mine_private"
+    OTHER_PUBLIC = "other_public"
+    VISIBLE_TO_ME = "visible_to_me"
