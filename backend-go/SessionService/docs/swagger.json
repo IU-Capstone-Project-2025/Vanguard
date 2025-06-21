@@ -1,0 +1,226 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Это пример API с gorilla/mux и swaggo",
+        "title": "Пример API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8000",
+    "basePath": "/",
+    "paths": {
+        "/create": {
+            "get": {
+                "description": "Creates a new session and returns an admin token for the specified user by userId.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Create a new session and get an admin token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin token in JSON format",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
+                        }
+                    },
+                    "405": {
+                        "description": "Method not allowed, only GET is allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/next": {
+            "get": {
+                "description": "Advances to the next question in the session identified by the provided code.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Move to the next question",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully moved to the next question"
+                    },
+                    "405": {
+                        "description": "Method not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/start": {
+            "get": {
+                "description": "Starts a session using the provided session ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Start a session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session started successfully"
+                    },
+                    "405": {
+                        "description": "Method not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/validate": {
+            "get": {
+                "description": "Validates a session code and returns a user token for the specified user if the code is valid.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Validate session code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User token in JSON format",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid code",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Only GET method is allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "xxx_SessionService_models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "xxx_SessionService_models.UserToken": {
+            "type": "object",
+            "properties": {
+                "currentQuiz": {
+                    "type": "string"
+                },
+                "exp": {
+                    "type": "integer"
+                },
+                "serverWsEndpoint": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "userType": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

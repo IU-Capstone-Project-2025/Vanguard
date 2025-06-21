@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	_ "xxx/SessionService/docs"
 	"xxx/SessionService/httpServer"
 )
 
@@ -13,6 +14,11 @@ const (
 	envProd  = "prod"
 )
 
+// @title           Пример API
+// @version         1.0
+// @description     Это пример API с gorilla/mux и swaggo
+// @host            localhost:8000
+// @BasePath        /
 func main() {
 	log := setupLogger(envLocal)
 	server, err := httpServer.InitHttpServer(log, "localhost", "8000", "amqp://guest:guest@localhost:5672/", "localhost:6379")

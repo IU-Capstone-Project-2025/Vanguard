@@ -2,9 +2,11 @@ package httpServer
 
 import (
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"log/slog"
 	"net/http"
 	"xxx/SessionService/Handlers"
+	_ "xxx/SessionService/docs"
 )
 
 type HttpServer struct {
@@ -42,10 +44,11 @@ func (HttpServer *HttpServer) Stop() {
 
 func (HttpServer *HttpServer) registerHandlers() error {
 	router := mux.NewRouter()
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 	router.HandleFunc("/create", HttpServer.CreateSessionHandler).Methods("GET")
 	router.HandleFunc("/validate", HttpServer.ValidateCodeHandler).Methods("GET")
-	router.HandleFunc("/Next", HttpServer.NextQestionHandler).Methods("GET")
-	router.HandleFunc("/StartSession", HttpServer.StartSessionHandler).Methods("GET")
+	router.HandleFunc("/next", HttpServer.NextQuestionHandler).Methods("GET")
+	router.HandleFunc("/start", HttpServer.StartSessionHandler).Methods("GET")
 	HttpServer.logger.Info("registerHandlers", "msg", "Listening on "+HttpServer.Host+":"+HttpServer.Port)
 	err := http.ListenAndServe(HttpServer.Host+":"+HttpServer.Port, router)
 	if err != nil {
