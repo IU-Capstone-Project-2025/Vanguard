@@ -55,14 +55,14 @@ services:
     depends_on:
       - auth
 
-  react-frontend:
+  frontend:
     build:
       context: frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:80"
     volumes:
-      - ./frontend/app:/app
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /app/node_modules
     environment:
       - NODE_ENV=development
