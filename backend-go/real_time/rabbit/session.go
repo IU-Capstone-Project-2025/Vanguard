@@ -70,7 +70,7 @@ func CreateSessionEndedQueue(ch *amqp.Channel) (amqp.Queue, error) {
 }
 
 // ConsumeSessionStart method listens to "session start" events delivered to the corresponding queue.
-func (r *RealTimeRabbit) ConsumeSessionStart() {
+func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry) {
 	msgs, err := r.channel.Consume(
 		r.SessionStartedQ.Name, // the name of the already created queue
 		"",
@@ -97,7 +97,7 @@ func (r *RealTimeRabbit) ConsumeSessionStart() {
 			}
 
 			fmt.Println(msg)
-			ws.RegisterSession(msg)
+			registry.RegisterSession(msg.SessionId) // register new session
 		}
 	}()
 
