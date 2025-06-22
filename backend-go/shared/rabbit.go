@@ -1,13 +1,15 @@
 package shared
 
 const (
-	SessionExchange = "session.events"
+	SessionExchange = "session.events" // the name of the only exchange
 
-	SessionStartRoutingKey  = "session.start"
-	SessionEndRoutingKey    = "session.end"
-	QuestionStartRoutingKey = "question.*.start"
+	SessionStartRoutingKey = "session.start" // routing key for "session_start" event
+	SessionEndRoutingKey   = "session.end"   // routing key for "session_end" event
+	// QuestionStartRoutingKey is a routing key for "question_start" event.
+	QuestionStartRoutingKey = "question.*.start" // * stands for session code
 )
 
+// RabbitSessionMsg represents a message pushed to RabbitMQ as "session_"-type event
 type RabbitSessionMsg struct {
 	SessionId string
 }

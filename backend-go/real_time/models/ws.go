@@ -1,17 +1,9 @@
 package models
 
-import "github.com/gorilla/websocket"
-
+// Role represent a user type
 type Role string
 
 const (
-	RoleAdmin       = "admin"
-	RoleParticipant = "participant"
+	RoleAdmin       = "admin"       // the host of the session (quiz)
+	RoleParticipant = "participant" // the participant of the session (quiz)
 )
-
-type ConnectionContext struct {
-	Conn      *websocket.Conn
-	UserId    string
-	SessionId string
-	Role      Role
-}

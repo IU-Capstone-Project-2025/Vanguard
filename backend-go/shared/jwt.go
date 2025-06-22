@@ -5,8 +5,7 @@ import (
 	"xxx/real_time/models"
 )
 
-const JwtKey = "some_complex_key"
-
+// UserTokenClaims represents the structure of the user's ephemeral token
 type UserTokenClaims struct {
 	UserId    string
 	SessionId string
