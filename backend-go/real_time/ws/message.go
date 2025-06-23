@@ -34,8 +34,8 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 }
 
 // handleUserMessage processes an incoming UserMessage from a WebSocket client.
-// TODO: implement real functionality
 func handleUserMessage(msg []byte, ctx *ConnectionContext) {
+	// TODO: implement real functionality
 	reply := ""
 	if ctx.Role == models.RoleAdmin {
 		reply = "Hi, room's Host. Echo:\n" + string(msg)
