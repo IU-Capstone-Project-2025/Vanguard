@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -20,8 +21,12 @@ const (
 // @host            localhost:8000
 // @BasePath        /
 func main() {
+	host := flag.String("host", "localhost", "HTTP server host")
+	port := flag.String("port", "8000", "HTTP server port")
+	rabbitMQ := flag.String("rabbitmq", "amqp://guest:guest@localhost:5672/", "RabbitMQ URL")
+	redis := flag.String("redis", "localhost:6379", "Redis address")
 	log := setupLogger(envLocal)
-	server, err := httpServer.InitHttpServer(log, "localhost", "8000", "amqp://guest:guest@localhost:5672/", "localhost:6379")
+	server, err := httpServer.InitHttpServer(log, *host, *port, *rabbitMQ, *redis)
 	if err != nil {
 		log.Error("error creating http server", "error", err)
 		return
