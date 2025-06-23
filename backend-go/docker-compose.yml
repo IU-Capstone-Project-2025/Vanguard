@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  quiz-engine:
+    build: .
+    container_name: quiz-engine
+    command:
+      - quiz-engine
+      - --host=0.0.0.0
+      - --port=8000
+      - --rabbitmq=amqp://guest:guest@rabbitmq:5672/
+      - --redis=redis:6379
+    
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+      - redis
+
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      # AMQP порт
+      - "15672:15672"    # Web UI RabbitMQ
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
