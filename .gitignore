@@ -58,6 +58,10 @@ frontend/app/yarn-error.log*
 # Editor/IDE
 .idea/
 .vscode/
-
 *.iml
+
+# Python related
 __pycache__
+venv
+.venv
+*.egg-info
