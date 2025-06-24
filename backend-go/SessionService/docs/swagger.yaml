@@ -12,17 +12,13 @@ definitions:
       message:
         type: string
     type: object
-  xxx_SessionService_models.UserToken:
+  xxx_SessionService_models.SessionCreateResponse:
     properties:
-      currentQuiz:
+      jwt:
         type: string
-      exp:
-        type: integer
       serverWsEndpoint:
         type: string
-      userId:
-        type: string
-      userType:
+      sessionId:
         type: string
     type: object
   xxx_SessionService_models.ValidateCodeReq:
@@ -58,7 +54,7 @@ paths:
         "200":
           description: User token in JSON format
           schema:
-            $ref: '#/definitions/xxx_SessionService_models.UserToken'
+            $ref: '#/definitions/xxx_SessionService_models.SessionCreateResponse'
         "400":
           description: Invalid code
           schema:
@@ -121,7 +117,7 @@ paths:
         "200":
           description: Admin token in JSON format
           schema:
-            $ref: '#/definitions/xxx_SessionService_models.UserToken'
+            $ref: '#/definitions/xxx_SessionService_models.SessionCreateResponse'
         "405":
           description: Method not allowed, only GET is allowed
           schema:

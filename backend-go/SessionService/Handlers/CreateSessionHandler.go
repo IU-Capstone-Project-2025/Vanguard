@@ -2,7 +2,9 @@ package Handlers
 
 import (
 	"encoding/json"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
+	"os"
 	"xxx/SessionService/models"
 	"xxx/shared"
 )
@@ -15,7 +17,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param   request  body  models.CreateSessionReq  true  " Create Session req"
-// @Success 200 {object} models.UserToken "Admin token in JSON format"
+// @Success 200 {object} models.SessionCreateResponse "Admin token in JSON format"
 // @Failure 405 {object} models.ErrorResponse "Method not allowed, only GET is allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
 // @Router /sessions [post]
@@ -50,7 +52,21 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
 	}
-	err = json.NewEncoder(w).Encode(AdminToken)
+	s := jwt.NewWithClaims(jwt.SigningMethodHS256, AdminToken)
+	token, err := s.SignedString(os.Getenv("JWT_SECRET_KEY"))
+	if err != nil {
+		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
+		return
+	}
+	response := models.SessionCreateResponse{
+		Jwt:              token,
+		ServerWsEndpoint: AdminToken.ServerWsEndpoint,
+		SessionId:        AdminToken.SessionId,
+	}
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
 		w.Header().Set("Content-Type", "application/json")

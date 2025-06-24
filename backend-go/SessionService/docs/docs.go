@@ -43,7 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "User token in JSON format",
                         "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
+                            "$ref": "#/definitions/xxx_SessionService_models.SessionCreateResponse"
                         }
                     },
                     "400": {
@@ -136,7 +136,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Admin token in JSON format",
                         "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
+                            "$ref": "#/definitions/xxx_SessionService_models.SessionCreateResponse"
                         }
                     },
                     "405": {
@@ -216,22 +216,16 @@ const docTemplate = `{
                 }
             }
         },
-        "xxx_SessionService_models.UserToken": {
+        "xxx_SessionService_models.SessionCreateResponse": {
             "type": "object",
             "properties": {
-                "currentQuiz": {
+                "jwt": {
                     "type": "string"
-                },
-                "exp": {
-                    "type": "integer"
                 },
                 "serverWsEndpoint": {
                     "type": "string"
                 },
-                "userId": {
-                    "type": "string"
-                },
-                "userType": {
+                "sessionId": {
                     "type": "string"
                 }
             }

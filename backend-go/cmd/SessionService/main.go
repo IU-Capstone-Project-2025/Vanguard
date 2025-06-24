@@ -44,7 +44,7 @@ func main() {
 	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
 
 	fmt.Println("env:")
-	fmt.Println(host, port, rabbitUrl)
+	fmt.Println(host, port, rabbitUrl, redisUrl)
 	//time.Sleep(30 * time.Second)
 
 	log := setupLogger(envLocal)

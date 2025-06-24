@@ -53,7 +53,7 @@ frontend/app/yarn-error.log*
 
 
 # env file
-backend-go/.env
+.env
 
 # Editor/IDE
 .idea/

@@ -70,12 +70,12 @@ services:
     depends_on:
       - quiz
 
-  go-backend:
-    build:
-      context: backend-go
-      dockerfile: backend-go/SessionService/Dockerfile
-    ports:
-      - "8080:8080"
+#  go-backend:
+#    build:
+#      context: backend-go
+#      dockerfile: backend-go/SessionService/Dockerfile
+#    ports:
+#      - "8080:8080"
 
 volumes:
   postgres_data:
