@@ -25,7 +25,7 @@ const GameProcessAdmin = () => {
   return (
     <div className="game-process">
       <h1>{quiz.title}</h1>
-      <p>Question {currentQuestionIndex + 1} / {quiz.questions.length}</p>
+      <p>Question{currentQuestionIndex + 1} / {quiz.questions.length}</p>
       <div className="question-block">
         <h2>{currentQuestion.text}</h2>
         {currentQuestion.image_url && (
