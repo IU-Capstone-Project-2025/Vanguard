@@ -1,7 +1,9 @@
+import io
 import os
 
 import pytest
 from httpx import AsyncClient, ASGITransport
+from PIL import Image
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from shared.db.models import Base, Quiz, User
@@ -95,3 +97,14 @@ async def test_quiz(uow_test, test_user):
         )
         quiz_db = await repo.create(quiz)
         return quiz_db
+
+def create_test_image():
+    image = Image.new("RGB", (100, 100), color="red")
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format="PNG")
+    img_byte_arr.seek(0)
+    return img_byte_arr
+
+@pytest.fixture
+def test_image():
+    return create_test_image()
