@@ -53,7 +53,7 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
 	}
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, AdminToken)
-	token, err := s.SignedString(os.Getenv("JWT_SECRET_KEY"))
+	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 	if err != nil {
 		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
 		w.Header().Set("Content-Type", "application/json")

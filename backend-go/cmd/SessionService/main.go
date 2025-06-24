@@ -28,7 +28,7 @@ func getEnvFilePath() string {
 // @title           Пример API
 // @version         1.0
 // @description     Это пример API с gorilla/mux и swaggo
-// @host            localhost:8000
+// @host            localhost:8081
 // @BasePath        /
 func main() {
 	if err := godotenv.Load(getEnvFilePath()); err != nil {

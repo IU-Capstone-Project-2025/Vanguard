@@ -39,7 +39,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 	}
 	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, userToken)
-	token, err := s.SignedString(os.Getenv("JWT_SECRET_KEY"))
+	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 	if err != nil {
 		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
 		w.Header().Set("Content-Type", "application/json")

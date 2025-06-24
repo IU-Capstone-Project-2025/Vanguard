@@ -28,7 +28,7 @@ definitions:
       userId:
         type: string
     type: object
-host: localhost:8000
+host: localhost:8081
 info:
   contact: {}
   description: Это пример API с gorilla/mux и swaggo
