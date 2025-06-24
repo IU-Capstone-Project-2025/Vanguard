@@ -25,7 +25,7 @@ func getEnvFilePath() string {
 func main() {
 	// Load environment variables file, if running in development
 	if os.Getenv("ENV") != "production" {
-		fmt.Println("LOADING .ENV")
+		fmt.Println("LOADING .ENV from ", getEnvFilePath())
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			log.Fatalf("Error: could not load .env file: %v", err)
 		}
