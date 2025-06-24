@@ -8,8 +8,3 @@ const (
 	// QuestionStartRoutingKey is a routing key for "question_start" event.
 	QuestionStartRoutingKey = "question.*.start" // * stands for session code
 )
-
-// RabbitSessionMsg represents a message pushed to RabbitMQ as "session_"-type event
-type RabbitSessionMsg struct {
-	SessionId string
-}

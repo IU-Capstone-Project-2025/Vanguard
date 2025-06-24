@@ -125,7 +125,7 @@ func TestWithTestContainers(t *testing.T) {
 	}
 	exchange := "session.events"
 	ch.ExchangeDeclare(exchange, "topic", true, false, false, false, nil)
-	evt := map[string]string{"SessionId": "COD52"}
+	evt := map[string]string{"ID": "COD52"}
 	body, _ := json.Marshal(evt)
 	ch.Publish(exchange, "session.start", false, false, amqp.Publishing{
 		ContentType: "application/json",

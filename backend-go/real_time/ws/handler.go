@@ -5,7 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"xxx/real_time/models"
+	"xxx/shared"
 )
 
 var upgrader = websocket.Upgrader{
@@ -19,7 +19,7 @@ type ConnectionContext struct {
 	Conn      *websocket.Conn // the connection tunnel with user
 	UserId    string          // unique ID of the connected user
 	SessionId string          // session ID of the session user joined in
-	Role      models.Role     // the role of the user within the session
+	Role      shared.UserRole // the role of the user within the session
 }
 
 // NewWebSocketHandler returns an http.HandlerFunc that uses the given registry.
@@ -74,7 +74,7 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 			Conn:      conn,
 			UserId:    token.UserId,
 			SessionId: token.SessionId,
-			Role:      token.Role,
+			Role:      token.UserType,
 		}
 
 		// Send a welcome message

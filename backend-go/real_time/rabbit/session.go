@@ -91,13 +91,13 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry) {
 	go func() {
 		defer wg.Done()
 		for d := range msgs {
-			var msg shared.RabbitSessionMsg
+			var msg shared.Session
 			if err := json.Unmarshal(d.Body, &msg); err != nil {
 				continue
 			}
 
 			fmt.Println(msg)
-			registry.RegisterSession(msg.SessionId) // register new session
+			registry.RegisterSession(msg.ID) // register new session
 		}
 	}()
 
