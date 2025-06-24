@@ -5,44 +5,40 @@ import { useNavigate } from "react-router-dom";
 const CreateSessionPage = () => {
     const navigate = useNavigate();
     const [selectedQuiz, setSelectedQuiz] = useState(null);
-    const [quizzes, setQuizzes] = useState([])
+    const [quizzes, setQuizzes] = useState([]);
     const [search, setSearch] = useState("");
-    const [SessionCode, setSessionCode] = useState(); // Mocked session code, should be generated dynamically
+    const [sessionCode, setSessionCode] = useState(null);
 
     useEffect(() => {
-        // Mock fetching quizzes from an API or database
-        const url = 'http://localhost:8000/api/quiz/'; // Replace with your actual API endpoint
         const fetchQuizzes = async () => {
             try {
-                const response = await fetch(url);
+                const response = await fetch("/api/quiz/"); // <-- относительный путь
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`Network error: ${response.status}`);
                 }
                 const data = await response.json();
-                setQuizzes(data.map(quiz => quiz.name));
-                console.log(quizzes) // Assuming the API returns an array of quiz objects with a 'name' property
+                if (!Array.isArray(data)) {
+                    throw new Error("Expected an array of quizzes.");
+                }
+                setQuizzes(data.map(quiz => quiz.title)); // <-- Здесь берем title
             } catch (error) {
-                console.error('Error fetching quizzes:', error);
+                console.error("Error fetching quizzes:", error);
             }
         };
-        fetchQuizzes();}
-    )
+        fetchQuizzes();
+    }, []);
 
     const handlePlay = () => {
         if (selectedQuiz) {
-            // Logic to start the session with selectedQuiz
-
-            navigate(`/ask-to-join/${SessionCode}`); // You may pass quiz info as state or param
+            navigate(`/ask-to-join/${sessionCode}`);
         }
     };
-
+  
     return (
         <div className="create-session-main-content">
             <div className="left-side">
                 <div className="title">
-                    <h2>
-                        Now choose the quiz <br /> to start a game
-                    </h2>
+                    <h2>Now choose the quiz <br /> to start a game</h2>
                     <div className="button-group">
                         <button
                             className="play-button"
@@ -53,7 +49,7 @@ const CreateSessionPage = () => {
                         </button>
                         <button
                             className="enter-store-button"
-                            onClick={() => navigate('/store')}
+                            onClick={() => navigate("/store")}
                         >
                             + Enter quiz Store
                         </button>
@@ -81,7 +77,7 @@ const CreateSessionPage = () => {
                                     >
                                         {quiz}
                                     </div>
-                                ))}
+                            ))}
                         </div>
                     </div>
                 </div>
