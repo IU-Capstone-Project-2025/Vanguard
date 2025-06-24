@@ -2,8 +2,11 @@ package Game
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"io/ioutil"
+	"net/http"
 	"xxx/SessionService/Rabbit"
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
@@ -94,27 +97,29 @@ func (manager *SessionManager) GenerateUserToken(code string, UserId string, Use
 }
 
 func (manager *SessionManager) SessionStart(quizUUID string) error {
-	//url := fmt.Sprintf("http://quiz:8001/%s", quizUUID)
-	//resp, err := http.Get(url)
-	//if err != nil {
-	//	return fmt.Errorf("error to get quiz from service %s %s", quizUUID, err.Error())
-	//}
-	//defer resp.Body.Close()
-	//
-	//if resp.StatusCode != http.StatusOK {
-	//	return fmt.Errorf("quiz session status code: %d", resp.StatusCode)
-	//}
-	//
-	//body, err := ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	return fmt.Errorf("error on SessionStart with read body %s, %s", quizUUID, err.Error())
-	//}
-	//
+	fmt.Println(quizUUID)
+	url := fmt.Sprintf("%s%s", shared.QuizManager, quizUUID)
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("error to get quiz from service %s %s", quizUUID, err.Error())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("quiz session status code: %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error on SessionStart with read body %s, %s", quizUUID, err.Error())
+	}
+
 	var quiz shared.Quiz
-	//if err := json.Unmarshal(body, &quiz); err != nil {
-	//	return fmt.Errorf("error on SessionStart with unmarshal json %s %s", quizUUID, err.Error())
-	//}
-	err := manager.rabbit.PublishSessionStart(context.Background(), quiz)
+	if err := json.Unmarshal(body, &quiz); err != nil {
+		return fmt.Errorf("error on SessionStart with unmarshal json %s %s", quizUUID, err.Error())
+	}
+	fmt.Println(quiz)
+	err = manager.rabbit.PublishSessionStart(context.Background(), quiz)
 	if err != nil {
 		return fmt.Errorf("error on SessionStart with publish quiz to rabbit %s %s", quizUUID, err.Error())
 	}
