@@ -73,7 +73,7 @@ services:
   go-backend:
     build:
       context: backend-go
-      dockerfile: Dockerfile
+      dockerfile: backend-go/SessionService/Dockerfile
     ports:
       - "8080:8080"
 
