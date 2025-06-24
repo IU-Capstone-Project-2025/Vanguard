@@ -4,6 +4,8 @@ import './styles/GameProcess.css';
 const GameProcessAdmin = () => {
   const [quiz, setQuiz] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answered, setAnswered] = useState(0);
+  const [membersNumber, setMembersNumber] = useState(0);
 
   useEffect(() => {
     // Здесь ты делаешь fetch из бекенда
@@ -25,7 +27,8 @@ const GameProcessAdmin = () => {
   return (
     <div className="game-process">
       <h1>{quiz.title}</h1>
-      <p>Question{currentQuestionIndex + 1} / {quiz.questions.length}</p>
+      <p>Question {currentQuestionIndex + 1} / {quiz.questions.length}</p>
+      <p>Answered: {answered} / {membersNumber}</p>
       <div className="question-block">
         <h2>{currentQuestion.text}</h2>
         {currentQuestion.image_url && (
