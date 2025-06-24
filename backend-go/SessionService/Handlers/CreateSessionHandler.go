@@ -45,7 +45,7 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	err = h.Manager.SessionStart(req.UserId)
+	err = h.Manager.SessionStart(req.QuizId)
 	if err != nil {
 		h.logger.Error("error With CreateSession", "CreateSessionHandler", err)
 		w.Header().Set("Content-Type", "application/json")
