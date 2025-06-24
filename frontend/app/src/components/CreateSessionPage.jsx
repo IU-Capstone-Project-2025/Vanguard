@@ -1,13 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import './styles/styles.css';
 import { useNavigate } from "react-router-dom";
 
 const CreateSessionPage = () => {
     const navigate = useNavigate();
     const [selectedQuiz, setSelectedQuiz] = useState(null);
-    const quizzes = ["Quiz 1", "Quiz 2"]; // Placeholder, should be dynamic in real app
+    const [quizzes, setQuizzes] = useState([])
     const [search, setSearch] = useState("");
-    const [SessionCode, setSessionCode] = useState("R4M4Z4NN"); // Mocked session code, should be generated dynamically
+    const [SessionCode, setSessionCode] = useState(); // Mocked session code, should be generated dynamically
+
+    useEffect(() => {
+        // Mock fetching quizzes from an API or database
+        const url = 'http://localhost:8000/api/quiz/'; // Replace with your actual API endpoint
+        const fetchQuizzes = async () => {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                setQuizzes(data.map(quiz => quiz.name));
+                console.log(quizzes) // Assuming the API returns an array of quiz objects with a 'name' property
+            } catch (error) {
+                console.error('Error fetching quizzes:', error);
+            }
+        };
+        fetchQuizzes();}
+    )
 
     const handlePlay = () => {
         if (selectedQuiz) {
