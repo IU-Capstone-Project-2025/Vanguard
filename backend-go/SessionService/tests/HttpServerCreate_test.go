@@ -13,6 +13,7 @@ import (
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/httpServer"
 	"xxx/SessionService/models"
+	"xxx/shared"
 )
 
 const (
@@ -58,7 +59,7 @@ func Test_HttpServerCreate(t *testing.T) {
 	fmt.Println("get body:")
 	fmt.Println(string(body))
 
-	var token models.UserToken
+	var token shared.UserToken
 	err = json.Unmarshal(body, &token)
 	if err != nil {
 		t.Errorf("error unmarshalling response: %s", err.Error())

@@ -1,4 +1,4 @@
-package models
+package shared
 
 type UserToken struct {
 	UserId           string `json:"userId"`

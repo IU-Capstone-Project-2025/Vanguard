@@ -1,4 +1,4 @@
-package models
+package shared
 
 type Session struct {
 	ID               string `redis:"id"`
