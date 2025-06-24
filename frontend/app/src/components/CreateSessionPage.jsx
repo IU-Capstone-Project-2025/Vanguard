@@ -75,8 +75,10 @@ const CreateSessionPage = () => {
       await connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
 
       sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
-      sessionStorage.setItem('sessionCode', sessionCode);
+      sessionStorage.setItem('sessionCode', sessionData.sessionId);
       sessionStorage.setItem('webSocket', wsRef);
+      sessionStorage.setItem('wsToken', sessionData.jwt);
+      sessionStorage.setItem('wsEndpoint', sessionData.serverWsEndpoint);
       navigate(`/ask-to-join/${sessionCode}`);
 
     }

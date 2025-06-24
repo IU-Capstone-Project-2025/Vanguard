@@ -41,7 +41,7 @@ const JoinGamePage = () => {
     const handlePlay =  async () => {
         if (code) {
             const sessionData = await joinSession(code ,null)
-            connectToWebSocket(sessionData.wsEndpoint,sessionData.jws);
+            connectToWebSocket(sessionData.wsEndpoint,sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
         }
