@@ -7,6 +7,13 @@ const JoinGamePage = () => {
     const [code,setCode] = useState("")
     const navigate = useNavigate()
 
+    const handlePlay = () => {
+        if (code) {
+            sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
+            navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
+        }
+    };
+
     return (
         <div className="joingame-main-content">
             <div className="left-side">
@@ -17,8 +24,11 @@ const JoinGamePage = () => {
                     <input 
                         type="text" 
                         placeholder="enter a code here"
-                        value={code}
-                        onChange={(e)=> setCode(e.target.value)}
+                        value={`${code.toUpperCase()}`}
+                        onChange={(e) => setCode(e.target.value)} // Remove '#' and convert to uppercase
+                        required
+                        autoFocus
+                        pattern="^[A-Z0-9]+$" // Ensure only alphanumeric characters are
                         className="code-input"
                     />
                     <div className="button-group">
@@ -26,7 +36,8 @@ const JoinGamePage = () => {
                                 className="play-button"
                                 onClick={
                                     (e) => {
-                                        navigate('/play')
+                                        handlePlay();
+                                        e.preventDefault();
                                     }
                                 }
                             >

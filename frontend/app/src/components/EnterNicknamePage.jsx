@@ -7,6 +7,16 @@ const PlayGamePage = () => {
     const [nickname,setNickname] = useState("")
     const navigate = useNavigate()
 
+
+    const handlePlay = () => {
+        if (nickname) {
+            sessionStorage.setItem('nickname', nickname);
+            navigate('/join');
+        }
+        else {
+            alert("Please enter a nickname to continue.");
+        }
+    }
     return (
         <div className="playgame-main-content">
             
@@ -17,6 +27,8 @@ const PlayGamePage = () => {
                     <input 
                         type="text" 
                         placeholder="enter the name here"
+                        required
+                        autoFocus
                         value={nickname}
                         onChange={(e)=> setNickname(e.target.value)}
                         className="code-input"
@@ -26,7 +38,8 @@ const PlayGamePage = () => {
                                 className="play-button"
                                 onClick={
                                     (e) => {
-                                        navigate('/wait}')
+                                        handlePlay();
+                                        e.preventDefault();
                                     }
                                 }
                             >
