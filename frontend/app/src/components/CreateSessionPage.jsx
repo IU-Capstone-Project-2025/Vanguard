@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState ,useRef} from "react";
 import { useNavigate } from "react-router-dom";
 
 import './styles/styles.css';
@@ -10,6 +10,7 @@ const CreateSessionPage = () => {
   const [quizzes, setQuizzes] = useState([]);
   const [search, setSearch] = useState("");
   const [sessionCode, setSessionCode] = useState(null);
+  const wsRef = useRef(null);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -31,16 +32,53 @@ const CreateSessionPage = () => {
     fetchQuizzes();
   }, []);
 
-  const handleQuizSelection = (quiz) => {
+   const handleQuizSelection = (quiz) => {
     sessionStorage.setItem('selectedQuizId', quiz.id);
     setSelectedQuiz(quiz);
   };
 
-  const handlePlay = () => {
+  // 🎯 POST-запрос к /api/session/sessions
+  const createSession = async (quizId,userId) => {
+
+    const response = await fetch("/api/session/sessions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ quizId, userId }),
+    });
+
+    if (!response.ok) throw new Error("Failed to create session");
+
+    const data = await response.json();
+    return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt": "string", "sessionId":"string"}
+  };
+
+  // 🌐 Устанавливаем WebSocket-соединение
+  const connectToWebSocket = (wsEndpoint, token) => {
+      wsRef.current = new WebSocket(`${wsEndpoint}?token=${token}`);
+      wsRef.current.onopen = () => {
+        console.log("✅ WebSocket connected");
+      };
+
+      wsRef.current.onerror = (err) => {
+        console.error("❌ WebSocket error:", err);
+
+      };
+    };
+
+
+  const handlePlay = async () => {
     if (selectedQuiz) {
+      const sessionData = await createSession(selectedQuiz.id,null);
+      setSessionCode(sessionData.sessionId);
+      await connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
+
       sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
       sessionStorage.setItem('sessionCode', sessionCode);
+      sessionStorage.setItem('webSocket', wsRef);
       navigate(`/ask-to-join/${sessionCode}`);
+
     }
   };
 
