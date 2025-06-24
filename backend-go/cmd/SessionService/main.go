@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"github.com/joho/godotenv"
 	"log/slog"
 	"os"
 	"time"
@@ -23,14 +23,14 @@ const (
 // @BasePath        /
 func main() {
 	time.Sleep(30 * time.Second)
-	host := flag.String("host", "localhost", "HTTP server host")
-	port := flag.String("port", "8000", "HTTP server port")
-	rabbitMQ := flag.String("rabbitmq", "amqp://guest:guest@localhost:5672/", "RabbitMQ URL")
-	redis := flag.String("redis", "localhost:6379", "Redis address")
-	flag.Parse()
-	fmt.Println(*host, *port, *rabbitMQ, *redis)
+	_ = godotenv.Load()
+	host := os.Getenv("HOST")
+	port := os.Getenv("PORT")
+	rabbitMQ := os.Getenv("RABBITMQ")
+	redis := os.Getenv("REDIS")
+	fmt.Println(host, port, rabbitMQ, redis)
 	log := setupLogger(envLocal)
-	server, err := httpServer.InitHttpServer(log, *host, *port, *rabbitMQ, *redis)
+	server, err := httpServer.InitHttpServer(log, host, port, rabbitMQ, redis)
 	if err != nil {
 		log.Error("error creating http server", "error", err)
 		return

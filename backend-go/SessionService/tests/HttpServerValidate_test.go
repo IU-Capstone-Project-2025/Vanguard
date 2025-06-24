@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 	"xxx/SessionService/httpServer"
-	"xxx/SessionService/models"
+	"xxx/shared"
 )
 
 func Test_HttpServerValidate(t *testing.T) {
@@ -49,7 +49,7 @@ func Test_HttpServerValidate(t *testing.T) {
 	fmt.Println("get body:")
 	fmt.Println(string(body))
 
-	var token models.UserToken
+	var token shared.UserToken
 	err = json.Unmarshal(body, &token)
 	if err != nil {
 		t.Errorf("error unmarshalling response: %s", err.Error())
@@ -72,7 +72,7 @@ func Test_HttpServerValidate(t *testing.T) {
 	if err != nil {
 		t.Error("error reading response body:", err)
 	}
-	var user models.UserToken
+	var user shared.UserToken
 	err = json.Unmarshal(body2, &user)
 	if err != nil {
 		t.Error("error unmarshalling response body:", err)

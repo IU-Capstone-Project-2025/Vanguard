@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	models "xxx/SessionService/models"
+	"xxx/shared"
 )
 
 type Cache interface {
-	SaveSession(session *models.Session) error
-	LoadSession(code string) (*models.Session, error)
+	SaveSession(session *shared.Session) error
+	LoadSession(code string) (*shared.Session, error)
 	DeleteSession(code string) error
 	EditSessionState(sessionID string, state string) error
 	CodeExist(code string) bool
@@ -39,7 +40,7 @@ func NewRedisClient(ctx context.Context, cfg models.Config) (*Redis, error) {
 }
 
 // SaveSession store session in Redis
-func (r *Redis) SaveSession(session *models.Session) error {
+func (r *Redis) SaveSession(session *shared.Session) error {
 	ctx := context.Background()
 	key := "session:" + session.Code
 	err := r.Client.HSet(ctx, key, map[string]interface{}{
@@ -54,7 +55,7 @@ func (r *Redis) SaveSession(session *models.Session) error {
 }
 
 // LoadSession Load session by its Id from Redis
-func (r *Redis) LoadSession(code string) (*models.Session, error) {
+func (r *Redis) LoadSession(code string) (*shared.Session, error) {
 	key := "session:" + code
 	ctx := context.Background()
 	res, err := r.Client.HGetAll(ctx, key).Result()
@@ -64,7 +65,7 @@ func (r *Redis) LoadSession(code string) (*models.Session, error) {
 	if len(res) == 0 {
 		return nil, fmt.Errorf("session with code %s not found in Redis", code)
 	}
-	session := &models.Session{
+	session := &shared.Session{
 		ID:    res["id"],
 		Code:  res["code"],
 		State: res["state"],

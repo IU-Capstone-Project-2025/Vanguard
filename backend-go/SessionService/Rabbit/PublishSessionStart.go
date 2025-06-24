@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 func (r *Rabbit) PublishSessionStart(ctx context.Context, payload interface{}) error {
@@ -13,8 +13,8 @@ func (r *Rabbit) PublishSessionStart(ctx context.Context, payload interface{}) e
 		return err
 	}
 	err = r.channel.PublishWithContext(ctx,
-		Shared.SessionExchange,        // exchange
-		Shared.SessionStartRoutingKey, // routing key
+		shared.SessionExchange,        // exchange
+		shared.SessionStartRoutingKey, // routing key
 		false,                         // mandatory
 		false,                         // immediate
 		amqp.Publishing{

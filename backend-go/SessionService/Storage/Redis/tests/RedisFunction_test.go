@@ -6,6 +6,7 @@ import (
 	"testing"
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
+	"xxx/shared"
 )
 
 func Test_RedisFunction(t *testing.T) {
@@ -22,7 +23,7 @@ func Test_RedisFunction(t *testing.T) {
 	if err != nil {
 		t.Error("error creating redis client", "error", err)
 	}
-	err = redis.SaveSession(&models.Session{
+	err = redis.SaveSession(&shared.Session{
 		ID:               "testRedis",
 		Code:             "testRedis",
 		State:            "testRedis",

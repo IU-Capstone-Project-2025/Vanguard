@@ -11,13 +11,13 @@ import (
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
 	"xxx/SessionService/utils"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 type Manager interface {
 	ValidateCode(code string) bool
-	GenerateUserToken(code string, UserId string, UserType string) *models.UserToken
-	NewSession() (*models.Session, error)
+	GenerateUserToken(code string, UserId string, UserType string) *shared.UserToken
+	NewSession() (*shared.Session, error)
 	SessionStart(code string) error
 	NextQuestion(code string) error
 }
@@ -57,7 +57,7 @@ func CreateSessionManager(codeLength int, rmqConn string, redisConn string) (*Se
 }
 
 // NewSession create session and save it to Redis
-func (manager *SessionManager) NewSession() (*models.Session, error) {
+func (manager *SessionManager) NewSession() (*shared.Session, error) {
 	sessionId := uuid.New().String()
 	code := ""
 	for i := 0; i < 3; i++ {
@@ -67,15 +67,15 @@ func (manager *SessionManager) NewSession() (*models.Session, error) {
 		}
 	}
 	//TODO improve session code generation
-	session := &models.Session{
+	session := &shared.Session{
 		ID:               sessionId,
 		Code:             code,
 		State:            "waiting",
-		ServerWsEndpoint: Shared.WsEndpoint,
+		ServerWsEndpoint: shared.WsEndpoint,
 	}
 	err := manager.cache.SaveSession(session)
 	if err != nil {
-		return &models.Session{}, err
+		return &shared.Session{}, err
 	}
 	return session, nil
 }
@@ -86,12 +86,12 @@ func (manager *SessionManager) ValidateCode(code string) bool {
 	return flag
 }
 
-func (manager *SessionManager) GenerateUserToken(code string, UserId string, UserType string) *models.UserToken {
-	return &models.UserToken{
+func (manager *SessionManager) GenerateUserToken(code string, UserId string, UserType string) *shared.UserToken {
+	return &shared.UserToken{
 		UserId:           UserId,
 		UserType:         UserType,
 		CurrentQuiz:      code,
-		ServerWsEndpoint: Shared.WsEndpoint,
+		ServerWsEndpoint: shared.WsEndpoint,
 		Exp:              10000,
 	}
 }
@@ -113,7 +113,7 @@ func (manager *SessionManager) SessionStart(quizUUID string) error {
 		return fmt.Errorf("error on SessionStart with read body %s, %s", quizUUID, err.Error())
 	}
 
-	var quiz models.Quiz
+	var quiz shared.Quiz
 	if err := json.Unmarshal(body, &quiz); err != nil {
 		return fmt.Errorf("error on SessionStart with unmarshal json %s %s", quizUUID, err.Error())
 	}

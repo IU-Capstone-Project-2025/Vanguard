@@ -1,4 +1,4 @@
-package models
+package shared
 
 type Option struct {
 	Text      string `json:"text"`

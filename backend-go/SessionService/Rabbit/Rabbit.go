@@ -3,7 +3,7 @@ package Rabbit
 import (
 	"context"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 type Rabbit struct {
@@ -27,7 +27,7 @@ func NewRabbit(rmq_host string) (*Rabbit, error) {
 		return nil, err
 	}
 	err = ch.ExchangeDeclare(
-		Shared.SessionExchange, // имя
+		shared.SessionExchange, // имя
 		"topic",                // тип
 		true,                   // durable
 		false,                  // auto-delete

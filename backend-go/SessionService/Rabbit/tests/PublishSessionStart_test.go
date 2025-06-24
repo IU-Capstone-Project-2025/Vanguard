@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 	"xxx/SessionService/Rabbit"
-	"xxx/SessionService/models"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 func Test_PublishSessionStart(t *testing.T) {
@@ -17,7 +16,7 @@ func Test_PublishSessionStart(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to open Rabbit: %s", err)
 	}
-	done := make(chan models.Session)
+	done := make(chan shared.Session)
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
 		t.Errorf("Failed to connect to RabbitMQ: %s", err)
@@ -29,7 +28,7 @@ func Test_PublishSessionStart(t *testing.T) {
 	}
 	defer ch.Close()
 	err = ch.ExchangeDeclare(
-		Shared.SessionExchange, // имя
+		shared.SessionExchange, // имя
 		"topic",                // тип
 		true,                   // durable
 		false,                  // auto-delete
@@ -53,8 +52,8 @@ func Test_PublishSessionStart(t *testing.T) {
 	}
 	err = ch.QueueBind(
 		q.Name,
-		Shared.SessionStartRoutingKey, // например, "session.start"
-		Shared.SessionExchange,        // например, "session.events"
+		shared.SessionStartRoutingKey, // например, "session.start"
+		shared.SessionExchange,        // например, "session.events"
 		false,
 		nil,
 	)
@@ -71,7 +70,7 @@ func Test_PublishSessionStart(t *testing.T) {
 		nil,    // args
 	)
 	go func() {
-		var s models.Session
+		var s shared.Session
 		for m := range msgs {
 			err := json.Unmarshal(m.Body, &s)
 			if err != nil {
@@ -81,7 +80,7 @@ func Test_PublishSessionStart(t *testing.T) {
 			return
 		}
 	}()
-	err = rabbit.PublishSessionStart(context.Background(), models.Session{
+	err = rabbit.PublishSessionStart(context.Background(), shared.Session{
 		ID:               "Start",
 		Code:             "123",
 		State:            "123",
@@ -90,7 +89,7 @@ func Test_PublishSessionStart(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to publish session start: %s", err)
 	}
-	var s models.Session
+	var s shared.Session
 	select {
 	case s = <-done:
 		fmt.Println("done", s.ID)
