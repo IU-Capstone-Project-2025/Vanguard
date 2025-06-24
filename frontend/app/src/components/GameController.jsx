@@ -5,42 +5,50 @@ const GameController = ({ sessionId }) => {
   const [question, setQuestion] = useState(null);
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [socket, setSocket] = useState(null);
 
-  // Допустим, что приход данных реализуем REST или WebSocket
-  // Здесь делаем простую имитацию REST-запроса
   useEffect(() => {
-    async function fetchQuestion() {
-      try {
-        const res = await fetch(`/api/sessions/${sessionId}/next_question`);
-        const data = await res.json();
+    // Подключаем WebSocket
+    const ws = new WebSocket(`wss://example.com/sessions/${sessionId}`);
+    setSocket(ws);
+
+    ws.onopen = () => {
+      console.log("✅ WebSocket connected");
+      // Дополнительно можно отправить сообщение для инициализации
+      ws.send(JSON.stringify({ action: "join", sessionId }));
+    };
+    ws.onerror = (error) => {
+      console.error("❌ WebSocket error:", error);
+    };
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "new_question") {
         setQuestion(data.question);
         setOptions(data.options);
         setLoading(false);
-      } catch (error) {
-        console.error(error);
+      } else if (data.type === "end") {
+        setQuestion(null);
+        setOptions([]);
       }
-    }
-    fetchQuestion();
+    };
+    ws.onclose = () => {
+      console.log("ℹ️ WebSocket closed");
+    };
+    return () => {
+      ws.close();
+    };
   }, [sessionId]);
 
-  const handleAnswer = async (selectedOption) => {
-    // Отправим ответ
-    try {
-      await fetch(`/api/sessions/${sessionId}/answer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ answer: selectedOption }),
-      });
-      // Потом получаем следующий вопрос
-      const res = await fetch(`/api/sessions/${sessionId}/next_question`);
-      const data = await res.json();
-      setQuestion(data.question);
-      setOptions(data.options);
-    } catch (error) {
-      console.error(error);
-    }
+  const handleAnswer = (selectedOption) => {
+    if (!socket) return;
+
+    const message = {
+      action: "submit_answer",
+      sessionId,
+      answer: selectedOption,
+    };
+    socket.send(JSON.stringify(message));
   };
 
   if (loading) {
