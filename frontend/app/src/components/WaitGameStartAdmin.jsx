@@ -23,11 +23,12 @@ const WaitGameStartAdmin = () => {
   };
 
   const handleStart = () => {
-    navigate("/game-session");
+    const sessionCode = sessionStorage.getItem('sessionCode');
+    navigate(`/game-controller/${sessionCode}`);
   };
 
   const handleTerminate = () => {
-    navigate("/home");
+    navigate("/");
   };
 
   return (
