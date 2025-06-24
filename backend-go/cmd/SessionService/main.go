@@ -31,8 +31,12 @@ func getEnvFilePath() string {
 // @host            localhost:8081
 // @BasePath        /
 func main() {
-	if err := godotenv.Load(getEnvFilePath()); err != nil {
-		fmt.Println("Warning: .env file not loaded:", err)
+	// Load environment variables file, if running in development
+	if os.Getenv("ENV") != "production" {
+		fmt.Println("LOADING .ENV")
+		if err := godotenv.Load(getEnvFilePath()); err != nil {
+			log.Fatalf("Error: could not load .env file: %v", err)
+		}
 	}
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
