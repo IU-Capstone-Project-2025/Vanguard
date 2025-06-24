@@ -25,7 +25,7 @@ func main() {
 	time.Sleep(30 * time.Second)
 	host := flag.String("host", "localhost", "HTTP server host")
 	port := flag.String("port", "8000", "HTTP server port")
-	rabbitMQ := flag.String("rabbitmq", "amqp://guest:guest@localhost:5672/", "RabbitMQ URL")
+	rabbitMQ := flag.String("rabbitmq", "amqp://admin:password@localhost:5672/", "RabbitMQ URL")
 	redis := flag.String("redis", "localhost:6379", "Redis address")
 	flag.Parse()
 	fmt.Println(*host, *port, *rabbitMQ, *redis)

@@ -9,7 +9,6 @@ import (
 )
 
 func extractTokenData(tokenString string) (*shared.UserTokenClaims, error) {
-	fmt.Println(tokenString)
 	token, err := jwt.ParseWithClaims(tokenString, &shared.UserTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.LoadConfig().JWT.SecretKey), nil
 	})
@@ -28,6 +27,7 @@ func extractTokenData(tokenString string) (*shared.UserTokenClaims, error) {
 	}
 
 	claims, ok := token.Claims.(*shared.UserTokenClaims)
+	fmt.Println("Decoded token: ", *claims)
 	if !ok {
 		return nil, fmt.Errorf("error decoding jwt")
 	}

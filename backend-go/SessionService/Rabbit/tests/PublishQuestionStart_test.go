@@ -9,7 +9,7 @@ import (
 	"time"
 	"xxx/SessionService/Rabbit"
 	"xxx/SessionService/models"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 func Test_PublishQuestionStart(t *testing.T) {
@@ -29,7 +29,7 @@ func Test_PublishQuestionStart(t *testing.T) {
 	}
 	defer ch.Close()
 	err = ch.ExchangeDeclare(
-		Shared.SessionExchange, // имя
+		shared.SessionExchange, // имя
 		"topic",                // тип
 		true,                   // durable
 		false,                  // auto-delete
@@ -53,8 +53,8 @@ func Test_PublishQuestionStart(t *testing.T) {
 	}
 	err = ch.QueueBind(
 		q.Name,
-		Shared.QuestionStartRoutingKey, // например, "session.start"
-		Shared.SessionExchange,         // например, "session.events"
+		shared.QuestionStartRoutingKey, // например, "session.start"
+		shared.SessionExchange,         // например, "session.events"
 		false,
 		nil,
 	)

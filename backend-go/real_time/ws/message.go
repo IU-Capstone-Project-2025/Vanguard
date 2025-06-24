@@ -24,8 +24,9 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 
 	for {
 		_, msg, err := ctx.Conn.ReadMessage()
+		fmt.Println("ws connection: received message: ", msg)
 		if err != nil {
-			fmt.Println("ws error reading message: %w", err)
+			fmt.Println(fmt.Errorf("ws error reading message: %w", err).Error())
 			return
 		}
 

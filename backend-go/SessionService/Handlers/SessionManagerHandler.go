@@ -3,7 +3,7 @@ package Handlers
 import (
 	"log/slog"
 	"xxx/SessionService/Game"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 type SessionManagerHandler struct {
@@ -12,7 +12,7 @@ type SessionManagerHandler struct {
 }
 
 func NewSessionManagerHandler(rmqConn string, RedisConn string, log *slog.Logger) (*SessionManagerHandler, error) {
-	codelenhtg := Shared.CodeLength
+	codelenhtg := shared.CodeLength
 	manager, err := Game.CreateSessionManager(codelenhtg, rmqConn, RedisConn)
 	if err != nil {
 		log.Error("error on NewSessionManagerHandler", err)

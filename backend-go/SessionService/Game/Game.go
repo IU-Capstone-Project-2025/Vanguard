@@ -11,7 +11,7 @@ import (
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
 	"xxx/SessionService/utils"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 type Manager interface {
@@ -71,7 +71,7 @@ func (manager *SessionManager) NewSession() (*models.Session, error) {
 		ID:               sessionId,
 		Code:             code,
 		State:            "waiting",
-		ServerWsEndpoint: Shared.WsEndpoint,
+		ServerWsEndpoint: shared.WsEndpoint,
 	}
 	err := manager.cache.SaveSession(session)
 	if err != nil {
@@ -91,7 +91,7 @@ func (manager *SessionManager) GenerateUserToken(code string, UserId string, Use
 		UserId:           UserId,
 		UserType:         UserType,
 		CurrentQuiz:      code,
-		ServerWsEndpoint: Shared.WsEndpoint,
+		ServerWsEndpoint: shared.WsEndpoint,
 		Exp:              10000,
 	}
 }

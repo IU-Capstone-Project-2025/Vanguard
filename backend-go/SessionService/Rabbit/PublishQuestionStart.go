@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"xxx/Shared"
+	"xxx/shared"
 )
 
 func (r *Rabbit) PublishQuestionStart(ctx context.Context, SessionCode string, payload interface{}) error {
@@ -15,7 +15,7 @@ func (r *Rabbit) PublishQuestionStart(ctx context.Context, SessionCode string, p
 		return err
 	}
 	err = r.channel.PublishWithContext(ctx,
-		Shared.SessionExchange, // exchange
+		shared.SessionExchange, // exchange
 		routingKey,             // routing key
 		false,                  // mandatory
 		false,                  // immediate

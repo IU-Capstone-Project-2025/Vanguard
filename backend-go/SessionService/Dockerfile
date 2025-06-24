@@ -4,7 +4,7 @@ FROM golang:1.24-alpine AS builder
 WORKDIR /app
 
 # Копируем все файлы проекта
-COPY . .
+COPY .. .
 
 # Собираем бинарь с отключенным CGO и для linux
 RUN CGO_ENABLED=0 GOOS=linux go build -o /quiz-engine ./cmd/SessionService/main.go

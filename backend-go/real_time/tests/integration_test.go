@@ -46,22 +46,20 @@ func TestWithTestContainers(t *testing.T) {
 	// 1. Start RabbitMQ container
 	rabbitReq := testcontainers.ContainerRequest{
 		Image:        "rabbitmq:3-management",
-		ExposedPorts: []string{"5672/tcp", "15672/tcp"},
+		ExposedPorts: []string{"5672:5672/tcp", "15672:15672/tcp"},
 		Env: map[string]string{
 			"RABBITMQ_LOAD_DEFINITIONS": "true",
 			"RABBITMQ_DEFINITIONS_FILE": "/etc/rabbitmq/definitions.json",
 		},
 		Files: []testcontainers.ContainerFile{
 			{
-				//Reader:            defenitionsR,
-				HostFilePath:      defenitionsAbs, // will be discarded internally
+				HostFilePath:      defenitionsAbs,
 				ContainerFilePath: "/etc/rabbitmq/definitions.json",
 				FileMode:          644,
 			},
 
 			{
-				//Reader:            confR,
-				HostFilePath:      confAbs, // will be discarded internally
+				HostFilePath:      confAbs,
 				ContainerFilePath: "/etc/rabbitmq/rabbitmq.conf",
 				FileMode:          644,
 			},
@@ -88,6 +86,8 @@ func TestWithTestContainers(t *testing.T) {
 	amqpURL := fmt.Sprintf("amqp://%s:%s@%s:%s/", config.LoadConfig().MQ.User, config.LoadConfig().MQ.Password,
 		rabbitHost, rabbitPort.Port())
 
+	fmt.Println("rabbit running on ", amqpURL)
+
 	// 2. Start Redis container similarly if needed
 
 	// 3. Start RealTime service in a goroutine or exec.Command, configuring it to connect to amqpURL and Redis.
@@ -104,25 +104,22 @@ func TestWithTestContainers(t *testing.T) {
 	// 4. Wait for service readiness (e.g., dial WS until success)
 	deadline := time.Now().Add(30 * time.Second)
 	var wsConn *websocket.Conn
-	for {
-		if time.Now().After(deadline) {
-			t.Fatal("WebSocket endpoint not ready in time")
-		}
-		u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws", RawQuery: "token=" + token}
-		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-		if err == nil {
-			conn.Close()
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
+	if time.Now().After(deadline) {
+		t.Fatal("WebSocket endpoint not ready in time")
 	}
+	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws", RawQuery: "token=" + token}
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err == nil {
+		conn.Close()
+	}
+	time.Sleep(500 * time.Millisecond)
 
 	// 5. Publish session.start
-	conn, err := amqp.Dial(amqpURL)
+	rabCon, err := amqp.Dial(amqpURL)
 	if err != nil {
 		t.Fatalf("Dial RabbitMQ: %v", err)
 	}
-	ch, err := conn.Channel()
+	ch, err := rabCon.Channel()
 	if err != nil {
 		t.Fatalf("Open channel: %v", err)
 	}
@@ -134,11 +131,11 @@ func TestWithTestContainers(t *testing.T) {
 		ContentType: "application/json",
 		Body:        body,
 	})
-	conn.Close()
+	rabCon.Close()
 
 	// 6. Wait a bit, then connect WS with a valid JWT for session "sess123"
 	time.Sleep(1 * time.Second)
-	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws", RawQuery: "token=" + token}
+	u = url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws", RawQuery: "token=" + token}
 	wsConn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		t.Fatalf("WebSocket dial failed: %v", err)
