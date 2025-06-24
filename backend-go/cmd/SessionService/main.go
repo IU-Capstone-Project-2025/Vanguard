@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"log"
 	"log/slog"
 	"os"
-	"time"
+	"path/filepath"
 	_ "xxx/SessionService/docs"
 	"xxx/SessionService/httpServer"
 )
@@ -16,25 +17,38 @@ const (
 	envProd  = "prod"
 )
 
+func getEnvFilePath() string {
+	root, err := filepath.Abs("..")
+	if err != nil {
+		log.Fatal("failed to find project root dir")
+	}
+	return filepath.Join(root, ".env")
+}
+
 // @title           Пример API
 // @version         1.0
 // @description     Это пример API с gorilla/mux и swaggo
 // @host            localhost:8000
 // @BasePath        /
 func main() {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(getEnvFilePath()); err != nil {
 		fmt.Println("Warning: .env file not loaded:", err)
 	}
-	host := os.Getenv("HOST")
-	port := os.Getenv("PORT")
-	rabbitMQ := os.Getenv("RABBITMQ")
-	redis := os.Getenv("REDIS")
+	host := os.Getenv("SESSION_SERVICE_HOST")
+	port := os.Getenv("SESSION_SERVICE_PORT")
+
+	rabbitUrl := fmt.Sprintf("amqp://%s:%s@%s:%s/",
+		os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASSWORD"),
+		os.Getenv("RABBITMQ_HOST"), os.Getenv("RABBITMQ_PORT"))
+
+	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+
 	fmt.Println("env:")
-	fmt.Println(host, port, rabbitMQ, redis)
-	time.Sleep(30 * time.Second)
+	fmt.Println(host, port, rabbitUrl)
+	//time.Sleep(30 * time.Second)
 
 	log := setupLogger(envLocal)
-	server, err := httpServer.InitHttpServer(log, host, port, rabbitMQ, redis)
+	server, err := httpServer.InitHttpServer(log, host, port, rabbitUrl, redisUrl)
 	if err != nil {
 		log.Error("error creating http server", "error", err)
 		return

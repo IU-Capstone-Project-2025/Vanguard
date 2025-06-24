@@ -3,7 +3,7 @@ package ws
 import (
 	"fmt"
 	"github.com/gorilla/websocket"
-	"xxx/real_time/models"
+	"xxx/shared"
 )
 
 // handleRead continuously reads messages from the WebSocket connection.
@@ -38,7 +38,7 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 func handleUserMessage(msg []byte, ctx *ConnectionContext) {
 	// TODO: implement real functionality
 	reply := ""
-	if ctx.Role == models.RoleAdmin {
+	if ctx.Role == shared.RoleAdmin {
 		reply = "Hi, room's Host. Echo:\n" + string(msg)
 	} else {
 		reply = "Hi, user. Echo:\n" + string(msg)

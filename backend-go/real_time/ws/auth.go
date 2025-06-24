@@ -8,8 +8,8 @@ import (
 	"xxx/shared"
 )
 
-func extractTokenData(tokenString string) (*shared.UserTokenClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &shared.UserTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+func extractTokenData(tokenString string) (*shared.UserToken, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &shared.UserToken{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.LoadConfig().JWT.SecretKey), nil
 	})
 
@@ -26,7 +26,7 @@ func extractTokenData(tokenString string) (*shared.UserTokenClaims, error) {
 		fmt.Println("Couldn't handle this token:", err)
 	}
 
-	claims, ok := token.Claims.(*shared.UserTokenClaims)
+	claims, ok := token.Claims.(*shared.UserToken)
 	fmt.Println("Decoded token: ", *claims)
 	if !ok {
 		return nil, fmt.Errorf("error decoding jwt")

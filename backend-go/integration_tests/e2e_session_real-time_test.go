@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -24,12 +23,11 @@ import (
 	"xxx/real_time/config"
 	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
+	"xxx/shared"
 
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
-
-	"xxx/SessionService/models"
 )
 
 var (
@@ -93,7 +91,6 @@ func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 	if err != nil {
 		t.Fatalf("Failed to start RabbitMQ container: %v", err)
 	}
-	defer rabbitC.Terminate(ctx)
 
 	rabbitHost, err := rabbitC.Host(ctx)
 	if err != nil {
@@ -106,7 +103,7 @@ func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 
 	u := fmt.Sprintf("amqp://%s:%s@%s:%s/", config.LoadConfig().MQ.User, config.LoadConfig().MQ.Password,
 		rabbitHost, rabbitPort.Port())
-	fmt.Println("Rabbit running at ", u)
+	t.Logf("Rabbit running at %s", u)
 	return rabbitC, u
 }
 
@@ -145,15 +142,15 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	_, redisUrl := startRedis(ctx, t)
 
 	go func() {
-		startRealTimeService(amqpUrl)
+		startRealTimeService(t, amqpUrl)
 	}()
-	fmt.Println("------------ wait for real time service -----------------")
+	t.Log("------------ wait for real time service -----------------")
 	time.Sleep(10 * time.Second)
 
 	go func() {
-		startSessionService(amqpUrl, redisUrl)
+		startSessionService(t, amqpUrl, redisUrl)
 	}()
-	fmt.Println("------------ wait for session service -----------------")
+	t.Log("------------ wait for session service -----------------")
 	time.Sleep(10 * time.Second)
 
 	// 1. Create a new session as admin
@@ -171,7 +168,7 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	defer createResp.Body.Close()
 	require.Equal(t, http.StatusOK, createResp.StatusCode, "expected 200 from create session")
 
-	var adminTokenResp models.UserToken
+	var adminTokenResp shared.UserToken
 	err = json.NewDecoder(createResp.Body).Decode(&adminTokenResp)
 	require.NoError(t, err, "decoding create session response")
 
@@ -180,21 +177,20 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	require.NotEmpty(t, wsEndpointBase, "serverWsEndpoint must be provided by create session response")
 
 	// Determine the session code needed for join.
-	sessionCode := adminTokenResp.CurrentQuiz
-	require.NotEmpty(t, sessionCode, "session code must be in CurrentQuiz (adjust if different)")
+	sessionCode := adminTokenResp.SessionId
+	require.NotEmpty(t, sessionCode, "session code must be in ID (adjust if different)")
 
 	// 2. Two participants join:
 	participantIDs := []string{
 		fmt.Sprintf("user1"),
 		fmt.Sprintf("user2"),
 	}
-	participantTokens := make([]models.UserToken, 0, 2)
+	participantTokens := make([]shared.UserToken, 0, 2)
 	for _, pid := range participantIDs {
 		joinReq := ValidateCodeReq{
 			Code:   sessionCode,
 			UserId: pid,
 		}
-		fmt.Sprintf("!!! JOIN user %s", pid)
 		joinReqBody, err := json.Marshal(joinReq)
 		require.NoError(t, err)
 
@@ -203,7 +199,7 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 		defer joinResp.Body.Close()
 		require.Equal(t, http.StatusOK, joinResp.StatusCode, "expected 200 from join for user %s", pid)
 
-		var userTokenResp models.UserToken
+		var userTokenResp shared.UserToken
 		err = json.NewDecoder(joinResp.Body).Decode(&userTokenResp)
 		require.NoError(t, err, "decoding join response for user %s", pid)
 
@@ -222,23 +218,14 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	wsClients := make([]wsClient, 0, 2)
 	dialTimeout := 5 * time.Second
 
-	type CustomClaims struct {
-		UserId           string `json:"userId"`
-		UserType         string `json:"userType"`
-		ServerWsEndpoint string `json:"serverWsEndpoint"`
-		CurrentQuiz      string `json:"currentQuiz"`
-		Exp              int64  `json:"exp"`
-		jwt.RegisteredClaims
-	}
-
 	for i, tokResp := range participantTokens {
 		wsURL := tokResp.ServerWsEndpoint
 
-		claims := CustomClaims{
+		claims := shared.UserToken{
 			UserId:           tokResp.UserId,
 			UserType:         tokResp.UserType,
 			ServerWsEndpoint: tokResp.ServerWsEndpoint,
-			CurrentQuiz:      tokResp.CurrentQuiz,
+			SessionId:        tokResp.SessionId,
 			Exp:              tokResp.Exp,
 			RegisteredClaims: jwt.RegisteredClaims{
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -247,7 +234,7 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		rawJwt, err := token.SignedString(os.Getenv("JWT_SECRET_KEY"))
+		rawJwt, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 		require.NoError(t, err)
 		// Parse and dial
 		u, err := url.Parse(wsURL)
@@ -285,57 +272,9 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 			c.Conn.Close()
 		}
 	}()
-
-	// 4. Start the session via Session Service
-	// Depending on your API, you may need to call POST /start?id=<sessionId> or /session/{id}/nextQuestion?code=<code>
-	// You likely need admin authorization: include header "Authorization: Bearer <adminToken>"
-	// If create response included a raw JWT, use that. Suppose you have adminJwt:
-	//   adminJwt := adminTokenResp.Token
-	// Here, if your structured response does not include raw token, adjust accordingly.
-	// Example using adminTokenResp if it has a field `RawToken`:
-	//    req, _ := http.NewRequest("POST", sessionServiceURL+"/start?id="+sessionCode, nil)
-	//    req.Header.Set("Authorization", "Bearer "+adminJwt)
-	//    resp, err := http.DefaultClient.Do(req)
-	//    require.NoError(t, err)
-	//    require.Equal(t, http.StatusOK, resp.StatusCode)
-	//
-	// For demonstration, if no auth needed and endpoint is GET:
-	startURL := fmt.Sprintf("%s/start?id=%s", sessionServiceURL, sessionCode)
-	reqStart, err := http.NewRequest("POST", startURL, nil)
-	require.NoError(t, err)
-	// If authorization required:
-	// reqStart.Header.Set("Authorization", "Bearer "+adminRawToken)
-	respStart, err := http.DefaultClient.Do(reqStart)
-	require.NoError(t, err)
-	defer respStart.Body.Close()
-	require.Equal(t, http.StatusOK, respStart.StatusCode, "expected 200 from start session")
-
-	// 5. After starting, Real-Time Service should broadcast a "session started" event or similar.
-	// Each WS client should receive a message indicating session start.
-	// We read from both connections.
-	for _, client := range wsClients {
-		client.Conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-		msgType, message, err := client.Conn.ReadMessage()
-		require.NoError(t, err, "error reading session start message for client %s", client.ID)
-		require.Equal(t, websocket.TextMessage, msgType, "expected text message")
-		t.Logf("Client %s received session-start message: %s", client.ID, string(message))
-		// Optionally assert contents, e.g., JSON contains type "session_started" or similar:
-		// var evt map[string]interface{}
-		// json.Unmarshal(message, &evt)
-		// assert.Equal(t, "session_started", evt["type"])
-	}
-
-	// 6. Further: you could simulate nextQuestion and check question delivery.
-	// Example:
-	// reqNext := fmt.Sprintf("%s/session/%s/nextQuestion?code=%s", sessionServiceURL, sessionCode, sessionCode)
-	// req2, _ := http.NewRequest("POST", reqNext, nil)
-	// req2.Header.Set("Authorization","Bearer "+adminJwt)
-	// resp2, err := http.DefaultClient.Do(req2)
-	// ...
-	// Then read question payload via WS similarly.
 }
 
-func startRealTimeService(amqpUrl string) {
+func startRealTimeService(t *testing.T, amqpUrl string) {
 	// Initialize ws connections registry
 	registry := ws.NewConnectionRegistry()
 
@@ -348,32 +287,29 @@ func startRealTimeService(amqpUrl string) {
 		err := http.ListenAndServe(
 			fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 			nil)
-		log.Fatal(err)
+		t.Fatal(err)
 	}()
 
-	fmt.Println("Connecting to broker: ", amqpUrl)
+	t.Log("Connecting to broker: ", amqpUrl)
 
 	brokerConn, err := amqp.Dial(amqpUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to broker")
+	t.Log("Connected to broker")
 	broker, err := rabbit.NewRealTimeRabbit(brokerConn)
 	go broker.ConsumeSessionStart(registry)
 	select {}
 }
 
-func startSessionService(amqpUrl, redisUrl string) {
-	host := flag.String("host", "localhost", "HTTP server host")
-	port := flag.String("port", "8081", "HTTP server port")
-	rabbitMQ := flag.String("rabbitmq", amqpUrl, "RabbitMQ URL")
-	redis := flag.String("redis", redisUrl, "Redis address")
-	flag.Parse()
-	fmt.Println(*host, *port, *rabbitMQ, *redis)
+func startSessionService(t *testing.T, amqpUrl, redisUrl string) {
+	host := os.Getenv("SESSION_SERVICE_HOST")
+	port := os.Getenv("SESSION_SERVICE_PORT")
+
 	log := setupLogger()
-	server, err := httpServer.InitHttpServer(log, *host, *port, *rabbitMQ, *redis)
+	server, err := httpServer.InitHttpServer(log, host, port, amqpUrl, redisUrl)
 	if err != nil {
-		log.Error("error creating http server", "error", err)
+		t.Fatal("error creating http server", "error", err)
 		return
 	}
 	server.Start()

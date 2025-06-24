@@ -80,7 +80,7 @@ func Test_HttpServerCreate(t *testing.T) {
 		return
 	}
 
-	session, err := redis.LoadSession(token.CurrentQuiz)
+	session, err := redis.LoadSession(token.SessionId)
 	if err != nil {
 		t.Error("error loading session from Redis:", err)
 		return

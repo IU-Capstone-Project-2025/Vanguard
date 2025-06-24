@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"xxx/SessionService/models"
+	"xxx/shared"
 )
 
 // CreateSessionHandler creates a new session and generates an admin token for the user.
@@ -33,7 +34,7 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 		return
 	}
 	session, err := h.Manager.NewSession()
-	AdminToken := h.Manager.GenerateUserToken(session.Code, req.UserId, "Admin")
+	AdminToken := h.Manager.GenerateUserToken(session.Code, req.UserId, shared.RoleAdmin)
 	if err != nil {
 		h.logger.Error("error With CreateSession", "CreateSessionHandler", err)
 		w.Header().Set("Content-Type", "application/json")

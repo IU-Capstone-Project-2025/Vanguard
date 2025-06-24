@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"xxx/SessionService/models"
+	"xxx/shared"
 )
 
 // ValidateCodeHandler validates a session code and returns a user token if valid.
@@ -36,7 +37,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 	}
 
 	if h.Manager.ValidateCode(req.Code) {
-		userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, "User")
+		userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(userToken); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
