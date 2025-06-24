@@ -92,6 +92,16 @@
   flex: 1 1 45%;
 }
 
+.option-button.correct {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+.option-button.incorrect {
+  background-color: #f44336;
+  color: #fff;
+}
+
 .option-button:hover {
   background-color: #d38e5a;
   color: #f9f3eb;
