@@ -2,7 +2,9 @@ package Handlers
 
 import (
 	"encoding/json"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
+	"os"
 	"xxx/SessionService/models"
 	"xxx/shared"
 )
@@ -15,7 +17,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param   request  body  models.ValidateCodeReq  true  " Create Session req"
-// @Success 200 {object} models.UserToken "User token in JSON format"
+// @Success 200 {object} models.SessionCreateResponse "User token in JSON format"
 // @Failure 400 {object} models.ErrorResponse "Invalid code"
 // @Failure 405 {object} models.ErrorResponse "Only GET method is allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
@@ -35,11 +37,25 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Bad Request"})
 		return
 	}
+	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
+	s := jwt.NewWithClaims(jwt.SigningMethodHS256, userToken)
+	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	if err != nil {
+		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
+		return
+	}
+	response := models.SessionCreateResponse{
+		Jwt:              token,
+		ServerWsEndpoint: userToken.ServerWsEndpoint,
+		SessionId:        userToken.SessionId,
+	}
 
 	if h.Manager.ValidateCode(req.Code) {
-		userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(userToken); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(models.ErrorResponse{Message: err.Error()})
 		}
