@@ -14,7 +14,13 @@ const CreateSessionPage = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const response = await fetch("/api/quiz/");
+        const response = await fetch("http://localhost:8001", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+        console.log("Response from /api/quiz:", response);
         if (!response.ok) {
           throw new Error(`Network error: ${response.status}`);
         }
@@ -37,10 +43,37 @@ const CreateSessionPage = () => {
   };
 
   const handlePlay = () => {
+
+    let userId = sessionStorage.getItem('userId');
+    if (!userId) {
+      userId = crypto.randomUUID();
+      sessionStorage.setItem('userId', userId);
+    }
+
+    sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
     if (selectedQuiz) {
-      sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
-      sessionStorage.setItem('sessionCode', sessionCode);
-      navigate(`/ask-to-join/${sessionCode}`);
+      fetch(`/sessions/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ quizId: sessionStorage.getItem('selectedQuizId')})
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to create session");
+          return res.json();
+        })
+        .then(data => {
+          if (!data.sessionCode) throw new Error("No sessionCode returned");
+          setSessionCode(data.sessionCode);
+          sessionStorage.setItem('sessionCode', data.sessionCode);
+          navigate(`/ask-to-join/${data.sessionCode}`);
+        })
+        .catch(err => {
+          console.error("Error creating session:", err);
+          alert("Failed to create session. Please try again.");
+        });
+      return;
     }
   };
 
