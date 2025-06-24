@@ -22,13 +22,16 @@ const (
 // @host            localhost:8000
 // @BasePath        /
 func main() {
-	time.Sleep(30 * time.Second)
-	_ = godotenv.Load()
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("Warning: .env file not loaded:", err)
+	}
 	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
 	rabbitMQ := os.Getenv("RABBITMQ")
 	redis := os.Getenv("REDIS")
+	fmt.Println("env:")
 	fmt.Println(host, port, rabbitMQ, redis)
+	time.Sleep(30 * time.Second)
 	log := setupLogger(envLocal)
 	server, err := httpServer.InitHttpServer(log, host, port, rabbitMQ, redis)
 	if err != nil {
