@@ -5,10 +5,10 @@ services:
     build: .
     container_name: quiz-engine
     environment:
-      - HOST=${HOST}
-      - PORT=${PORT}
-      - RABBITMQ=${RABBITMQ}
-      - REDIS=${REDIS}
+      HOST: localhost
+      PORT: 8000
+      RABBITMQ: amqp://guest:guest@rabbitmq:5672/
+      REDIS: redis:6379
     ports:
       - "8000:8000"
     depends_on:
