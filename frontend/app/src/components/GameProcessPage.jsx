@@ -1,5 +1,5 @@
 import React from "react";
-import "./GameProcess.css";
+import "./styles/GameProcess.css";
 
 const GameProcess = ({ question, options, onAnswer }) => {
   return (

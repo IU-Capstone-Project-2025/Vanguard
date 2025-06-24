@@ -7,10 +7,12 @@ const HomePage = () => {
     const navigate = useNavigate()
 
     const handlePlayClick = () => {
-        navigate('/play')
+        navigate('/enter-nickname')
     }
 
     const handleCreateClick = () => {
+        sessionStorage.removeItem('sessionCode'); // Clear any previous session code
+        sessionStorage.removeItem('nickname'); // Clear any previous nickname
         navigate('/create')
     }
 

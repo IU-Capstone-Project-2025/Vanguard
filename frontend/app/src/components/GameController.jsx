@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import GameProcess from "./GameProcess";
+import GameProcess from "./GameProcessPage";
 
 const GameController = ({ sessionId }) => {
   const [question, setQuestion] = useState(null);
