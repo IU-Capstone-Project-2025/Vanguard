@@ -17,6 +17,43 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6739:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbit
+    container_name: rabbit
+    ports:
+      - "15672:15672"  # Management UI
+      - "5672:5672"    # AMQP port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbit/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    environment:
+      RABBITMQ_LOAD_DEFINITIONS: "true"
+      RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "rabbitmqctl",
+          "status"
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
   migrator:
     build:
@@ -61,6 +98,54 @@ services:
     depends_on:
       - auth
 
+  real-time:
+    build:
+      context: backend-go
+      dockerfile: real_time/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: rabbit
+      RABBITMQ_PORT: "5672"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REALTIME_SERVICE_HOST: "0.0.0.0"
+      REALTIME_SERVICE_PORT: "8080"
+      JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
+      ENV: ${GO_ENV}
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  session:
+    build:
+      context: backend-go
+      dockerfile: SessionService/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: rabbit
+      RABBITMQ_PORT: "5672"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REALTIME_SERVICE_HOST: "0.0.0.0"
+      REALTIME_SERVICE_PORT: "8080"
+      SESSION_SERVICE_HOST: "0.0.0.0"
+      SESSION_SERVICE_PORT: "8081"
+      JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
+      ENV: ${GO_ENV}
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   frontend:
     build:
       context: frontend
@@ -75,16 +160,12 @@ services:
       - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING}
     depends_on:
       - quiz
-
-#  go-backend:
-#    build:
-#      context: backend-go
-#      dockerfile: backend-go/SessionService/Dockerfile
-#    ports:
-#      - "8080:8080"
+      - real-time
+      - session
 
 volumes:
   postgres_data:
+  rabbitmq_data:
 
 networks:
   default:
