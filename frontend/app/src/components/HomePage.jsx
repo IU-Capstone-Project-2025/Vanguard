@@ -1,10 +1,20 @@
 import React from "react";
 import './styles/styles.css'
 import Homepage_image from './assets/homepage-image.png'
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
     const navigate = useNavigate()
+
+    const handlePlayClick = () => {
+        navigate('/enter-nickname')
+    }
+
+    const handleCreateClick = () => {
+        sessionStorage.removeItem('sessionCode'); // Clear any previous session code
+        sessionStorage.removeItem('nickname'); // Clear any previous nickname
+        navigate('/create')
+    }
 
     return (
         <div className="homepage-main-content">
@@ -16,21 +26,13 @@ const HomePage = () => {
                     <div className="button-group">
                         <button id="play"
                                 className="play-button"
-                                onClick={
-                                    (e) => {
-                                         navigate('/play')
-                                    }
-                                }
+                                onClick={handlePlayClick}
                             >
                             <span>Play</span>
                         </button>
                         <button id='create'
                                 className="create-button"
-                                onClick={
-                                    (e) => {
-                                        navigate('/create')
-                                    }
-                                }    
+                                onClick={handleCreateClick}
                             >
                             <span>Create</span>
                         </button>

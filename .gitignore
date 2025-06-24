@@ -2,6 +2,7 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 .idea
+.env
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -57,6 +58,10 @@ backend-go/.env
 # Editor/IDE
 .idea/
 .vscode/
-
 *.iml
+
+# Python related
 __pycache__
+venv
+.venv
+*.egg-info

@@ -61,7 +61,7 @@ func Test_HttpServerValidate(t *testing.T) {
 	}
 	params := url.Values{}
 	params.Add("userId", "1")
-	params.Add("code", token.CurrentQuiz)
+	params.Add("code", token.SessionId)
 	u.RawQuery = params.Encode()
 	resp2, err := http.Get(u.String())
 	if err != nil {
