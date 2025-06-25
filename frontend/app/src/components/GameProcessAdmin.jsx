@@ -19,10 +19,23 @@ const GameProcessAdmin = () => {
     if (!quiz) {
         return <div className="game-process">Loading Data...</div>;
     }
+    const toNextQuestion = async (quizId) => {
 
+        const response = await fetch(`/api/session/session/${quizId}/nextQuestion`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ quizId}),
+        });
+
+        if (!response.ok) throw new Error("Failed to get to the next question session");
+
+    };
     const currentQuestion = quiz.questions[currentQuestionIndex];
     const handleNextQuestion = async () => {
         setCurrentQuestionIndex(currentQuestionIndex + 1)
+        await toNextQuestion(sessionStorage.getItem('selectedQuizId'));
     }
     return (
         <div className="game-process">

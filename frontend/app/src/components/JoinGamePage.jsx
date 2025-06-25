@@ -1,4 +1,4 @@
-import React, {useRef} from "react";
+import React, {useEffect, useRef} from "react";
 import './styles/styles.css'
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -18,13 +18,15 @@ const JoinGamePage = () => {
             },
             body: JSON.stringify({ quizId, userId}),
         });
-
         if (!response.ok) throw new Error("Failed to join session");
 
         const data = await response.json();
         return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt":"string", "sessionId":"string"}
     };
 
+    useEffect(() => {
+        console.log("code updated:", code);
+    }, [code]);
 
     // 🌐 Устанавливаем WebSocket-соединение
     const connectToWebSocket = (wsEndpoint, token) => {
@@ -38,7 +40,10 @@ const JoinGamePage = () => {
 
         };
     };
+
+
     const handlePlay =  async () => {
+
         if (code) {
             const sessionData = await joinSession(code ,null)
             connectToWebSocket(sessionData.wsEndpoint,sessionData.jwt);

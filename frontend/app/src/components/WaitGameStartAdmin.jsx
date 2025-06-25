@@ -22,9 +22,9 @@ const WaitGameStartAdmin = () => {
     // TODO: отправить на backend сигнал о кике игрока по id
   };
 
-  const createSession = async (quizId) => {
+  const toNextQuestion = async (quizId) => {
 
-    const response = await fetch("/api/session/start", {
+    const response = await fetch(`/api/session/session/${quizId}/nextQuestion`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -32,13 +32,13 @@ const WaitGameStartAdmin = () => {
       body: JSON.stringify({ quizId}),
     });
 
-    if (!response.ok) throw new Error("Failed to start session");
+    if (!response.ok) throw new Error("Failed to get to the next question session");
 
   };
 
   const handleStart = async () => {
     const sessionCode = sessionStorage.getItem('sessionCode');
-    await createSession(sessionCode)
+    await toNextQuestion(sessionCode)
     navigate(`/game-controller/${sessionCode}`);
   };
 

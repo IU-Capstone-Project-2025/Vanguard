@@ -28,7 +28,7 @@ func (h *SessionManagerHandler) NextQuestionHandler(w http.ResponseWriter, r *ht
 	}
 
 	vars := mux.Vars(r)
-	code := vars["code"]
+	code := vars["id"]
 	err := h.Manager.NextQuestion(code)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
