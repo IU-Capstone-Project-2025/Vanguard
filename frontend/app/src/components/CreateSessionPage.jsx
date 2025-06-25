@@ -14,7 +14,7 @@ const CreateSessionPage = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const response = await fetch("http://localhost:8001", {
+        const response = await fetch("api/quiz/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json"
@@ -52,7 +52,7 @@ const CreateSessionPage = () => {
 
     sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
     if (selectedQuiz) {
-      fetch(`/sessions/`, {
+      fetch(`http://localhost:8081/sessions/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

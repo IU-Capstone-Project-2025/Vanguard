@@ -1,12 +1,11 @@
-import React from "react";
-import './styles/styles.css'
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { v4 as uuidv4 } from "uuid"; // ✅ импорт
+import './styles/styles.css';
 
 const PlayGamePage = () => {
-    const [nickname,setNickname] = useState("")
-    const navigate = useNavigate()
-
+    const [nickname, setNickname] = useState("");
+    const navigate = useNavigate();
 
     const handlePlay = async () => {
         if (!nickname.trim()) {
@@ -21,12 +20,18 @@ const PlayGamePage = () => {
                 return;
             }
 
-            const response = await fetch("/api/join-session", {
+            // ✅ генерируем уникальный userId
+            const userId = `${nickname}_${uuidv4()}`;
+
+            const response = await fetch("/join", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ name: nickname, sessionCode }),
+                body: JSON.stringify({
+                    userId,      // ✅ добавляем userId в запрос
+                    code: sessionCode,
+                }),
             });
 
             if (!response.ok) {
@@ -34,11 +39,13 @@ const PlayGamePage = () => {
             }
 
             const data = await response.json();
-            const { wsEndpoint, playerId } = data;
+            const { jwt, serverWsEndpoint, sessionId } = data;
 
+            // ✅ сохраняем userId и nickname
             sessionStorage.setItem("nickname", nickname);
-            sessionStorage.setItem("WSEndpoint", wsEndpoint);
-            sessionStorage.setItem("playerId", playerId); // если нужно
+            sessionStorage.setItem("userId", userId);
+            sessionStorage.setItem("WSEndpoint", serverWsEndpoint);
+            sessionStorage.setItem("JWT", jwt);
 
             navigate(`/wait/${sessionCode}`);
         } catch (error) {
@@ -49,36 +56,32 @@ const PlayGamePage = () => {
 
     return (
         <div className="playgame-main-content">
-            
-                <div className="title">
-                    <h1>
-                        Now enter your nickname
-                    </h1>
-                    <input 
-                        type="text" 
-                        placeholder="enter the name here"
-                        required
-                        autoFocus
-                        value={nickname}
-                        onChange={(e)=> setNickname(e.target.value)}
-                        className="code-input"
-                    />
-                    <div className="button-group">
-                        <button id="play"
-                                className="play-button"
-                                onClick={
-                                    (e) => {
-                                        handlePlay();
-                                        e.preventDefault();
-                                    }
-                                }
-                            >
-                            <span>Play</span>
-                        </button>
-                    </div>
+            <div className="title">
+                <h1>Now enter your nickname</h1>
+                <input 
+                    type="text" 
+                    placeholder="enter the name here"
+                    required
+                    autoFocus
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    className="code-input"
+                />
+                <div className="button-group">
+                    <button
+                        id="play"
+                        className="play-button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handlePlay();
+                        }}
+                    >
+                        <span>Play</span>
+                    </button>
                 </div>
             </div>
-    )
+        </div>
+    );
 };
 
 export default PlayGamePage;
