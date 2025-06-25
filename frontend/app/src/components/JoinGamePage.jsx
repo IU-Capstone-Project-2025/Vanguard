@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 const JoinGamePage = () => {
-    const [code,setCode] = useState(sessionStorage.getItem("code"));
+    const [code,setCode] = useState("");
     const navigate = useNavigate()
     const wsRef = useRef(null);
 
