@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 const JoinGamePage = () => {
-    const [code,setCode] = useState("")
+    const [code,setCode] = useState(sessionStorage.getItem("code"));
     const navigate = useNavigate()
     const wsRef = useRef(null);
 
@@ -41,9 +41,7 @@ const JoinGamePage = () => {
         };
     };
 
-
     const handlePlay =  async () => {
-
         if (code) {
             const sessionData = await joinSession(code ,null)
             connectToWebSocket(sessionData.wsEndpoint,sessionData.jwt);
