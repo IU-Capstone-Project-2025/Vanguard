@@ -7,7 +7,7 @@ const HomePage = () => {
     const navigate = useNavigate()
 
     const handlePlayClick = () => {
-        navigate('/enter-nickname')
+        navigate('/join')
     }
 
     const handleCreateClick = () => {

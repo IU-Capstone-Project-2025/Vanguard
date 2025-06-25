@@ -10,7 +10,7 @@ const JoinGamePage = () => {
     const handlePlay = () => {
         if (code) {
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
-            navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
+            navigate(`/enter-nickname`); // Navigate to the waiting page with the session code
         }
     };
 
