@@ -21,8 +21,19 @@ cd Vanguard
 
 ### 2. Build and start the services
 ```sh
-docker compose up --build -d
+docker compose --env-file .env.example up -d --build
+```
+
+or just make .env and launch as following
+
+```sh
+docker compose --env-file .env up -d --build
 ```
 
 ### 3. Access the platform
 - React frontend: http://localhost:3000
+
+### 4. Shut down the deployment
+```sh
+docker compose down
+```
