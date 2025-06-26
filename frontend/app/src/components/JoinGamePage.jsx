@@ -9,14 +9,14 @@ const JoinGamePage = () => {
     const wsRef = useRef(null);
 
     // 🎯 POST-запрос к /api/session/join
-    const joinSession = async (quizId,userId) => {
+    const joinSession = async (sessionCode, userId) => {
 
         const response = await fetch("/api/session/join", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ quizId, userId}),
+            body: JSON.stringify({ "code": sessionCode,"userId": userId}),
         });
         if (!response.ok) throw new Error("Failed to join session");
 
@@ -43,8 +43,9 @@ const JoinGamePage = () => {
 
     const handlePlay =  async () => {
         if (code) {
-            const sessionData = await joinSession(code ,null)
-            connectToWebSocket(sessionData.wsEndpoint,sessionData.jwt);
+            console.log("code updated:", code);
+            const sessionData = await joinSession(code ,"PlayerId")
+            connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
         }

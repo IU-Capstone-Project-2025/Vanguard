@@ -37,7 +37,7 @@ const AskToJoinSession = () => {
             <h1>It's your code<br />for joining</h1>
             <div className="join-code">
                 <span onClick={handleCopyClick}>
-                    #{sessionStorage.getItem(sessionCode)}
+                    #{sessionStorage.getItem("sessionCode")}
                 </span>
                 <span>
                     {copied && <p>Link copied!</p>}

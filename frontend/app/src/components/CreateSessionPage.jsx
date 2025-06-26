@@ -38,14 +38,14 @@ const CreateSessionPage = () => {
   };
 
   // 🎯 POST-запрос к /api/session/sessions
-  const createSession = async (quizId,userId) => {
+  const createSession = async (sessionCode, userId) => {
 
     const response = await fetch("/api/session/sessions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ quizId, userId }),
+      body: JSON.stringify({ "quizId":sessionCode, "userId": userId }),
     });
 
     if (!response.ok) throw new Error("Failed to create session");
@@ -70,7 +70,7 @@ const CreateSessionPage = () => {
 
   const handlePlay = async () => {
     if (selectedQuiz) {
-      const sessionData = await createSession(selectedQuiz.id,null);
+      const sessionData = await createSession(selectedQuiz.id,"AdminId");
       setSessionCode(sessionData.sessionId);
       await connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
 
