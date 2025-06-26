@@ -55,3 +55,57 @@
   transform: scale(1.03);
   background-color: #5d5c5d;
 }
+
+.game-process {
+  padding: 3vw;
+  font-family: Arial, sans-serif;
+}
+
+.question-block {
+  margin-bottom: 2vw;
+}
+
+.question-block h2 {
+  font-size: 24px;
+}
+
+.question-image {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 1vw 0;
+}
+
+.options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1vw;
+}
+
+.option-button {
+  font-size: 18px;
+  padding: 1vw 2vw;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: #f9f3eb;
+  color: #2a2b2b;
+  flex: 1 1 45%;
+}
+
+.option-button:hover {
+  background-color: #d38e5a;
+  color: #f9f3eb;
+}
+
+.navigation-buttons {
+  margin-top: 2vw;
+  display: flex;
+  justify-content: space-between;
+}
+
+.nav-button {
+  padding: 0.5vw 1.5vw;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+}

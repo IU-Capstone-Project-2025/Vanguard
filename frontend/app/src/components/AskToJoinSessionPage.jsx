@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 const AskToJoinSession = () => {
   // Mocked backend data
   const { sessionCode } = useParams();
-  const [joinLink, setJoinLink] = React.useState(`https://yourapp.com/join/${sessionCode}`);
+  const [joinLink, setJoinLink] = React.useState(`https://localhost:3000/join/${sessionCode}`);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
@@ -37,7 +37,7 @@ const AskToJoinSession = () => {
             <h1>It's your code<br />for joining</h1>
             <div className="join-code">
                 <span onClick={handleCopyClick}>
-                    #{sessionCode}
+                    #{sessionStorage.getItem("sessionCode")}
                 </span>
                 <span>
                     {copied && <p>Link copied!</p>}
