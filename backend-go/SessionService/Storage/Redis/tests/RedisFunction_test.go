@@ -3,16 +3,35 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
+	"log"
+	"os"
+	"path/filepath"
 	"testing"
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
 	"xxx/shared"
 )
 
+func getEnvFilePath() string {
+	envPath := filepath.Join("..", "..", "..", "..", "..", ".env") // сдвигаемся на 4 уровня вверх из integration_tests
+	absPath, err := filepath.Abs(envPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return absPath
+}
 func Test_RedisFunction(t *testing.T) {
+	if os.Getenv("ENV") != "production" {
+		if err := godotenv.Load(getEnvFilePath()); err != nil {
+			t.Fatalf("could not load .env file: %v", err)
+		}
+	}
+	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+
 	ctx := context.Background()
 	RedisConfig := models.Config{
-		Addr:        "localhost:6379",
+		Addr:        redisUrl,
 		Password:    "",
 		DB:          0,
 		MaxRetries:  0,

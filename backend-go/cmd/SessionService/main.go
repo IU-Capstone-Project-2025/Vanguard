@@ -31,6 +31,7 @@ func getEnvFilePath() string {
 // @host            localhost:8081
 // @BasePath        /
 func main() {
+
 	// Load environment variables file, if running in development
 	if os.Getenv("ENV") != "production" {
 		fmt.Println("LOADING .ENV")

@@ -83,9 +83,9 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session code",
-                        "name": "code",
-                        "in": "query",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
                         "required": true
                     }
                 ],

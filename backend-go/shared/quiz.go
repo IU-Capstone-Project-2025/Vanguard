@@ -14,3 +14,8 @@ type Question struct {
 type Quiz struct {
 	Questions []Question `json:"questions"`
 }
+
+type QuizMessage struct {
+	SessionId string `json:"session_id"`
+	Quiz      Quiz   `json:"quiz"`
+}
