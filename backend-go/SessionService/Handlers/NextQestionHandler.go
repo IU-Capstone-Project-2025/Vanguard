@@ -2,6 +2,7 @@ package Handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"xxx/SessionService/models"
@@ -14,7 +15,7 @@ import (
 // @Tags sessions
 // @Accept  json
 // @Produce  json
-// @Param   code   query    string  true  "Session code"
+// @Param   id   path   string  true  "Session ID"
 // @Success 201 "Successfully moved to the next question"
 // @Failure 405 {object} models.ErrorResponse "Method not allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
@@ -26,9 +27,9 @@ func (h *SessionManagerHandler) NextQuestionHandler(w http.ResponseWriter, r *ht
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Method not allowed"})
 		return
 	}
-
+	fmt.Println(r.URL.String())
 	vars := mux.Vars(r)
-	code := vars["code"]
+	code := vars["id"]
 	err := h.Manager.NextQuestion(code)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")

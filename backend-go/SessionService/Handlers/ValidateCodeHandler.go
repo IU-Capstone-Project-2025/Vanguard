@@ -37,6 +37,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Bad Request"})
 		return
 	}
+
 	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, userToken)
 	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
@@ -58,10 +59,12 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(models.ErrorResponse{Message: err.Error()})
+			return
 		}
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Code is incorrect"})
+		return
 	}
 }
