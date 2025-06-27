@@ -23,7 +23,7 @@ import (
 // @Router /sessions [post]
 func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		h.logger.Info("CreateSessionHandler", "Request Method", r.Method)
+		h.logger.Info("CreateSessionHandler request method not allowed ", "Request Method", r.Method)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Only GET method is allowed"})
@@ -31,24 +31,31 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 	}
 	var req models.CreateSessionReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("CreateSessionHandler err to decode req",
+			"Decode err", err,
+			"Request Body", r.Body)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Bad Request"})
 		return
 	}
+	h.logger.Debug("CreateSessionHandler get req", "req", req)
 	session, err := h.Manager.NewSession()
 	AdminToken := h.Manager.GenerateUserToken(session.Code, req.UserId, shared.RoleAdmin)
 	if err != nil {
-		h.logger.Error("error With CreateSession", "CreateSessionHandler", err)
+		h.logger.Error("CreateSessionHandler Error with create Session", "err", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	err = h.Manager.SessionStart(req.QuizId)
+	err = h.Manager.SessionStart(req.QuizId, AdminToken.SessionId)
 	if err != nil {
-		h.logger.Error("error With CreateSession", "CreateSessionHandler", err)
+		h.logger.Error("CreateSessionHandler error With SessionStart",
+			"QuizId", req.QuizId,
+			"SessionId", AdminToken.SessionId,
+			"err", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
@@ -57,7 +64,9 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, AdminToken)
 	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 	if err != nil {
-		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
+		h.logger.Error("CreateSessionHandler error to generate jwt token for user",
+			"AdminToken", AdminToken,
+			"err", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
@@ -70,10 +79,13 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
+		h.logger.Error("CreateSessionHandler err to write response",
+			"response", response,
+			"err", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
 		return
 	}
+	h.logger.Debug("CreateSessionHandler success encode response", "response", response)
 }

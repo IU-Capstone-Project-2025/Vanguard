@@ -2,7 +2,6 @@ package Handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"xxx/SessionService/models"
@@ -22,20 +21,24 @@ import (
 // @Router /session/{id}/nextQuestion [post]
 func (h *SessionManagerHandler) NextQuestionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		h.logger.Info("NextQuestionHandler request method not allowed ", "Request Method", r.Method)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Method not allowed"})
 		return
 	}
-	fmt.Println(r.URL.String())
 	vars := mux.Vars(r)
 	code := vars["id"]
 	err := h.Manager.NextQuestion(code)
 	if err != nil {
+		h.logger.Info("NextQuestionHandler error to send next Question message to rabbit",
+			"code", code,
+			"err", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: err.Error()})
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	h.logger.Info("NextQuestionHandler success", "code", code)
 }
