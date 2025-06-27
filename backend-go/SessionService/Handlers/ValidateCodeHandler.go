@@ -7,6 +7,7 @@ import (
 	"os"
 	"xxx/SessionService/models"
 	"xxx/shared"
+	"fmt"
 )
 
 // ValidateCodeHandler validates a session code and returns a user token if valid.
@@ -29,7 +30,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Only GET method is allowed"})
 		return
 	}
-
+    fmt.Println("get req with ", r.URL.String())
 	var req models.ValidateCodeReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -37,7 +38,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Bad Request"})
 		return
 	}
-
+    fmt.Println(req)
 	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, userToken)
 	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))

@@ -1,14 +1,51 @@
-import React from "react";
+import React, {useEffect, useRef} from "react";
 import './styles/styles.css'
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 const JoinGamePage = () => {
-    const [code,setCode] = useState("")
+    const [code,setCode] = useState("");
     const navigate = useNavigate()
+    const wsRef = useRef(null);
 
-    const handlePlay = () => {
+    // 🎯 POST-запрос к /api/session/join
+    const joinSession = async (sessionCode, userId) => {
+
+        const response = await fetch("/api/session/join", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ "code": sessionCode,"userId": userId}),
+        });
+        if (!response.ok) throw new Error("Failed to join session");
+
+        const data = await response.json();
+        return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt":"string", "sessionId":"string"}
+    };
+
+    useEffect(() => {
+        console.log("code updated:", code);
+    }, [code]);
+
+    // 🌐 Устанавливаем WebSocket-соединение
+    const connectToWebSocket = (wsEndpoint, token) => {
+        wsRef.current = new WebSocket(`${wsEndpoint}?token=${token}`);
+        wsRef.current.onopen = () => {
+            console.log("✅ WebSocket connected");
+        };
+
+        wsRef.current.onerror = (err) => {
+            console.error("❌ WebSocket error:", err);
+
+        };
+    };
+
+    const handlePlay =  async () => {
         if (code) {
+            console.log("code updated:", code);
+            const sessionData = await joinSession(code ,"PlayerId")
+            connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
         }

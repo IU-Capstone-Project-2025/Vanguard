@@ -22,12 +22,28 @@ const WaitGameStartAdmin = () => {
     // TODO: отправить на backend сигнал о кике игрока по id
   };
 
-  const handleStart = () => {
-    navigate("/game-session");
+  const toNextQuestion = async (sessionCode) => {
+
+    const response = await fetch(`/api/session/session/${sessionCode}/nextQuestion`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ "code": sessionCode}),
+    });
+
+    if (!response.ok) throw new Error("Failed to get to the next question session");
+
+  };
+
+  const handleStart = async () => {
+    const sessionCode = sessionStorage.getItem('sessionCode');
+    await toNextQuestion(sessionCode)
+    navigate(`/game-controller/${sessionCode}`);
   };
 
   const handleTerminate = () => {
-    navigate("/home");
+    navigate("/");
   };
 
   return (

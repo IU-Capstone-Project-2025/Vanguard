@@ -63,7 +63,8 @@ class Quiz(Base):
     tags: Mapped[List["Tag"]] = relationship(
         secondary="quiz_tags",
         back_populates="quizzes",
-        passive_deletes=True
+        passive_deletes=True,
+        lazy="selectin"
     )
 
 
