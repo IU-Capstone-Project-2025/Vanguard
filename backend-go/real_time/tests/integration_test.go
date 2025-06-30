@@ -161,7 +161,7 @@ func startRealTimeServer() error {
 	// Initialize ws connections registry
 	registry := ws.NewConnectionRegistry()
 
-	// Set route handler
+	// SetCurrQuestionIdx route handler
 	http.Handle("/ws", ws.NewWebSocketHandler(registry))
 
 	cfg := config.LoadConfig()

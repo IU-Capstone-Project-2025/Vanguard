@@ -8,6 +8,11 @@ import (
 	"xxx/shared"
 )
 
+type HandlerDeps struct {
+	Tracker  *QuizTracker
+	Registry *ConnectionRegistry
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  5 * 1024,
 	WriteBufferSize: 5 * 1024,
@@ -30,7 +35,7 @@ type ConnectionContext struct {
 // Parses and validates the token;
 // Upgrades the HTTP request to a WebSocket connection;
 // Starts a goroutine running handleRead to process incoming messages
-func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
+func NewWebSocketHandler(deps HandlerDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO:
 		//   - If token is missing or invalid, respond with appropriate HTTP status (e.g., 400/401) and return early.
@@ -61,10 +66,10 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		}
 
 		// Ensure session exists in registry
-		registry.RegisterSession(token.SessionId)
+		deps.Registry.RegisterSession(token.SessionId)
 
 		// Register this connection
-		if err := registry.RegisterConnection(token.SessionId, token.UserId, conn); err != nil {
+		if err := deps.Registry.RegisterConnection(token.SessionId, token.UserId, conn); err != nil {
 			log.Printf("Failed to register connection: %v", err)
 			conn.Close()
 			return
@@ -82,6 +87,6 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		conn.WriteMessage(websocket.TextMessage, []byte(welcome))
 
 		// Start reading messages for this connection in a separate goroutine.
-		go handleRead(ctx, registry)
+		go handleRead(ctx, deps)
 	}
 }

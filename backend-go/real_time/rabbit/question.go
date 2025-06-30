@@ -3,7 +3,10 @@ package rabbit
 // This file stores functions related to "question"-type events published to RabbitMQ
 
 import (
+	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"sync"
+	"xxx/real_time/ws"
 	"xxx/shared"
 )
 
@@ -38,6 +41,30 @@ func CreateQuestionStartQueue(ch *amqp.Channel) (amqp.Queue, error) {
 }
 
 // ConsumeQuestionStart method listens to "next question start" events delivered to the corresponding queue.
-func (r *RealTimeRabbit) ConsumeQuestionStart() {
+func (r *RealTimeRabbit) ConsumeQuestionStart(sessionId string, registry *ws.ConnectionRegistry) {
+	msgs, err := r.channel.Consume(
+		r.QuestionStartedQs[sessionId].Name, // the name of the already created queue
+		"",
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,   // args
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	// listen to messages in parallel goroutine
+	go func() {
+		defer wg.Done()
+		for range msgs { // ignore the contents in the queue, since only event itself matters
+			fmt.Println("next question triggered")
+		}
+	}()
+
+	wg.Wait() // defer this function termination while consuming from the queue
 }

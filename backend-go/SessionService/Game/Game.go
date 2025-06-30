@@ -95,7 +95,7 @@ func (manager *SessionManager) GenerateUserToken(code string, UserId string, Use
 
 func (manager *SessionManager) SessionStart(quizUUID string) error {
 	//url := fmt.Sprintf("http://quiz:8001/%s", quizUUID)
-	//resp, err := http.Get(url)
+	//resp, err := http.GetCurrentQuestionIdx(url)
 	//if err != nil {
 	//	return fmt.Errorf("error to get quiz from service %s %s", quizUUID, err.Error())
 	//}
