@@ -2,8 +2,11 @@ package Game
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"io/ioutil"
+	"net/http"
 	"xxx/SessionService/Rabbit"
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
@@ -15,7 +18,7 @@ type Manager interface {
 	ValidateCode(code string) bool
 	GenerateUserToken(code string, UserId string, UserType shared.UserRole) *shared.UserToken
 	NewSession() (*shared.Session, error)
-	SessionStart(code string) error
+	SessionStart(quizUUID string, sessionId string) error
 	NextQuestion(code string) error
 }
 
@@ -28,7 +31,6 @@ type SessionManager struct {
 func CreateSessionManager(codeLength int, rmqConn string, redisConn string) (*SessionManager, error) {
 	rabbit, err := Rabbit.NewRabbit(rmqConn)
 	if err != nil {
-		fmt.Println("error on CreateSessionManager with rabbit", err)
 		return nil, err
 	}
 	ctx := context.Background()
@@ -72,7 +74,7 @@ func (manager *SessionManager) NewSession() (*shared.Session, error) {
 	}
 	err := manager.cache.SaveSession(session)
 	if err != nil {
-		return &shared.Session{}, err
+		return &shared.Session{}, fmt.Errorf("error saving session to redis: %v", err)
 	}
 	return session, nil
 }
@@ -93,28 +95,33 @@ func (manager *SessionManager) GenerateUserToken(code string, UserId string, Use
 	}
 }
 
-func (manager *SessionManager) SessionStart(quizUUID string) error {
-	//url := fmt.Sprintf("http://quiz:8001/%s", quizUUID)
-	//resp, err := http.GetCurrentQuestionIdx(url)
-	//if err != nil {
-	//	return fmt.Errorf("error to get quiz from service %s %s", quizUUID, err.Error())
-	//}
-	//defer resp.Body.Close()
-	//
-	//if resp.StatusCode != http.StatusOK {
-	//	return fmt.Errorf("quiz session status code: %d", resp.StatusCode)
-	//}
-	//
-	//body, err := ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	return fmt.Errorf("error on SessionStart with read body %s, %s", quizUUID, err.Error())
-	//}
-	//
+func (manager *SessionManager) SessionStart(quizUUID string, sessionId string) error {
+	fmt.Println(quizUUID)
+	url := fmt.Sprintf("%s%s", shared.QuizManager, quizUUID)
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("error to get quiz from service %s %s", quizUUID, err.Error())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("quiz session status code: %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error on SessionStart with read body %s, %s", quizUUID, err.Error())
+	}
+
 	var quiz shared.Quiz
-	//if err := json.Unmarshal(body, &quiz); err != nil {
-	//	return fmt.Errorf("error on SessionStart with unmarshal json %s %s", quizUUID, err.Error())
-	//}
-	err := manager.rabbit.PublishSessionStart(context.Background(), quiz)
+	if err := json.Unmarshal(body, &quiz); err != nil {
+		return fmt.Errorf("error on SessionStart with unmarshal json %s %s", quizUUID, err.Error())
+	}
+	message := shared.QuizMessage{
+		SessionId: sessionId,
+		Quiz:      quiz,
+	}
+	err = manager.rabbit.PublishSessionStart(context.Background(), message)
 	if err != nil {
 		return fmt.Errorf("error on SessionStart with publish quiz to rabbit %s %s", quizUUID, err.Error())
 	}
@@ -124,7 +131,7 @@ func (manager *SessionManager) SessionStart(quizUUID string) error {
 func (manager *SessionManager) NextQuestion(code string) error {
 	err := manager.rabbit.PublishQuestionStart(context.Background(), code, "aboba")
 	if err != nil {
-		return err
+		return fmt.Errorf("error to send message to rabbit %s", err)
 	}
 	return nil
 }

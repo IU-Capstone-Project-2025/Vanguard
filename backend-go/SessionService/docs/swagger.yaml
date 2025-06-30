@@ -12,17 +12,13 @@ definitions:
       message:
         type: string
     type: object
-  xxx_SessionService_models.UserToken:
+  xxx_SessionService_models.SessionCreateResponse:
     properties:
-      currentQuiz:
+      jwt:
         type: string
-      exp:
-        type: integer
       serverWsEndpoint:
         type: string
-      userId:
-        type: string
-      userType:
+      sessionId:
         type: string
     type: object
   xxx_SessionService_models.ValidateCodeReq:
@@ -32,7 +28,7 @@ definitions:
       userId:
         type: string
     type: object
-host: localhost:8000
+host: localhost:8081
 info:
   contact: {}
   description: Это пример API с gorilla/mux и swaggo
@@ -58,7 +54,7 @@ paths:
         "200":
           description: User token in JSON format
           schema:
-            $ref: '#/definitions/xxx_SessionService_models.UserToken'
+            $ref: '#/definitions/xxx_SessionService_models.SessionCreateResponse'
         "400":
           description: Invalid code
           schema:
@@ -81,9 +77,9 @@ paths:
       description: Advances to the next question in the session identified by the
         provided code.
       parameters:
-      - description: Session code
-        in: query
-        name: code
+      - description: Session ID
+        in: path
+        name: id
         required: true
         type: string
       produces:
@@ -121,7 +117,7 @@ paths:
         "200":
           description: Admin token in JSON format
           schema:
-            $ref: '#/definitions/xxx_SessionService_models.UserToken'
+            $ref: '#/definitions/xxx_SessionService_models.SessionCreateResponse'
         "405":
           description: Method not allowed, only GET is allowed
           schema:

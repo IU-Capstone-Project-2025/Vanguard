@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from shared.db.models import Quiz, User
 from shared.repositories import UserRepository, QuizRepository
 
-from quiz_app.api.dependencies.dependencies import get_uow
+from quiz_app.core.dependencies import get_uow
 
 
 async def init_sample_data():

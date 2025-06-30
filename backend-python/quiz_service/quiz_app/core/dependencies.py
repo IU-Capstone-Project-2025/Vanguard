@@ -1,5 +1,8 @@
-from fastapi import Depends
+from uuid import UUID
 
+from fastapi import Depends, Request, HTTPException
+
+from shared.core.dependencies import get_current_user_id
 from shared.db.database import async_session_maker
 from shared.utils.unitofwork import UnitOfWork
 
@@ -22,3 +25,10 @@ async def get_quiz_service(_uow: UnitOfWork = Depends(get_uow)) -> QuizService:
 async def get_image_service() -> S3ImageService:
     """Dependency that provides a S3ImageService instance."""
     return S3ImageService()
+
+
+async def get_potential_user_id(request: Request) -> UUID | None:
+    try:
+        return await get_current_user_id(request)
+    except HTTPException:
+        return None

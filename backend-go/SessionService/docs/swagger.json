@@ -6,7 +6,7 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8000",
+    "host": "localhost:8081",
     "basePath": "/",
     "paths": {
         "/join": {
@@ -37,7 +37,7 @@
                     "200": {
                         "description": "User token in JSON format",
                         "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
+                            "$ref": "#/definitions/xxx_SessionService_models.SessionCreateResponse"
                         }
                     },
                     "400": {
@@ -77,9 +77,9 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session code",
-                        "name": "code",
-                        "in": "query",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -130,7 +130,7 @@
                     "200": {
                         "description": "Admin token in JSON format",
                         "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.UserToken"
+                            "$ref": "#/definitions/xxx_SessionService_models.SessionCreateResponse"
                         }
                     },
                     "405": {
@@ -210,22 +210,16 @@
                 }
             }
         },
-        "xxx_SessionService_models.UserToken": {
+        "xxx_SessionService_models.SessionCreateResponse": {
             "type": "object",
             "properties": {
-                "currentQuiz": {
+                "jwt": {
                     "type": "string"
-                },
-                "exp": {
-                    "type": "integer"
                 },
                 "serverWsEndpoint": {
                     "type": "string"
                 },
-                "userId": {
-                    "type": "string"
-                },
-                "userType": {
+                "sessionId": {
                     "type": "string"
                 }
             }

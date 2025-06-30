@@ -38,3 +38,8 @@ func (q Quiz) GetQuestion(idx int) Question {
 func (q Quiz) Len() int {
 	return len(q.Questions)
 }
+
+type QuizMessage struct {
+	SessionId string `json:"session_id"`
+	Quiz      Quiz   `json:"quiz"`
+}

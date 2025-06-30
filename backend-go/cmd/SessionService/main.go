@@ -28,11 +28,16 @@ func getEnvFilePath() string {
 // @title           Пример API
 // @version         1.0
 // @description     Это пример API с gorilla/mux и swaggo
-// @host            localhost:8000
+// @host            localhost:8081
 // @BasePath        /
 func main() {
-	if err := godotenv.Load(getEnvFilePath()); err != nil {
-		fmt.Println("Warning: .env file not loaded:", err)
+
+	// Load environment variables file, if running in development
+	if os.Getenv("ENV") != "production" {
+		fmt.Println("LOADING .ENV")
+		if err := godotenv.Load(getEnvFilePath()); err != nil {
+			log.Fatalf("Error: could not load .env file: %v", err)
+		}
 	}
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
@@ -44,7 +49,7 @@ func main() {
 	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
 
 	fmt.Println("env:")
-	fmt.Println(host, port, rabbitUrl)
+	fmt.Println(host, port, rabbitUrl, redisUrl)
 	//time.Sleep(30 * time.Second)
 
 	log := setupLogger(envLocal)

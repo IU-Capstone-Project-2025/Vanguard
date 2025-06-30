@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from shared.schemas.quiz import QuizCreate, QuizResponse, QuizUpdate
 
-from quiz_app.api.dependencies.dependencies import get_quiz_service
+from quiz_app.core.dependencies import get_quiz_service, get_current_user_id, get_potential_user_id
 from quiz_app.services.quiz_service import QuizService
 
 router = APIRouter(tags=["quiz-service"])
@@ -19,7 +19,7 @@ router = APIRouter(tags=["quiz-service"])
 )
 async def create_quiz(
         quiz: QuizCreate,
-        user_id: UUID,  # TODO: handle auth normally
+        user_id: UUID = Depends(get_current_user_id),
         quiz_service: QuizService = Depends(get_quiz_service)
 ):
     return await quiz_service.create_quiz(user_id=user_id, quiz_in=quiz)
@@ -33,7 +33,7 @@ async def create_quiz(
 )
 async def get_quiz_by_id(
         quiz_id: UUID,
-        user_id: UUID | None = None,  # TODO: handle auth normally
+        user_id: UUID | None = Depends(get_potential_user_id),
         quiz_service: QuizService = Depends(get_quiz_service)
 ):
     return await quiz_service.get_quiz_by_id(quiz_id=quiz_id, user_id=user_id)
@@ -48,7 +48,7 @@ async def get_quiz_by_id(
 async def update_quiz(
         quiz_id: UUID,
         quiz: QuizUpdate,
-        user_id: UUID,  # TODO: handle auth normally
+        user_id: UUID = Depends(get_current_user_id),
         quiz_service: QuizService = Depends(get_quiz_service)
 ):
     return await quiz_service.update_quiz(quiz_id=quiz_id, user_id=user_id, data=quiz)
@@ -62,7 +62,7 @@ async def update_quiz(
 )
 async def delete_quiz(
         quiz_id: UUID,
-        user_id: UUID,  # TODO: handle auth normally
+        user_id: UUID = Depends(get_current_user_id),
         quiz_service: QuizService = Depends(get_quiz_service)
 ):
     await quiz_service.delete_quiz(quiz_id=quiz_id, user_id=user_id)
@@ -82,7 +82,7 @@ async def list_quizzes(
         tag: list[str] = Query([], alias="tag"),
         page: int = Query(1, ge=1),
         size: int = Query(20, ge=1, le=100),
-        user_id_req: UUID | None = Query(None),  # TODO: handle auth normally
+        user_id_req: UUID | None = Depends(get_potential_user_id),
         quiz_service: QuizService = Depends(get_quiz_service)
 ):
     """
