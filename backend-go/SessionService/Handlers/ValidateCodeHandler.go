@@ -70,6 +70,12 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 			json.NewEncoder(w).Encode(models.ErrorResponse{Message: err.Error()})
 			return
 		}
+		err = h.Manager.AddPlayerToSession(req.Code, "aboba")
+		if err != nil {
+			h.logger.Error("ValidateCodeHandler err to save user player to session",
+				"response", response,
+				"err", err)
+		}
 		h.logger.Info("ValidateCodeHandler encode response ok", "response", response)
 	} else {
 		h.logger.Error("ValidateCodeHandler err to validate code", "code", req.Code)

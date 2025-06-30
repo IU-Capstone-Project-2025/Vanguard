@@ -20,6 +20,8 @@ type Manager interface {
 	NewSession() (*shared.Session, error)
 	SessionStart(quizUUID string, sessionId string) error
 	NextQuestion(code string) error
+	GetListOfUsers(quizUUID string) ([]string, error)
+	AddPlayerToSession(quizUUID string, UserName string) error
 }
 
 type SessionManager struct {
@@ -134,4 +136,19 @@ func (manager *SessionManager) NextQuestion(code string) error {
 		return fmt.Errorf("error to send message to rabbit %s", err)
 	}
 	return nil
+}
+func (manager *SessionManager) AddPlayerToSession(quizUUID string, UserName string) error {
+	err := manager.cache.AddPlayerToSession(quizUUID, UserName)
+	if err != nil {
+		return fmt.Errorf("error saving user to redis: %v", err)
+	}
+	return nil
+}
+
+func (manager *SessionManager) GetListOfUsers(quizUUID string) ([]string, error) {
+	users, err := manager.cache.GetPlayersForSession(quizUUID)
+	if err != nil {
+		return nil, fmt.Errorf("error get user from redis: %v", err)
+	}
+	return users, nil
 }
