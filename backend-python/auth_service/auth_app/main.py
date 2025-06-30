@@ -11,6 +11,7 @@ from shared.db.database import async_session_maker
 from auth_app.api.endpoints.auth import router as auth_router
 from auth_app.core.config import settings
 from auth_app.core.logging import setup_logging
+from auth_app.exceptions.handlers import register_exception_handlers
 
 setup_logging(debug=settings.DEBUG)
 logger = logging.getLogger("app")
@@ -49,3 +50,5 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+
+register_exception_handlers(app)
