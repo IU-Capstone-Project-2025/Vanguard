@@ -15,7 +15,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param   id   path   string  true  "id"
-// @Success 200 {object} models.GetPlayersResponseGetPlayersResponse ""
+// @Success 200 {object} models.GetPlayersResponse ""
 // @Failure 405 {object} models.ErrorResponse "Method not allowed, only GET is allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
 // @Router /session/{id}/list [post]
