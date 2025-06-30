@@ -4,24 +4,23 @@ import pytest
 from fastapi import status
 
 
-async def create_payload(tags=None):
-    return {
-        "title": "Desserts Quiz",
-        "description": "Identify all these sweet treats",
-        "is_public": False,
-        "tags": tags or ["cakes", "cookies"],
-        "questions": [
-            {
-                "type": "single_choice",
-                "text": "Which is a French dessert?",
-                "options": [
-                    {"text": "Tiramisu", "is_correct": False},
-                    {"text": "Crème brûlée", "is_correct": True},
-                    {"text": "Brownie", "is_correct": False},
-                ],
-            }
-        ]
-    }
+QUIZ_EXAMPLE = {
+    "title": "Advanced Python",
+    "description": "A quiz about advanced Python topics.",
+    "is_public": True,
+    "questions": [
+        {
+            "type": "single_choice",
+            "text": "What is the output of print(type(lambda x: x))?",
+            "options": [
+                {"text": "<class 'function'>", "is_correct": True},
+                {"text": "<class 'lambda'>", "is_correct": False},
+                {"text": "<class 'method'>", "is_correct": False},
+                {"text": "<lambda>", "is_correct": False}
+            ]
+        }
+    ]
+}
 
 
 @pytest.mark.asyncio
@@ -59,47 +58,10 @@ async def test_get_quiz_by_id_as_unauthenticated(test_client, test_quiz):
 
 
 @pytest.mark.asyncio
-async def test_create_quiz(test_client, test_user):
-    payload = await create_payload(tags=["Sweet", "Bake_Team"])
-
-    r = await test_client.post("/", params={"user_id": test_user.id}, json=payload)
-
-    assert r.status_code == 201
-    data = r.json()
-
-    assert data["title"] == payload["title"]
-    assert data["is_public"] is False
-
-    assert isinstance(data["tags"], list)
-    returned_names = {t["name"] for t in data["tags"]}
-    assert returned_names == {"sweet", "bake_team"}
-
-
-QUIZ_EXAMPLE = {
-    "title": "Advanced Python",
-    "description": "A quiz about advanced Python topics.",
-    "is_public": True,
-    "questions": [
-        {
-            "type": "single_choice",
-            "text": "What is the output of print(type(lambda x: x))?",
-            "options": [
-                {"text": "<class 'function'>", "is_correct": True},
-                {"text": "<class 'lambda'>", "is_correct": False},
-                {"text": "<class 'method'>", "is_correct": False},
-                {"text": "<lambda>", "is_correct": False}
-            ]
-        }
-    ]
-}
-
-
-@pytest.mark.asyncio
-async def test_create_quiz(test_client, test_user):
-    response = await test_client.post(
+async def test_create_quiz(test_client_authed, test_user):
+    response = await test_client_authed.post(
         "/",
-        json=QUIZ_EXAMPLE,
-        params={"user_id": str(test_user.id)}
+        json=QUIZ_EXAMPLE
     )
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
@@ -108,10 +70,9 @@ async def test_create_quiz(test_client, test_user):
 
 
 @pytest.mark.asyncio
-async def test_get_quiz_by_id(test_client, test_user, test_quiz):
-    response = await test_client.get(
-        f"/{test_quiz.id}",
-        params={"user_id": str(test_user.id)}
+async def test_get_quiz_by_id(test_client_authed, test_user, test_quiz):
+    response = await test_client_authed.get(
+        f"/{test_quiz.id}"
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -120,16 +81,15 @@ async def test_get_quiz_by_id(test_client, test_user, test_quiz):
 
 
 @pytest.mark.asyncio
-async def test_update_quiz(test_client, test_user, test_quiz):
+async def test_update_quiz(test_client_authed, test_user, test_quiz):
     updated_data = {
         "title": "Updated Title",
         "description": "Updated Description",
         "is_public": False
     }
-    response = await test_client.put(
+    response = await test_client_authed.put(
         f"/{test_quiz.id}",
-        json=updated_data,
-        params={"user_id": str(test_user.id)}
+        json=updated_data
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -138,15 +98,14 @@ async def test_update_quiz(test_client, test_user, test_quiz):
 
 
 @pytest.mark.asyncio
-async def test_delete_quiz(test_client, test_user, test_quiz):
-    response = await test_client.delete(
-        f"/{test_quiz.id}",
-        params={"user_id": str(test_user.id)}
+async def test_delete_quiz(test_client_authed, test_user, test_quiz):
+    response = await test_client_authed.delete(
+        f"/{test_quiz.id}"
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
     # Ensure it no longer exists
-    get_response = await test_client.get(f"/{test_quiz.id}", params={"user_id": str(test_user.id)})
+    get_response = await test_client_authed.get(f"/{test_quiz.id}")
     assert get_response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -160,8 +119,8 @@ async def test_list_quizzes_all_public(test_client, test_user, test_quiz):
 
 
 @pytest.mark.asyncio
-async def test_list_quizzes_mine(test_client, test_user, test_quiz):
-    response = await test_client.get("/", params={"mine": "true", "user_id_req": str(test_user.id)})
+async def test_list_quizzes_mine(test_client_authed, test_user, test_quiz):
+    response = await test_client_authed.get("/", params={"mine": "true"})
     assert response.status_code == status.HTTP_200_OK
     quizzes = response.json()
     assert all(q["id"] == str(test_quiz.id) for q in quizzes)
@@ -174,8 +133,8 @@ async def test_list_quizzes_filter_by_user_unauthorized(test_client, test_user, 
 
 
 @pytest.mark.asyncio
-async def test_list_quizzes_filter_by_user_authorized(test_client, test_user, test_quiz):
-    response = await test_client.get("/", params={"user_id": str(test_user.id), "public": "true", "user_id_req": str(test_user.id)})
+async def test_list_quizzes_filter_by_user_authorized(test_client_authed, test_user, test_quiz):
+    response = await test_client_authed.get("/", params={"user_id": str(test_user.id), "public": "true"})
     assert response.status_code == status.HTTP_200_OK
     quizzes = response.json()
     assert any(q["id"] == str(test_quiz.id) for q in quizzes)
