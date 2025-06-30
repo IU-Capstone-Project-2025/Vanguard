@@ -1,0 +1,15 @@
+name: Frontend CI/CD
+
+on:
+  workflow_call:
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo "Frontend pipeline stub"

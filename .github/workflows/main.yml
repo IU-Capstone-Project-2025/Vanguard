@@ -1,0 +1,98 @@
+name: Main CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, ci-pipeline ]
+    paths-ignore:
+    - 'docker-compose.yaml'
+    - '.env.example'
+    - '.gitignore'
+    - 'LICENSE'
+    - 'README.md'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  detect-changes:
+    name: Detect Service Changes
+    runs-on: ubuntu-latest
+    outputs:
+      auth-service: ${{ steps.changes.outputs.auth-service }}
+      quiz-service: ${{ steps.changes.outputs.quiz-service }}
+      real-time-service: ${{ steps.changes.outputs.real-time-service }}
+      session-service: ${{ steps.changes.outputs.session-service }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      shared-migrations: ${{ steps.changes.outputs.shared-migrations }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Detect Changes
+      id: changes
+      uses: dorny/paths-filter@v2
+      with:
+        filters: |
+          auth-service:
+            - 'backend-python/auth_service/**'
+            - 'backend-python/shared/**'
+          quiz-service:
+            - 'backend-python/quiz_service/**'
+            - 'backend-python/shared/**'
+          real-time-service:
+            - 'backend-go/cmd/real_time/**'
+            - 'backend-go/real_time/**'
+            - 'backend-go/shared/**'
+          session-service:
+            - 'backend-go/cmd/SessionService/**'
+            - 'backend-go/SessionService/**'
+            - 'backend-go/shared/**'
+          frontend:
+            - 'frontend/**'
+          shared-migrations:
+            - 'backend-python/shared/Dockerfile'
+            - 'backend-python/shared/alembic/**'
+            - 'backend-python/shared/shared/db/**'
+
+  auth-service:
+    name: Auth Service CI/CD
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.auth-service == 'true' }}
+    uses: ./.github/workflows/auth-service.yml
+    secrets: inherit
+
+  quiz-service:
+    name: Quiz Service CI/CD
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.quiz-service == 'true' }}
+    uses: ./.github/workflows/quiz-service.yml
+    secrets: inherit
+
+  real-time-service:
+    name: Real-Time Service CI/CD
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.real-time-service == 'true' }}
+    uses: ./.github/workflows/real-time-service.yml
+    secrets: inherit
+
+  session-service:
+    name: Session Service CI/CD
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.session-service == 'true' }}
+    uses: ./.github/workflows/session-service.yml
+    secrets: inherit
+
+  frontend:
+    name: Frontend CI/CD
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    secrets: inherit
+
+  shared-migrations:
+    name: Shared Migrations CI/CD
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.shared-migrations == 'true'}}
+    uses: ./.github/workflows/shared-migrations.yml
+    secrets: inherit
