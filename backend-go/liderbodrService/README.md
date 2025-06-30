@@ -1,4 +1,5 @@
-link to diagram https://www.mermaidchart.com/app/projects/b6fc6c6e-5ef3-428b-bc09-cbd1b7b3e539/diagrams/5bbb9939-c088-4b25-941d-cb75b3b5c217/version/v0.1/edit
+link to diagram https://www.mermaidchart.com/app/projects/b6fc6c6e-5ef3-428b-bc09-cbd1b7b3e539/diagrams/5bbb9939-c088-4b25-941d-cb75b3b5c217/share/invite/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb2N1bWVudElEIjoiNWJiYjk5MzktYzA4OC00YjI1LTk0MWQtY2I3NWIzYjVjMjE3IiwiYWNjZXNzIjoiRWRpdCIsImlhdCI6MTc1MTI4OTc1OX0.4fldTWXMVotRlmTeL1nd-XH3S5pIwNXdabroN9r1DNs
+
 In Memory structures
 
 type ScoreEntry = {
