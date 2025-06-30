@@ -7,8 +7,10 @@ from shared.schemas.auth import (
     UserCreate, UserLogin, TokenResponse, UserResponse, UpdateProfile, RefreshTokenRequest
 )
 
+from shared.core.dependencies import get_current_user_id
+
 from auth_app.core.config import settings
-from auth_app.api.dependencies.dependencies import get_auth_service, get_current_user_id
+from auth_app.core.dependencies import get_auth_service
 from auth_app.services.auth_service import AuthService
 
 router = APIRouter(tags=["auth-service"])

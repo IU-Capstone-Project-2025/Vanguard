@@ -1,18 +1,17 @@
-import os
-
 import bcrypt
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
+from shared.core.config import settings
 from shared.db.models import Base, User
 from shared.repositories import UserRepository
 from shared.utils.unitofwork import UnitOfWork
 
-from auth_app.api.dependencies.dependencies import get_uow
+from auth_app.core.dependencies import get_uow
 from auth_app.main import app
 
-TEST_DB_URL = os.getenv("TEST_DB_URL")
+TEST_DB_URL = settings.TEST_DB_URL
 
 @pytest.fixture(scope="function")
 async def uow_test():

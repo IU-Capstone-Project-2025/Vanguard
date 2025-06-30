@@ -1,19 +1,20 @@
 import io
-import os
 
+import bcrypt
 import pytest
 from httpx import AsyncClient, ASGITransport
 from PIL import Image
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
+from shared.core.config import settings
 from shared.db.models import Base, Quiz, User
 from shared.repositories import UserRepository, QuizRepository
 from shared.utils.unitofwork import UnitOfWork
 
-from quiz_app.api.dependencies.dependencies import get_uow
+from quiz_app.core.dependencies import get_uow, get_current_user_id, get_potential_user_id
 from quiz_app.main import app
 
-TEST_DB_URL = os.getenv("TEST_DB_URL")
+TEST_DB_URL = settings.TEST_DB_URL
 
 @pytest.fixture(scope="function")
 async def uow_test():
@@ -38,13 +39,23 @@ async def test_user(uow_test):
     user_data = {
         "username": "test_user",
         "email": "test@mail.com",
-        "password_hash": "password_hash"
+        "password_hash": bcrypt.hashpw(b"secret", bcrypt.gensalt()).decode()
     }
 
     async with uow_test.transaction() as session:
         repo = UserRepository(session)
         user_db = await repo.create(User(**user_data))
         return user_db
+
+@pytest.fixture
+async def test_client_authed(uow_test, test_user):
+    app.dependency_overrides = {
+        get_uow: lambda: uow_test,
+        get_current_user_id: lambda: test_user.id,
+        get_potential_user_id: lambda: test_user.id
+    }
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        yield client
 
 @pytest.fixture
 async def test_quiz(uow_test, test_user):

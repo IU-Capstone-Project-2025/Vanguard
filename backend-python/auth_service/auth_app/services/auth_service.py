@@ -5,6 +5,7 @@ from fastapi import Request
 
 import bcrypt, jwt
 
+from shared.core.config import settings as shared_settings
 from shared.db.models import User, RefreshToken
 from shared.repositories import UserRepository, RefreshTokenRepository
 from shared.schemas.auth import (
@@ -43,7 +44,7 @@ class AuthService:
             "exp": datetime.now(UTC) + expires_delta,
             "jti": str(uuid4())
         }
-        return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return jwt.encode(payload, shared_settings.JWT_SECRET_KEY, algorithm=shared_settings.JWT_ALGORITHM)
 
     def _create_tokens(self, user_id: UUID, request: Request):
         access = self._create_jwt(user_id, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
