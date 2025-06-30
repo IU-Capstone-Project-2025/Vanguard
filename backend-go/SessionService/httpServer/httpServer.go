@@ -50,6 +50,9 @@ func (HttpServer *HttpServer) registerHandlers() error {
 	router.HandleFunc("/session/{id}/nextQuestion", HttpServer.NextQuestionHandler).Methods("POST")
 	router.HandleFunc("/start", HttpServer.StartSessionHandler).Methods("POST")
 	router.HandleFunc("/session/{id}/list", HttpServer.GetListOfUsers).Methods("POST")
+	registry := Handlers.NewConnectionRegistry()
+	// Set route handler
+	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
 	HttpServer.logger.Info("registerHandlers", "msg", "Listening on "+HttpServer.Host+":"+HttpServer.Port)
 	err := http.ListenAndServe(HttpServer.Host+":"+HttpServer.Port, router)
 	if err != nil {
