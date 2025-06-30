@@ -7,7 +7,6 @@ import (
 	"os"
 	"xxx/SessionService/models"
 	"xxx/shared"
-	"fmt"
 )
 
 // ValidateCodeHandler validates a session code and returns a user token if valid.
@@ -25,25 +24,30 @@ import (
 // @Router /join [post]
 func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		h.logger.Info("ValidateCodeHandler request method not allowed ", "Request Method", r.Method)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Only GET method is allowed"})
 		return
 	}
-    fmt.Println("get req with ", r.URL.String())
 	var req models.ValidateCodeReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.Error("ValidateCodeHandler Request Body Decode Error",
+			"body", r.Body,
+			"Error", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Bad Request"})
 		return
 	}
-    fmt.Println(req)
+	h.logger.Debug("ValidateCodeHandler Request Body", "Body", req)
 	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, userToken)
 	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 	if err != nil {
-		h.logger.Error("CreateSessionHandler", "CreateSessionHandler", err)
+		h.logger.Error("ValidateCodeHandler err to generate jwt token",
+			"userToken", userToken,
+			"err", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
@@ -56,14 +60,22 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 	}
 
 	if h.Manager.ValidateCode(req.Code) {
+		h.logger.Info("ValidateCodeHandler code exist", "code", req.Code)
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
+			h.logger.Error("ValidateCodeHandler err to encode response",
+				"response", response,
+				"err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(models.ErrorResponse{Message: err.Error()})
+			return
 		}
+		h.logger.Info("ValidateCodeHandler encode response ok", "response", response)
 	} else {
+		h.logger.Error("ValidateCodeHandler err to validate code", "code", req.Code)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Code is incorrect"})
+		return
 	}
 }
