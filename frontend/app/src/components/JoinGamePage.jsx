@@ -50,13 +50,13 @@ const JoinGamePage = () => {
         if (code) {
             console.log("code updated:", code);
             const sessionData = await joinSession(code ,"PlayerId")
-            connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
-            sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             if (!sessionData || !sessionData.sessionId) {
                 console.error("❌ Failed to join session or session ID is missing");
                 alert("Failed to join session. Please check the code and try again.");
                 return;
             }
+            connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
+            sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
         }
     };
