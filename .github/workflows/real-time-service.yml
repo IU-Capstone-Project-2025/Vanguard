@@ -34,7 +34,7 @@ jobs:
     #     RABBITMQ_PASSWORD: password
     #     RABBITMQ_HOST: localhost
     #     RABBITMQ_PORT: "5672"
-    #     REDIS_HOST: redis
+    #     REDIS_HOST: localhost
     #     REDIS_PORT: "6379"
     #     REALTIME_SERVICE_HOST: "0.0.0.0"
     #     REALTIME_SERVICE_PORT: "8080"
@@ -49,7 +49,7 @@ jobs:
         RABBITMQ_PASSWORD: password
         RABBITMQ_HOST: localhost
         RABBITMQ_PORT: "5672"
-        REDIS_HOST: redis
+        REDIS_HOST: localhost
         REDIS_PORT: "6379"
         REALTIME_SERVICE_HOST: "0.0.0.0"
         REALTIME_SERVICE_PORT: "8080"

@@ -9,7 +9,48 @@ on:
         required: true
 
 jobs:
-  noop:
+  build-push-deploy:
     runs-on: ubuntu-latest
+    env:
+      SERVICE_NAME: tryit-frontend
+
     steps:
-    - run: echo "Frontend pipeline stub"
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set Docker image tags
+      run: |
+        echo "DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/$SERVICE_NAME:${{ github.sha }}" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE_LATEST=${{ secrets.DOCKERHUB_USERNAME }}/$SERVICE_NAME:latest" >> $GITHUB_ENV
+
+    - name: Build Docker image
+      working-directory: frontend
+      run: |
+        docker build -t $DOCKER_IMAGE -t $DOCKER_IMAGE_LATEST .
+
+    - name: Push Docker image
+      if: github.ref == 'refs/heads/main'
+      run: |
+        docker push $DOCKER_IMAGE
+        docker push $DOCKER_IMAGE_LATEST
+
+    - name: Save image tag
+      if: github.ref == 'refs/heads/main'
+      working-directory: frontend
+      run: echo "$DOCKER_IMAGE" > image-tag.txt
+
+    - name: Upload image tag
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-image-tag
+        path: frontend/image-tag.txt

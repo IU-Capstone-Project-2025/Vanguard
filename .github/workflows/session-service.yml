@@ -31,9 +31,9 @@ jobs:
     #   env:
     #     RABBITMQ_USER: admin
     #     RABBITMQ_PASSWORD: password
-    #     RABBITMQ_HOST: rabbit
+    #     RABBITMQ_HOST: localhost
     #     RABBITMQ_PORT: "5672"
-    #     REDIS_HOST: redis
+    #     REDIS_HOST: localhost
     #     REDIS_PORT: "6379"
     #     REALTIME_SERVICE_HOST: "real-time"
     #     REALTIME_SERVICE_PORT: "8080"
@@ -48,9 +48,9 @@ jobs:
     #   env:
     #     RABBITMQ_USER: admin
     #     RABBITMQ_PASSWORD: password
-    #     RABBITMQ_HOST: rabbit
+    #     RABBITMQ_HOST: localhost
     #     RABBITMQ_PORT: "5672"
-    #     REDIS_HOST: redis
+    #     REDIS_HOST: localhost
     #     REDIS_PORT: "6379"
     #     REALTIME_SERVICE_HOST: "real-time"
     #     REALTIME_SERVICE_PORT: "8080"
