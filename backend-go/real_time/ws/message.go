@@ -29,7 +29,6 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 			fmt.Println(fmt.Errorf("ws error reading message: %w", err).Error())
 			return
 		}
-
 		handleUserMessage(msg, ctx)
 	}
 }

@@ -1,6 +1,7 @@
 package models
 
 type ValidateCodeReq struct {
-	Code   string `json:"code"`
-	UserId string `json:"userId"`
+	Code     string `json:"code"`
+	UserName string `json:"userName"`
+	UserId   string `json:"userId"`
 }
