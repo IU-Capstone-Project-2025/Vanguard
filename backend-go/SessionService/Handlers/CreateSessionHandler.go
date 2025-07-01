@@ -73,9 +73,8 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 		return
 	}
 	response := models.SessionCreateResponse{
-		Jwt:              token,
-		ServerWsEndpoint: AdminToken.ServerWsEndpoint,
-		SessionId:        AdminToken.SessionId,
+		Jwt:       token,
+		SessionId: AdminToken.SessionId,
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

@@ -55,7 +55,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 	}
 	response := models.SessionCreateResponse{
 		Jwt:              token,
-		ServerWsEndpoint: userToken.ServerWsEndpoint,
+		ServerWsEndpoint: shared.GetWsEndpoint(),
 		SessionId:        userToken.SessionId,
 	}
 
