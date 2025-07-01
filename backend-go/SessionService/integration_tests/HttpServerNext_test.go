@@ -2,6 +2,7 @@ package integration_tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -25,11 +26,10 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
-	rabbitURL := fmt.Sprintf("amqp://%s:%s@%s:%s/",
-		os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASSWORD"),
-		os.Getenv("RABBITMQ_HOST"), os.Getenv("RABBITMQ_PORT"))
-
-	redisURL := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+	rabbitC, rabbitURL := startRabbit(context.Background(), t)
+	redisC, redisURL := startRedis(context.Background(), t)
+	defer redisC.Terminate(context.Background())
+	defer rabbitC.Terminate(context.Background())
 
 	// Запуск канала RabbitMQ для question.{sessionID}.start
 	rabbitMsgChan := make(chan []byte, 1)
@@ -41,14 +41,15 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(1 * time.Second)
+	time.Sleep(5 * time.Second)
+	defer server.Stop()
 	go func() {
 		msg := consumeQuestionStartFromRabbit(t, rabbitURL, "123")
 		rabbitMsgChan <- msg
 	}()
 
 	// 🛠️ Создаем сессию
-	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessions", host, port)
+	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
 		UserId: "1",
 		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
@@ -104,12 +105,12 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 func consumeQuestionStartFromRabbit(t *testing.T, rabbitURL, sessionID string) []byte {
 	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
-		t.Errorf("Failed to connect to RabbitMQ: %s", err)
+		t.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}
 	defer conn.Close()
 	ch, err := conn.Channel()
 	if err != nil {
-		t.Errorf("Failed to open a channel: %s", err)
+		t.Fatalf("Failed to open a channel: %s", err)
 	}
 	defer ch.Close()
 	err = ch.ExchangeDeclare(
@@ -122,7 +123,7 @@ func consumeQuestionStartFromRabbit(t *testing.T, rabbitURL, sessionID string) [
 		nil,                    // arguments
 	)
 	if err != nil {
-		t.Errorf("Failed to declare an exchange: %s", err)
+		t.Fatalf("Failed to declare an exchange: %s", err)
 	}
 	q, err := ch.QueueDeclare(
 		"",    // пустое имя = сгенерировать уникальное
@@ -133,7 +134,7 @@ func consumeQuestionStartFromRabbit(t *testing.T, rabbitURL, sessionID string) [
 		nil,
 	)
 	if err != nil {
-		t.Errorf("Failed to declare a queue: %s", err)
+		t.Fatalf("Failed to declare a queue: %s", err)
 	}
 	err = ch.QueueBind(
 		q.Name,
@@ -143,7 +144,7 @@ func consumeQuestionStartFromRabbit(t *testing.T, rabbitURL, sessionID string) [
 		nil,
 	)
 	if err != nil {
-		t.Errorf("Failed to bind a queue: %s", err)
+		t.Fatalf("Failed to bind a queue: %s", err)
 	}
 	msgs, err := ch.Consume(
 		q.Name, // queue
