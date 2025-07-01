@@ -12,6 +12,7 @@ import GameController from './components/GameController';
 import GameProcessAdmin from './components/GameProcessAdmin';
 
 import NotFoundPage from './components/NotFoundPage';
+import RegisterPage from './components/RegisterPage';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/wait/:sessionCode" element={<WaitGameStartPlayer/>} />
         <Route path="/game-process/:sessionCode" element={<GameController/>} />
         <Route path="/game-controller/:sessionCode" element={<GameProcessAdmin/>} />
+        <Route path="/register" element={<RegisterPage />} />
         
         {/* Catch-all route for 404 Not Found */}
         <Route path="*" element={<NotFoundPage />} /> 
