@@ -30,11 +30,25 @@ const WaitGameStartAdmin = () => {
       console.error("❌ WebSocket with Session Service error:", err);
 
     };
+
+    // получение сообщения от session service
+
+    sessionServiceWsRef.current.onmessage = (message) => {
+      try {
+        // const players = JSON.parse(message.data);
+        setPlayers(JSON.parse(message.data));
+        console.log("📨 Received JSON message:",players);
+      } catch (e){
+        console.error("⚠️ Failed to parse incoming WebSocket message:", message.data);
+      }
+    }
   };
 
   useEffect(() => {
     connectToWebSocket(sessionStorage.getItem("jwt"))
   },[])
+  useEffect(() => {},
+      [players])
 
   const handleKick = (idToRemove) => {
     setPlayers(prev => prev.filter(player => player.id !== idToRemove));
