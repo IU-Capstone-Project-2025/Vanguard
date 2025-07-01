@@ -49,6 +49,7 @@ func (HttpServer *HttpServer) registerHandlers() error {
 	router.HandleFunc("/join", HttpServer.ValidateCodeHandler).Methods("POST")
 	router.HandleFunc("/session/{id}/nextQuestion", HttpServer.NextQuestionHandler).Methods("POST")
 	router.HandleFunc("/start", HttpServer.StartSessionHandler).Methods("POST")
+	router.HandleFunc("/validate", HttpServer.ValidateSessionCodeHandler).Methods("POST")
 	//router.HandleFunc("/session/{id}/list", HttpServer.GetListOfUsers).Methods("POST")
 	registry := Handlers.NewConnectionRegistry(HttpServer.logger)
 	// Set route handler

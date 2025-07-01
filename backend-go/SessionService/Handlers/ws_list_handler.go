@@ -239,7 +239,9 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 		}
 	}
 	for _, conn := range reg.GetConnections(ctx.SessionId) {
-		jsonData, err = json.Marshal(ctx.UserName)
+		var message []string
+		message = append(message, ctx.UserName)
+		jsonData, err = json.Marshal(message)
 		if err != nil {
 			reg.logger.Error("WsHandler handleRead error to marshal json",
 				"err", err)
@@ -250,6 +252,7 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 			if err != nil {
 				reg.logger.Error("WsHandler handleRead error to write json", "err", err)
 			}
+			reg.logger.Info("ws sends to all", message)
 		}
 	}
 }
