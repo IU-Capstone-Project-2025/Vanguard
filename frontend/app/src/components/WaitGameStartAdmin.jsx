@@ -6,17 +6,7 @@ const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
   const sessionServiceWsRef = useRef(null);
 
-  const [players, setPlayers] = useState([
-    { id: 1, name: "Alice" },
-    { id: 2, name: "Bob" },
-    { id: 3, name: "Charlie" },
-    { id: 4, name: "Diana" },
-    { id: 5, name: "Eva" },
-    { id: 6, name: "Frank" },
-    { id: 7, name: "Grace" },
-    { id: 8, name: "Henry" },
-    { id: 9, name: "Isabella" },
-  ]);
+  const [players, setPlayers] = useState([]);
 
   // 🌐 Устанавливаем WebSocket-соединение с Session Service
   const connectToWebSocket = (token) => {
@@ -35,9 +25,23 @@ const WaitGameStartAdmin = () => {
 
     sessionServiceWsRef.current.onmessage = (message) => {
       try {
-        // const players = JSON.parse(message.data);
-        setPlayers(JSON.parse(message.data));
-        console.log("📨 Received JSON message:",players);
+        const incomingNames = JSON.parse(message.data); // пример: ["Alice"] или ["Alice", "Bob"]
+
+        if (!Array.isArray(incomingNames)) return;
+
+        setPlayers((prevPlayers) => {
+
+          // Фильтруем новых
+          const newPlayers = incomingNames
+              .map((name, index) => ({
+                id: prevPlayers.length + index + 1,
+                name: name
+              }));
+
+          return [...prevPlayers, ...newPlayers];
+        });
+
+        console.log("📨 Received JSON message:",incomingNames);
       } catch (e){
         console.error("⚠️ Failed to parse incoming WebSocket message:", message.data);
       }
@@ -47,8 +51,6 @@ const WaitGameStartAdmin = () => {
   useEffect(() => {
     connectToWebSocket(sessionStorage.getItem("jwt"))
   },[])
-  useEffect(() => {},
-      [players])
 
   const handleKick = (idToRemove) => {
     setPlayers(prev => prev.filter(player => player.id !== idToRemove));

@@ -2,6 +2,7 @@ import React, {useEffect, useRef} from "react";
 import './styles/styles.css'
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
+import Cookies from "js-cookie";
 
 const JoinGamePage = () => {
     const [code, setCode] = useState("");
@@ -18,7 +19,7 @@ const JoinGamePage = () => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({"code": sessionCode, "userId": userId}),
+            body: JSON.stringify({"code": sessionCode, "userId": userId, "userName":Cookies.get("user_nickname")}),
         });
         if (response.code === 400) {
             console.error("❌ Error joining session:", response.statusText);
