@@ -5,7 +5,7 @@ from fastapi import Depends, File, UploadFile, APIRouter, Query, status
 from shared.schemas.image import ImageUploadResponse
 
 from quiz_app.services.image_service import S3ImageService
-from quiz_app.api.dependencies.dependencies import get_image_service
+from quiz_app.core.dependencies import get_image_service
 
 router = APIRouter(prefix="/images", tags=["images"])
 

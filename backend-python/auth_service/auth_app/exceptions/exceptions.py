@@ -1,34 +1,45 @@
-class TokenError(Exception):
-    """Base exception for token related errors"""
+from fastapi import status
 
-    def __init__(self, message: str = "Token authentication failed"):
-        self.message = message
-        super().__init__(message)
 
-    def __str__(self):
-        return self.message
+class AuthServiceError(Exception):
+    """Base exception for auth service."""
 
-class TokenExpiredError(TokenError):
-    """Raised when token has expired"""
 
-    def __init__(self):
-        super().__init__("Token has expired")
+class EmailAlreadyExists(AuthServiceError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Email already registered."
 
-class InvalidTokenError(TokenError):
-    """Raised when token is invalid"""
 
-    def __init__(self):
-        super().__init__("Invalid token")
+class UsernameAlreadyExists(AuthServiceError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    detail = "Username already registered."
 
-class MissingTokenError(TokenError):
-    """Raised when token is missing"""
 
-    def __init__(self):
-        super().__init__("Authorization token is missing")
+class InvalidCredentials(AuthServiceError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "Invalid email or password."
 
-class InvalidTokenPayloadError(TokenError):
-    """Raised when token payload is invalid"""
-    def __init__(self, field: str):
-        self.field = field
-        message = f"Missing required field in token: '{field}'"
-        super().__init__(message)
+
+class UserNotFound(AuthServiceError):
+    status_code = status.HTTP_404_NOT_FOUND
+    detail = "User not found."
+
+
+class EmailInUse(AuthServiceError):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "Email is already in use."
+
+
+class UsernameInUse(AuthServiceError):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "Username is already in use."
+
+
+class InvalidRefreshToken(AuthServiceError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "Invalid refresh token."
+
+
+class ExpiredRefreshToken(AuthServiceError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "Refresh token has expired."

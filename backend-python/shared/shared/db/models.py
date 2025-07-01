@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import ForeignKey, String, Boolean, Text, Integer, DateTime
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB, INET
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -29,6 +29,12 @@ class User(Base):
     # Relationship to quizzes
     quizzes: Mapped[List["Quiz"]] = relationship(
         back_populates="owner",
+        cascade="all, delete-orphan"
+    )
+
+    refresh_tokens: Mapped[List["RefreshToken"]] = relationship(
+        "RefreshToken",
+        back_populates="user",
         cascade="all, delete-orphan"
     )
 
@@ -100,3 +106,25 @@ class QuizTag(Base):
         ForeignKey("tags.id", ondelete="CASCADE"),  # When a Tag is deleted, all its quiz_tags rows are auto-deleted
         primary_key=True
     )
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    token: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        server_default=func.gen_random_uuid()
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    user_agent: Mapped[str] = mapped_column(String(256), nullable=True)
+    ip_address: Mapped[str] = mapped_column(INET, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    user: Mapped["User"] = relationship("User", back_populates="refresh_tokens")
