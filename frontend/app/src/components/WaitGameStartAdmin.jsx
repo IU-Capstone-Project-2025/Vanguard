@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/WaitGameStartAdmin.css";
 
 const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
+  const sessionServiceWsRef = useRef(null);
 
   const [players, setPlayers] = useState([
     { id: 1, name: "Alice" },
@@ -16,6 +17,24 @@ const WaitGameStartAdmin = () => {
     { id: 8, name: "Henry" },
     { id: 9, name: "Isabella" },
   ]);
+
+  // 🌐 Устанавливаем WebSocket-соединение с Session Service
+  const connectToWebSocket = (token) => {
+    let serverWsEndpoint = "ws://localhost:8081/ws";
+    sessionServiceWsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
+    sessionServiceWsRef.current.onopen = () => {
+      console.log("✅ WebSocket connected with Session Service");
+    };
+
+    sessionServiceWsRef.current.onerror = (err) => {
+      console.error("❌ WebSocket with Session Service error:", err);
+
+    };
+  };
+
+  useEffect(() => {
+    connectToWebSocket(sessionStorage.getItem("jwt"))
+  },[])
 
   const handleKick = (idToRemove) => {
     setPlayers(prev => prev.filter(player => player.id !== idToRemove));

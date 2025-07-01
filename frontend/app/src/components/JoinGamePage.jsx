@@ -1,12 +1,12 @@
 import React, {useEffect, useRef} from "react";
 import './styles/styles.css'
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import {useNavigate} from "react-router-dom";
+import {useState} from "react";
 
 const JoinGamePage = () => {
-    const [code,setCode] = useState("");
+    const [code, setCode] = useState("");
     const navigate = useNavigate()
-    const wsRef = useRef(null);
+    const realTimeWsRef = useRef(null);
 
     // 🎯 POST-запрос к /api/session/join
     const joinSession = async (sessionCode, userId) => {
@@ -18,47 +18,46 @@ const JoinGamePage = () => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ "code": sessionCode,"userId": userId }),
+            body: JSON.stringify({"code": sessionCode, "userId": userId}),
         });
-        if (response.code == 400) {
+        if (response.code === 400) {
             console.error("❌ Error joining session:", response.statusText);
             alert("Failed to join session. Please check the code and try again.");
             return;
         }
         const data = await response.json();
         return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt":"string", "sessionId":"string"}
-    
+
     };
     useEffect(() => {
         console.log("code updated:", code);
     }, [code]);
 
-    // 🌐 Устанавливаем WebSocket-соединение
-    const connectToWebSocket = (serverWsEndpoint, token) => {
-        wsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
-        wsRef.current.onopen = () => {
-            console.log("✅ WebSocket connected");
+    // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
+    const connectToWebSocket = (token) => {
+        realTimeWsRef.current = new WebSocket(`/api/ws/ws?token=${token}`);
+        realTimeWsRef.current.onopen = () => {
+            console.log("✅ WebSocket connected with Real-time");
         };
 
-        wsRef.current.onerror = (err) => {
-            console.error("❌ WebSocket error:", err);
+        realTimeWsRef.current.onerror = (err) => {
+            console.error("❌ WebSocket with Real-time error:", err);
 
         };
     };
 
-    const handlePlay =  async () => {
+    const handlePlay = async () => {
         if (code) {
             console.log("code updated:", code);
-            const sessionData = await joinSession(code ,"PlayerId")
+            const sessionData = await joinSession(code, "PlayerId")
             if (!sessionData || !sessionData.sessionId) {
                 console.error("❌ Failed to join session or session ID is missing");
                 alert("Failed to join session. Please check the code and try again.");
                 return;
             }
-            connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
+            connectToWebSocket(sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             sessionStorage.setItem('jwt', sessionData.jwt);
-            sessionStorage.setItem('serverWsEndpoint', sessionData.serverWsEndpoint);
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
         }
     };
@@ -70,8 +69,8 @@ const JoinGamePage = () => {
                     <h1>
                         Ask your quiz creator for a code
                     </h1>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder="enter a code here"
                         value={`${code.toUpperCase()}`}
                         onChange={(e) => setCode(e.target.value)} // Remove '#' and convert to uppercase
@@ -89,14 +88,14 @@ const JoinGamePage = () => {
                                         e.preventDefault();
                                     }
                                 }
-                            >
+                        >
                             <span>Play</span>
                         </button>
                     </div>
                 </div>
             </div>
             <div className="right-side">
-                
+
             </div>
         </div>
     )

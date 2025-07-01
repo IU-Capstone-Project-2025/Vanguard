@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/WaitGameStartPlayer.css";
 
 const WaitGameStartPlayer = () => {
+
+    const sessionServiceWsRef = useRef(null);
     const [players, setPlayers] = useState([
         { id: 1, name: "Alice" },
         { id: 2, name: "Bob" },
@@ -16,7 +18,19 @@ const WaitGameStartPlayer = () => {
     ]);
 
     const navigate = useNavigate();
-
+    const connectToWebSocket = (token) => {
+        let serverWsEndpoint = "ws://localhost:8081/ws";
+        sessionServiceWsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
+        sessionServiceWsRef.current.onopen = () => {
+            console.log("✅ WebSocket connected to Session Service");
+        }
+        sessionServiceWsRef.current.onerror = (err) => {
+            console.error("❌ WebSocket with Session Service error:", err);
+        }
+    }
+    useEffect(() => {
+        connectToWebSocket(sessionStorage.getItem("jwt"));
+    })
     const handleLeave = () => {
         navigate("/");
     };
