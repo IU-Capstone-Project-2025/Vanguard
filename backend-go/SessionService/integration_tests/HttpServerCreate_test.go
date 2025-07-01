@@ -211,7 +211,7 @@ func Test_HttpServerCreate(t *testing.T) {
 		if event.SessionId != token.SessionId {
 			t.Errorf("unexpected SessionId in RabbitMQ: got %s, want %s", event.SessionId, token.SessionId)
 		}
-		fmt.Println(event)
+		t.Log(event)
 	case <-time.After(10 * time.Second):
 		t.Fatal("timeout: did not receive message from RabbitMQ")
 	}
