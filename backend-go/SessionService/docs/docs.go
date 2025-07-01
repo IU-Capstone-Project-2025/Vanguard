@@ -67,49 +67,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/session/{id}/list": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "sessions"
-                ],
-                "summary": "sends list of users",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.GetPlayersResponse"
-                        }
-                    },
-                    "405": {
-                        "description": "Method not allowed, only GET is allowed",
-                        "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/session/{id}/nextQuestion": {
             "post": {
                 "description": "Advances to the next question in the session identified by the provided code.",
@@ -248,6 +205,9 @@ const docTemplate = `{
                 },
                 "userId": {
                     "type": "string"
+                },
+                "userName": {
+                    "type": "string"
                 }
             }
         },
@@ -255,20 +215,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "xxx_SessionService_models.GetPlayersResponse": {
-            "type": "object",
-            "properties": {
-                "players": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sessionCode": {
                     "type": "string"
                 }
             }
