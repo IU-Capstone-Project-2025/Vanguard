@@ -123,7 +123,7 @@ func Test_HttpServerCreate(t *testing.T) {
 	cwd, _ := os.Getwd()
 	fmt.Println("Working dir:", cwd)
 
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
 		}

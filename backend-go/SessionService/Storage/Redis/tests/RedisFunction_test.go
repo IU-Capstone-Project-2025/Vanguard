@@ -106,13 +106,13 @@ func getEnvFilePath() string {
 	return absPath
 }
 func Test_RedisFunction(t *testing.T) {
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
 		}
 	}
-	_, redisUrl := startRedis(context.Background(), t)
-
+	redisC, redisUrl := startRedis(context.Background(), t)
+	defer redisC.Terminate(context.Background())
 	ctx := context.Background()
 	RedisConfig := models.Config{
 		Addr:        redisUrl,
@@ -124,7 +124,7 @@ func Test_RedisFunction(t *testing.T) {
 	}
 	redis, err := Redis.NewRedisClient(ctx, RedisConfig)
 	if err != nil {
-		t.Error("error creating redis client", "error", err)
+		t.Fatal("error creating redis client", "error", err)
 	}
 	err = redis.SaveSession(&shared.Session{
 		ID:               "testRedis",
@@ -133,12 +133,12 @@ func Test_RedisFunction(t *testing.T) {
 		ServerWsEndpoint: "testRedis",
 	})
 	if err != nil {
-		t.Error("error creating redis client", "error", err)
+		t.Fatal("error creating redis client", "error", err)
 	}
 	fmt.Println("SaveSession success")
 	session, err := redis.LoadSession("testRedis")
 	if err != nil {
-		t.Error("error loading session", "error", err)
+		t.Fatal("error loading session", "error", err)
 	}
 	if session.Code != "testRedis" {
 		t.Error("error loading session", "error", err)
@@ -146,11 +146,11 @@ func Test_RedisFunction(t *testing.T) {
 	fmt.Println("LoadSession success", session)
 	err = redis.EditSessionState("testRedis", "testRedis2")
 	if err != nil {
-		t.Error("error editing session", "error", err)
+		t.Fatal("error editing session", "error", err)
 	}
 	session, err = redis.LoadSession("testRedis")
 	if err != nil {
-		t.Error("error loading session", "error", err)
+		t.Fatal("error loading session", "error", err)
 	}
 	if session.State != "testRedis2" {
 		t.Error("error loading session", "error", err)
@@ -158,7 +158,7 @@ func Test_RedisFunction(t *testing.T) {
 	fmt.Println("EditSessionState success", session)
 	err = redis.DeleteSession("testRedis")
 	if err != nil {
-		t.Error("error deleting session", "error", err)
+		t.Fatal("error deleting session", "error", err)
 	}
 	session, err = redis.LoadSession("testRedis")
 	if err != nil {

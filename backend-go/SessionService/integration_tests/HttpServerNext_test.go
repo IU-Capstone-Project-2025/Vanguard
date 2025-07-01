@@ -30,9 +30,12 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 	redisC, redisURL := startRedis(context.Background(), t)
 	defer redisC.Terminate(context.Background())
 	defer rabbitC.Terminate(context.Background())
-
 	// Запуск канала RabbitMQ для question.{sessionID}.start
 	rabbitMsgChan := make(chan []byte, 1)
+	go func() {
+		msg := consumeQuestionStartFromRabbit(t, rabbitURL, "123")
+		rabbitMsgChan <- msg
+	}()
 
 	// ⚙️ Создаем логгер и запускаем сервер
 	log := setupLogger(envLocal)
@@ -41,13 +44,8 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 	defer server.Stop()
-	go func() {
-		msg := consumeQuestionStartFromRabbit(t, rabbitURL, "123")
-		rabbitMsgChan <- msg
-	}()
-
 	// 🛠️ Создаем сессию
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{

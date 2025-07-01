@@ -16,7 +16,7 @@ import (
 )
 
 func Test_HttpValidateSessionCode(t *testing.T) {
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
 		}
