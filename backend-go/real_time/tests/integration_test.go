@@ -83,7 +83,7 @@ func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 func TestWithTestContainers(t *testing.T) {
 	ctx := context.Background()
 
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		fmt.Println("LOADING .ENV")
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			log.Fatalf("Error: could not load .env file: %v", err)
