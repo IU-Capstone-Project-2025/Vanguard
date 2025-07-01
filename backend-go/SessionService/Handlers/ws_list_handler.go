@@ -252,6 +252,7 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 			if err != nil {
 				reg.logger.Error("WsHandler handleRead error to write json", "err", err)
 			}
+			reg.logger.Info("ws sends to all", message)
 		}
 	}
 }
