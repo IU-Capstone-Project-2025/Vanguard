@@ -22,6 +22,7 @@ type Manager interface {
 	NextQuestion(code string) error
 	GetListOfUsers(quizUUID string) ([]string, error)
 	AddPlayerToSession(quizUUID string, UserName string) error
+	SessionStartMock(quizUUID string, sessionId string) error
 }
 
 type SessionManager struct {
@@ -150,4 +151,48 @@ func (manager *SessionManager) GetListOfUsers(quizUUID string) ([]string, error)
 		return nil, fmt.Errorf("error get user from redis: %v", err)
 	}
 	return users, nil
+}
+
+func (manager *SessionManager) SessionStartMock(quizUUID string, sessionId string) error {
+	quiz := shared.Quiz{Questions: []shared.Question{
+		{
+			Type: "single_choice",
+			Text: "What is the output of print(2 ** 3)?",
+			Options: []shared.Option{
+				{Text: "6", IsCorrect: false},
+				{Text: "8", IsCorrect: true},
+				{Text: "9", IsCorrect: false},
+				{Text: "5", IsCorrect: false},
+			},
+		},
+		{
+			Type: "single_choice",
+			Text: "Which keyword is used to create a function in Python?",
+			Options: []shared.Option{
+				{Text: "func", IsCorrect: false},
+				{Text: "function", IsCorrect: false},
+				{Text: "def", IsCorrect: true},
+				{Text: "define", IsCorrect: false},
+			},
+		},
+		{
+			Type: "single_choice",
+			Text: "What data type is the result of: 3 / 2 in Python 3?",
+			Options: []shared.Option{
+				{Text: "int", IsCorrect: false},
+				{Text: "float", IsCorrect: true},
+				{Text: "str", IsCorrect: false},
+				{Text: "decimal", IsCorrect: false},
+			},
+		},
+	}}
+	message := shared.QuizMessage{
+		SessionId: sessionId,
+		Quiz:      quiz,
+	}
+	err := manager.rabbit.PublishSessionStart(context.Background(), message)
+	if err != nil {
+		return fmt.Errorf("error on SessionStart with publish quiz to rabbit %s %s", quizUUID, err.Error())
+	}
+	return nil
 }

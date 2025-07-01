@@ -1,19 +1,26 @@
 package httpServer
 
 import (
+	"context"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 	"xxx/SessionService/Handlers"
 	_ "xxx/SessionService/docs"
 )
 
 type HttpServer struct {
 	*Handlers.SessionManagerHandler
-	Host   string
-	Port   string
-	logger *slog.Logger
+	Host     string
+	Port     string
+	logger   *slog.Logger
+	server   *http.Server
+	stopChan chan os.Signal
 }
 
 func InitHttpServer(logger *slog.Logger, Host string, Port string, rmqConn string, RedisConn string) (*HttpServer, error) {
@@ -23,42 +30,64 @@ func InitHttpServer(logger *slog.Logger, Host string, Port string, rmqConn strin
 		logger.Error("InitHttpServer", "NewSessionManagerHandler", err)
 		return nil, err
 	}
-	return &HttpServer{managerHandler, Host, Port, logger}, nil
+	return &HttpServer{
+		SessionManagerHandler: managerHandler,
+		Host:                  Host,
+		Port:                  Port,
+		logger:                logger,
+		stopChan:              make(chan os.Signal, 1),
+	}, nil
 }
 
-func (HttpServer *HttpServer) Start() {
+func (hs *HttpServer) Start() {
+	router := hs.registerHandlers()
+
+	hs.server = &http.Server{
+		Addr:    hs.Host + ":" + hs.Port,
+		Handler: router,
+	}
+
+	// Захват SIGINT / SIGTERM
+	signal.Notify(hs.stopChan, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
-		err := HttpServer.registerHandlers()
-		if err != nil {
-			HttpServer.logger.Error("StartHttpServer", "RegisterHandlers", err)
-			return
+		hs.logger.Info("HTTP server is starting", "addr", hs.server.Addr)
+		if err := hs.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			hs.logger.Error("ListenAndServe error", "err", err)
 		}
-		HttpServer.logger.Info("StartHttpServer", "StartHttpServer ok")
 	}()
-	select {}
+
+	<-hs.stopChan
+	hs.logger.Info("Shutdown signal received")
+
+	hs.Stop()
 }
 
-func (HttpServer *HttpServer) Stop() {
-	//TODO implement function
+func (hs *HttpServer) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	hs.logger.Info("Shutting down HTTP server...")
+	if err := hs.server.Shutdown(ctx); err != nil {
+		hs.logger.Error("HTTP server Shutdown", "err", err)
+	} else {
+		hs.logger.Info("HTTP server exited properly")
+	}
 }
 
-func (HttpServer *HttpServer) registerHandlers() error {
+func (hs *HttpServer) registerHandlers() *mux.Router {
 	router := mux.NewRouter()
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
-	router.HandleFunc("/sessions", HttpServer.CreateSessionHandler).Methods("POST")
-	router.HandleFunc("/join", HttpServer.ValidateCodeHandler).Methods("POST")
-	router.HandleFunc("/session/{id}/nextQuestion", HttpServer.NextQuestionHandler).Methods("POST")
-	router.HandleFunc("/start", HttpServer.StartSessionHandler).Methods("POST")
-	router.HandleFunc("/validate", HttpServer.ValidateSessionCodeHandler).Methods("POST")
-	//router.HandleFunc("/session/{id}/list", HttpServer.GetListOfUsers).Methods("POST")
-	registry := Handlers.NewConnectionRegistry(HttpServer.logger)
-	// Set route handler
+	router.HandleFunc("/sessions", hs.CreateSessionHandler).Methods("POST")
+	router.HandleFunc("/join", hs.ValidateCodeHandler).Methods("POST")
+	router.HandleFunc("/session/{id}/nextQuestion", hs.NextQuestionHandler).Methods("POST")
+	router.HandleFunc("/start", hs.StartSessionHandler).Methods("POST")
+	router.HandleFunc("/validate", hs.ValidateSessionCodeHandler).Methods("POST")
+	router.HandleFunc("/sessionsMock", hs.CreateSessionHandlerMock).Methods("POST")
+
+	registry := Handlers.NewConnectionRegistry(hs.logger)
 	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
-	HttpServer.logger.Info("registerHandlers", "msg", "Listening on "+HttpServer.Host+":"+HttpServer.Port)
-	err := http.ListenAndServe(HttpServer.Host+":"+HttpServer.Port, router)
-	if err != nil {
-		HttpServer.logger.Error("registerHandlers", "ListenAndServe", err)
-		return err
-	}
-	return nil
+
+	hs.logger.Info("Routes registered", "host", hs.Host, "port", hs.Port)
+	return router
 }
