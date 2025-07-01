@@ -12,9 +12,6 @@ const WaitGameStartPlayer = () => {
 
     const [players, setPlayers] = useState([]);
 
-    const navigate = useNavigate();
-
-
     // 🌐 Устанавливаем WebSocket-соединение с Session Service
     const connectToWebSocket = (token) => {
         let serverWsEndpoint = "ws://localhost:8081/ws";
