@@ -1,0 +1,90 @@
+:root {
+    --orange: #D38E5A;
+    --bage: #F9F3EB;
+    --dark: #2A2B2B;
+    --light-gray: #C6BDB3;
+    --gray: #5D5C5D;
+}
+
+.auth-container {
+    display: flex;
+    justify-content: space-between;
+    /*align-items: center;*/
+    height: 100vh;
+    background-color: var(--orange);
+    padding: 0 5vw;
+    font-family: 'Comic Sans MS', sans-serif;
+}
+
+.title {
+    color: var(--bage);
+    font-size: 40px;
+    line-height: 1.5;
+    max-width: 60%;
+
+    align-items: flex-start;
+}
+
+.login-passwd-container {
+    background-color: var(--bage);
+    border-radius: 10px;
+    padding: 1vw;
+    width: 100%;
+    max-width: 20vw;
+    max-height: 45vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: right;
+    align-items: center;
+    gap: 1vh;
+    /*margin-bottom: 10%;*/
+    margin-top: 30vh;
+    margin-right: auto;
+
+}
+
+.login-passwd-panel h1 {
+    color: var(--dark);
+    font-size: 20px;
+    margin: 1.5vh 0vh 1.5vh 0vh;
+}
+
+.login-passwd-input {
+    background-color: var(--gray);
+    color: var(--bage);
+    width: 100%;
+    padding: 1vh 1vw;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    margin-bottom: 1.5vh;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.submit-button,
+.signup-button {
+    background-color: var(--dark);
+    color: var(--bage);
+    border-radius: 10px;
+    padding: 1vh 1vw;
+    font-size: 16px;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    margin-top: 1vh;
+    box-sizing: border-box;
+}
+
+.submit-button:hover,
+.signup-button:hover {
+    background-color: #1c1c1c;
+    transform: translateY(-2px);
+}
+
+.signup-question {
+    font-size: 14px;
+    color: var(--dark);
+    margin: 1vh 0 0 0;
+}
