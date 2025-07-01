@@ -41,7 +41,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		return
 	}
 	h.logger.Debug("ValidateCodeHandler Request Body", "Body", req)
-	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, shared.RoleParticipant)
+	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, req.UserName, shared.RoleParticipant)
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, userToken)
 	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 	if err != nil {
@@ -69,6 +69,12 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(models.ErrorResponse{Message: err.Error()})
 			return
+		}
+		err = h.Manager.AddPlayerToSession(req.Code, req.UserName)
+		if err != nil {
+			h.logger.Error("ValidateCodeHandler err to save user player to session",
+				"response", response,
+				"err", err)
 		}
 		h.logger.Info("ValidateCodeHandler encode response ok", "response", response)
 	} else {
