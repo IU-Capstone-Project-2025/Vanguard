@@ -25,7 +25,6 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatalf("could not load .env file: %v", err)
 		}
 	}
-
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
 
@@ -75,7 +74,7 @@ func Test_HttpWebSocket(t *testing.T) {
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req2 := models.ValidateCodeReq{
 		UserId:   "test1",
-		UserName: "test1",
+		UserName: "user1",
 		Code:     token.SessionId,
 	}
 	jsonBytes, err = json.Marshal(req2)
@@ -101,7 +100,7 @@ func Test_HttpWebSocket(t *testing.T) {
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req3 := models.ValidateCodeReq{
 		UserId:   "test2",
-		UserName: "test2",
+		UserName: "user2",
 		Code:     token.SessionId,
 	}
 	jsonBytes, err = json.Marshal(req3)
@@ -123,7 +122,6 @@ func Test_HttpWebSocket(t *testing.T) {
 	if err != nil {
 		t.Error("error unmarshalling response body:", err)
 	}
-
 	go func() {
 		scheme := "ws"             // или "wss" если HTTPS
 		wsHost := "localhost:8081" // твой сервер и порт

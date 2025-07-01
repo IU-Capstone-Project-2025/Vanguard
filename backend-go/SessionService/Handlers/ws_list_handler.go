@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
-	"log"
+	"log/slog"
 	"net/http"
 	"sync"
 	"xxx/real_time/config"
@@ -54,15 +54,14 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		// Parses and validates the token via extractTokenData. If invalid or expired, it should reject the request
 		token, err := extractTokenData(tokenString)
 		if err != nil {
-			fmt.Println(err)
+			registry.logger.Error("WsHandler error to extract token", "err", err)
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
-
 		// Upgrades the HTTP request to a WebSocket connection.
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			fmt.Println("ws upgrade error:", err)
+			registry.logger.Error("WsHandler error to upgrade websocket", "err", err)
 			return
 		}
 
@@ -71,7 +70,11 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 
 		// Register this connection
 		if err := registry.RegisterConnection(token.SessionId, token.UserId, token.UserName, conn); err != nil {
-			fmt.Println("error onRegisterConnection", err, token.SessionId, token.UserId, conn)
+			registry.logger.Error("WsHandler error to register connection",
+				"SessionId", token.SessionId,
+				"UserId", token.UserId,
+				"UserName", token.UserName,
+				"err", err)
 			conn.Close()
 			return
 		}
@@ -86,27 +89,29 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 
 		// Send a welcome message
 		welcome := fmt.Sprintf(`{"type":"welcome","sessionId":"%s","userId":"%s"}`, ctx.SessionId, ctx.UserId)
-		conn.WriteMessage(websocket.TextMessage, []byte(welcome))
-
+		err = conn.WriteMessage(websocket.TextMessage, []byte(welcome))
+		if err != nil {
+			registry.logger.Error("WsHandler error to send welcome", "err", err)
+		}
+		registry.logger.Info("WsHandler welcome to connection", "welcome", welcome)
 		// Start reading messages for this connection in a separate goroutine.
 		go handleRead(ctx, registry)
 	}
 }
 
-//человек делает запрос на вебсокет с его токеном. Далее Всем юзерам в такой руме приходит
-// сообщение, если только в этой руме уже небыло чела с таким же именем и юзеркодом
-
 type ConnectionRegistry struct {
 	mu          sync.RWMutex
 	connections map[string]map[string]*websocket.Conn
 	rooms       map[string]map[string]string
+	logger      *slog.Logger
 }
 
 // NewConnectionRegistry initializes the ConnectionRegistry
-func NewConnectionRegistry() *ConnectionRegistry {
+func NewConnectionRegistry(log *slog.Logger) *ConnectionRegistry {
 	return &ConnectionRegistry{
 		connections: make(map[string]map[string]*websocket.Conn),
 		rooms:       make(map[string]map[string]string),
+		logger:      log,
 	}
 }
 
@@ -197,9 +202,9 @@ func extractTokenData(tokenString string) (*shared.UserToken, error) {
 	case token.Valid:
 		fmt.Println("OK token")
 	case errors.Is(err, jwt.ErrTokenMalformed):
-		fmt.Println("Malformed token")
+		fmt.Errorf("malformed token: %w", err)
 	default:
-		fmt.Println("Couldn't handle this token:", err)
+		fmt.Errorf("couldn't handle this token: %w", err)
 	}
 
 	claims, ok := token.Claims.(*shared.UserToken)
@@ -215,34 +220,35 @@ func extractTokenData(tokenString string) (*shared.UserToken, error) {
 func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 	err := reg.RegisterConnection(ctx.SessionId, ctx.UserId, ctx.UserName, ctx.Conn)
 	if err != nil {
-		fmt.Println("ws error in token: %w", err)
+		reg.logger.Error("WsHandler handleRead error to register connection")
 		return
 	}
-	fmt.Println("ws connected to session", len(reg.GetConnections(ctx.SessionId)))
+	reg.logger.Info("ws connected to user", ctx.UserId, ctx.UserName)
 	m := reg.GetRooms(ctx.SessionId)
 	con := reg.connections[ctx.SessionId][ctx.UserId]
 	jsonData, err := json.Marshal(m)
 	if err != nil {
-		log.Println("Ошибка сериализации:", err)
+		reg.logger.Error("WsHandler handleRead error to marshal json", err)
 		return
 	}
 	if len(m) > 0 {
 		fmt.Println(m)
 		err = con.WriteMessage(websocket.TextMessage, jsonData)
 		if err != nil {
-			fmt.Println("ws error in token: %w", err)
+			reg.logger.Error("WsHandler handleRead error to write json", err)
 		}
 	}
 	for _, conn := range reg.GetConnections(ctx.SessionId) {
-		jsonData, err = json.Marshal(ctx.UserId)
+		jsonData, err = json.Marshal(ctx.UserName)
 		if err != nil {
-			log.Println("Ошибка сериализации:", err)
+			reg.logger.Error("WsHandler handleRead error to marshal json",
+				"err", err)
 			return
 		}
 		if conn != ctx.Conn {
 			err = conn.WriteMessage(websocket.TextMessage, jsonData)
 			if err != nil {
-				fmt.Println("ws error in token: %w", err)
+				reg.logger.Error("WsHandler handleRead error to write json", "err", err)
 			}
 		}
 	}
