@@ -10,6 +10,7 @@ import JoinGamePage from './components/JoinGamePage';
 import EnterNicknamePage from './components/EnterNicknamePage';
 import GameController from './components/GameController';
 import GameProcessAdmin from './components/GameProcessAdmin';
+import AuthPage from './components/AuthPage';
 
 import NotFoundPage from './components/NotFoundPage';
 import RegisterPage from './components/RegisterPage';
@@ -28,6 +29,7 @@ function App() {
         <Route path="/game-process/:sessionCode" element={<GameController/>} />
         <Route path="/game-controller/:sessionCode" element={<GameProcessAdmin/>} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<AuthPage/>} />
         
         {/* Catch-all route for 404 Not Found */}
         <Route path="*" element={<NotFoundPage />} /> 

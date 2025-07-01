@@ -55,8 +55,8 @@ const CreateSessionPage = () => {
   };
 
   // 🌐 Устанавливаем WebSocket-соединение
-  const connectToWebSocket = (wsEndpoint, token) => {
-      wsRef.current = new WebSocket(`${wsEndpoint}?token=${token}`);
+  const connectToWebSocket = (serverWsEndpoint, token) => {
+      wsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
       wsRef.current.onopen = () => {
         console.log("✅ WebSocket connected");
       };
@@ -77,8 +77,8 @@ const CreateSessionPage = () => {
       sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
       sessionStorage.setItem('sessionCode', sessionData.sessionId);
       sessionStorage.setItem('webSocket', wsRef);
-      sessionStorage.setItem('wsToken', sessionData.jwt);
-      sessionStorage.setItem('wsEndpoint', sessionData.serverWsEndpoint);
+      sessionStorage.setItem('jwt', sessionData.jwt);
+      sessionStorage.setItem('serverWsEndpoint', sessionData.serverWsEndpoint);
       navigate(`/ask-to-join/${sessionCode}`);
 
     }

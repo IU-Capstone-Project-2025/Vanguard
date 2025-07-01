@@ -34,8 +34,8 @@ const JoinGamePage = () => {
     }, [code]);
 
     // 🌐 Устанавливаем WebSocket-соединение
-    const connectToWebSocket = (wsEndpoint, token) => {
-        wsRef.current = new WebSocket(`${wsEndpoint}?token=${token}`);
+    const connectToWebSocket = (serverWsEndpoint, token) => {
+        wsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
         wsRef.current.onopen = () => {
             console.log("✅ WebSocket connected");
         };
@@ -57,6 +57,8 @@ const JoinGamePage = () => {
             }
             connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
+            sessionStorage.setItem('jwt', sessionData.jwt);
+            sessionStorage.setItem('serverWsEndpoint', sessionData.serverWsEndpoint);
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
         }
     };
