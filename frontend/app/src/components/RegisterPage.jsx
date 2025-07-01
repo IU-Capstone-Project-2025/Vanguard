@@ -42,6 +42,7 @@ const RegisterPage = () => {
         Cookies.set("user_nickname", data.username);
 
         setSuccess("Registration successful! You can now log in.");
+        navigate("/login"); // перенаправляем на страницу логина
       } else {
         const data = await response.json();
         setError(data.detail?.[0]?.msg || "Registration failed");

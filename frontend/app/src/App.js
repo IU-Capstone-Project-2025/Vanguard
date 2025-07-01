@@ -27,51 +27,51 @@ function App() {
         <Route path='/' element={<HomePage/>}/>
         
         <Route path='/create' element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <CreateSessionPage/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           } 
         />
         <Route path='/enter-nickname' element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <EnterNicknamePage/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           }
         />
         <Route path='/join' element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <JoinGamePage/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           } 
         />
         <Route path="/ask-to-join/:sessionCode" element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <AskToJoinSessionPage/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           }
         /> 
         <Route path="/sessionAdmin/:sessionCode" element={
-            <ProtectedRoute> 
+            // <ProtectedRoute> 
               <WaitGameStartAdmin/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           } 
         />
         <Route path="/wait/:sessionCode" element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <WaitGameStartPlayer/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           } 
         />
         <Route path="/game-process/:sessionCode" element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <GameController/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           } 
         />
         <Route path="/game-controller/:sessionCode" element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <GameProcessAdmin/>
-            </ProtectedRoute>
+            // </ProtectedRoute>
           } 
         />
       </Routes>
