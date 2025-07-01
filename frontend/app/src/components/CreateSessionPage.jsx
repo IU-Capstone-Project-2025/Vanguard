@@ -1,5 +1,6 @@
 import React, { useEffect, useState ,useRef} from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie"
 
 import './styles/styles.css';
 
@@ -45,7 +46,11 @@ const CreateSessionPage = () => {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ "quizId":sessionCode, "userId": userId }),
+      body: JSON.stringify({
+          "quizId":sessionCode,
+          "userId": userId,
+          "userName": Cookies.get("user_nickname")
+      }),
     });
 
     if (!response.ok) throw new Error("Failed to create session");

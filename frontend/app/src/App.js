@@ -13,25 +13,67 @@ import GameProcessAdmin from './components/GameProcessAdmin';
 import AuthPage from './components/AuthPage';
 
 import NotFoundPage from './components/NotFoundPage';
+import RegisterPage from './components/RegisterPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path='/' element={<HomePage/>}/>
-        <Route path='/create' element={<CreateSessionPage/>} />
-        <Route path='/enter-nickname' element={<EnterNicknamePage/>} />
-        <Route path='/join' element={<JoinGamePage/>} />
-        <Route path="/ask-to-join/:sessionCode" element={<AskToJoinSessionPage/>} /> 
-        <Route path="/sessionAdmin/:sessionCode" element={<WaitGameStartAdmin/>} />
-        <Route path="/wait/:sessionCode" element={<WaitGameStartPlayer/>} />
-        <Route path="/game-process/:sessionCode" element={<GameController/>} />
-        <Route path="/game-controller/:sessionCode" element={<GameProcessAdmin/>} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<AuthPage/>} />
-        
         {/* Catch-all route for 404 Not Found */}
         <Route path="*" element={<NotFoundPage />} /> 
+        <Route path='/' element={<HomePage/>}/>
         
+        <Route path='/create' element={
+            <ProtectedRoute>
+              <CreateSessionPage/>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path='/enter-nickname' element={
+            <ProtectedRoute>
+              <EnterNicknamePage/>
+            </ProtectedRoute>
+          }
+        />
+        <Route path='/join' element={
+            <ProtectedRoute>
+              <JoinGamePage/>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/ask-to-join/:sessionCode" element={
+            <ProtectedRoute>
+              <AskToJoinSessionPage/>
+            </ProtectedRoute>
+          }
+        /> 
+        <Route path="/sessionAdmin/:sessionCode" element={
+            <ProtectedRoute> 
+              <WaitGameStartAdmin/>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/wait/:sessionCode" element={
+            <ProtectedRoute>
+              <WaitGameStartPlayer/>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/game-process/:sessionCode" element={
+            <ProtectedRoute>
+              <GameController/>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/game-controller/:sessionCode" element={
+            <ProtectedRoute>
+              <GameProcessAdmin/>
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </Router>
   );
