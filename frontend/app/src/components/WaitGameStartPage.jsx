@@ -1,9 +1,13 @@
 import React, {useEffect, useRef, useState} from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./styles/WaitGameStartPlayer.css";
 
 const WaitGameStartPlayer = () => {
-
+    const navigate = useNavigate();
+    const sessionCode = useParams();
+    sessionStorage.setItem("sessionCode", sessionCode);
+    
+    
     const sessionServiceWsRef = useRef(null);
     const [players, setPlayers] = useState([
         { id: 1, name: "Alice" },
@@ -16,8 +20,7 @@ const WaitGameStartPlayer = () => {
         { id: 8, name: "Henry" },
         { id: 9, name: "Isabella" },
     ]);
-
-    const navigate = useNavigate();
+    
 
     // 🌐 Устанавливаем WebSocket-соединение с Session Service
     const connectToWebSocket = (token) => {
@@ -31,6 +34,10 @@ const WaitGameStartPlayer = () => {
         }
     }
     useEffect(() => {
+        if (!sessionStorage.getItem("nickname")) {
+            navigate("/enter-nickname");
+            return;
+        }
         connectToWebSocket(sessionStorage.getItem("jwt"));
     })
     const handleLeave = () => {

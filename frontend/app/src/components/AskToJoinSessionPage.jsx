@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 const AskToJoinSession = () => {
   // Mocked backend data
   const { sessionCode } = useParams();
-  const [joinLink, setJoinLink] = React.useState(`https://localhost:3000/join/${sessionCode}`);
+  const [joinLink, setJoinLink] = React.useState(`https://localhost:3000/wait/${sessionCode}`);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
