@@ -4,20 +4,41 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"log"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 	"xxx/SessionService/Rabbit"
 	"xxx/shared"
 )
 
+func getEnvFilePath() string {
+	envPath := filepath.Join("..", "..", "..", "..", ".env") // сдвигаемся на 4 уровня вверх из integration_tests
+	absPath, err := filepath.Abs(envPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return absPath
+}
 func Test_PublishQuestionStart(t *testing.T) {
-	rabbit, err := Rabbit.NewRabbit("amqp://guest:guest@localhost:5672/")
+	if os.Getenv("ENV") != "production" {
+		if err := godotenv.Load(getEnvFilePath()); err != nil {
+			t.Fatalf("could not load .env file: %v", err)
+		}
+	}
+	rabbitURL := fmt.Sprintf("amqp://%s:%s@%s:%s/",
+		os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASSWORD"),
+		os.Getenv("RABBITMQ_HOST"), os.Getenv("RABBITMQ_PORT"))
+
+	rabbit, err := Rabbit.NewRabbit(rabbitURL)
 	if err != nil {
 		t.Errorf("Failed to open Rabbit: %s", err)
 	}
 	done := make(chan shared.Session)
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
 		t.Errorf("Failed to connect to RabbitMQ: %s", err)
 	}

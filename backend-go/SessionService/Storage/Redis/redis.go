@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"time"
 	models "xxx/SessionService/models"
 	"xxx/shared"
 )
@@ -14,6 +15,8 @@ type Cache interface {
 	DeleteSession(code string) error
 	EditSessionState(sessionID string, state string) error
 	CodeExist(code string) bool
+	GetPlayersForSession(sessionCode string) ([]string, error)
+	AddPlayerToSession(sessionCode string, playerName string) error
 }
 
 type Redis struct {
@@ -106,4 +109,29 @@ func (r *Redis) CodeExist(code string) bool {
 	} else {
 		return false
 	}
+}
+
+func (r *Redis) AddPlayerToSession(sessionCode string, playerName string) error {
+	ctx := context.Background()
+	key := fmt.Sprintf("session:%s:players", sessionCode)
+	err := r.Client.SAdd(ctx, key, playerName).Err()
+	if err != nil {
+		return err
+	}
+
+	r.Client.Expire(ctx, key, time.Hour)
+
+	return nil
+}
+
+func (r *Redis) GetPlayersForSession(sessionCode string) ([]string, error) {
+	ctx := context.Background()
+	key := fmt.Sprintf("session:%s:players", sessionCode)
+
+	players, err := r.Client.SMembers(ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	return players, nil
 }

@@ -27,7 +27,8 @@ func (h *SessionManagerHandler) StartSessionHandler(w http.ResponseWriter, r *ht
 	}
 
 	req := r.URL.Query().Get("id")
-	err := h.Manager.SessionStart(req)
+	code := r.URL.Query().Get("code")
+	err := h.Manager.SessionStart(req, code)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)

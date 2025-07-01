@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	_ "github.com/joho/godotenv/autoload"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"xxx/real_time/app"
 	"xxx/real_time/config"
 	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
@@ -25,19 +25,37 @@ func getEnvFilePath() string {
 func main() {
 	// Load environment variables file, if running in development
 	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
-		fmt.Println("LOADING .ENV")
+		fmt.Println("LOADING .ENV from ", getEnvFilePath())
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			log.Fatalf("Error: could not load .env file: %v", err)
 		}
 	}
 
-	// Initialize ws connections registry
-	registry := ws.NewConnectionRegistry()
-
-	// Set route handler
-	http.Handle("/ws", ws.NewWebSocketHandler(registry))
-
 	cfg := config.LoadConfig()
+
+	manager := app.NewManager()
+
+	// Connect to the rabbit MQ
+	fmt.Println("Connecting to broker")
+	err := manager.ConnectRabbitMQ(fmt.Sprintf("amqp://%s:%s@%s:%s/",
+		cfg.MQ.User, cfg.MQ.Password, cfg.MQ.Host, cfg.MQ.Port))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connected to broker")
+
+	//err = manager.ConnectRedis()
+	//if err != nil {
+	//
+	//}
+
+	handlerDeps := ws.HandlerDeps{
+		Tracker:  manager.QuizTracker,
+		Registry: manager.ConnectionRegistry,
+	}
+
+	// SetCurrQuestionIdx route handler
+	http.Handle("/ws", ws.NewWebSocketHandler(handlerDeps))
 
 	go func() {
 		err := http.ListenAndServe(
@@ -46,16 +64,9 @@ func main() {
 		log.Fatal(err)
 	}()
 
-	fmt.Println("Connecting to broker")
-	brokerConn, err := amqp.Dial(
-		fmt.Sprintf("amqp://%s:%s@%s:%s/",
-			cfg.MQ.User, cfg.MQ.Password, cfg.MQ.Host, cfg.MQ.Port),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Connected to broker")
-	broker, err := rabbit.NewRealTimeRabbit(brokerConn)
-	go broker.ConsumeSessionStart(registry)
+	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
+	fmt.Println("Service is up!")
+
+	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
 	select {}
 }

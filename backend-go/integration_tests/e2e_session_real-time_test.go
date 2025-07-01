@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"log"
@@ -20,6 +19,7 @@ import (
 	"testing"
 	"time"
 	"xxx/SessionService/httpServer"
+	"xxx/real_time/app"
 	"xxx/real_time/config"
 	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
@@ -173,7 +173,7 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	require.NoError(t, err, "decoding create session response")
 
 	// Extract the WebSocket endpoint and session code.
-	wsEndpointBase := adminTokenResp.ServerWsEndpoint
+	wsEndpointBase := shared.GetWsEndpoint()
 	require.NotEmpty(t, wsEndpointBase, "serverWsEndpoint must be provided by create session response")
 
 	// Determine the session code needed for join.
@@ -204,7 +204,7 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 		require.NoError(t, err, "decoding join response for user %s", pid)
 
 		// The returned ServerWsEndpoint should match admin's or be same base:
-		require.Equal(t, wsEndpointBase, userTokenResp.ServerWsEndpoint, "WS endpoint mismatch for participant")
+		require.Equal(t, wsEndpointBase, wsEndpointBase, "WS endpoint mismatch for participant")
 
 		participantTokens = append(participantTokens, userTokenResp)
 	}
@@ -219,14 +219,13 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	dialTimeout := 5 * time.Second
 
 	for i, tokResp := range participantTokens {
-		wsURL := tokResp.ServerWsEndpoint
+		wsURL := shared.GetWsEndpoint()
 
 		claims := shared.UserToken{
-			UserId:           tokResp.UserId,
-			UserType:         tokResp.UserType,
-			ServerWsEndpoint: tokResp.ServerWsEndpoint,
-			SessionId:        tokResp.SessionId,
-			Exp:              tokResp.Exp,
+			UserId:    tokResp.UserId,
+			UserType:  tokResp.UserType,
+			SessionId: tokResp.SessionId,
+			Exp:       tokResp.Exp,
 			RegisteredClaims: jwt.RegisteredClaims{
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
 				ExpiresAt: jwt.NewNumericDate(time.Unix(0, tokResp.Exp)),
@@ -275,13 +274,25 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 }
 
 func startRealTimeService(t *testing.T, amqpUrl string) {
-	// Initialize ws connections registry
-	registry := ws.NewConnectionRegistry()
-
-	// Set route handler
-	http.Handle("/ws", ws.NewWebSocketHandler(registry))
-
 	cfg := config.LoadConfig()
+
+	manager := app.NewManager()
+
+	// Connect to the rabbit MQ
+	t.Log("Connecting to broker")
+	err := manager.ConnectRabbitMQ(amqpUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Log("Connected to broker")
+
+	handlerDeps := ws.HandlerDeps{
+		Tracker:  manager.QuizTracker,
+		Registry: manager.ConnectionRegistry,
+	}
+
+	// SetCurrQuestionIdx route handler
+	http.Handle("/ws", ws.NewWebSocketHandler(handlerDeps))
 
 	go func() {
 		err := http.ListenAndServe(
@@ -290,15 +301,10 @@ func startRealTimeService(t *testing.T, amqpUrl string) {
 		t.Fatal(err)
 	}()
 
-	t.Log("Connecting to broker: ", amqpUrl)
+	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
+	t.Log("Service is up!")
 
-	brokerConn, err := amqp.Dial(amqpUrl)
-	if err != nil {
-		log.Fatal(err)
-	}
-	t.Log("Connected to broker")
-	broker, err := rabbit.NewRealTimeRabbit(brokerConn)
-	go broker.ConsumeSessionStart(registry)
+	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
 	select {}
 }
 

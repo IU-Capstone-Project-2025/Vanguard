@@ -12,6 +12,15 @@ definitions:
       message:
         type: string
     type: object
+  xxx_SessionService_models.GetPlayersResponse:
+    properties:
+      players:
+        items:
+          type: string
+        type: array
+      sessionCode:
+        type: string
+    type: object
   xxx_SessionService_models.SessionCreateResponse:
     properties:
       jwt:
@@ -26,6 +35,8 @@ definitions:
       code:
         type: string
       userId:
+        type: string
+      userName:
         type: string
     type: object
 host: localhost:8081
@@ -70,6 +81,34 @@ paths:
       summary: Validate session code
       tags:
       - sessions
+  /session/{id}/list:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.GetPlayersResponse'
+        "405":
+          description: Method not allowed, only GET is allowed
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+      summary: sends list of users
+      tags:
+      - sessions
   /session/{id}/nextQuestion:
     post:
       consumes:
@@ -77,9 +116,9 @@ paths:
       description: Advances to the next question in the session identified by the
         provided code.
       parameters:
-      - description: Session code
-        in: query
-        name: code
+      - description: Session ID
+        in: path
+        name: id
         required: true
         type: string
       produces:
