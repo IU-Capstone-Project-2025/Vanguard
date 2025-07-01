@@ -10,7 +10,9 @@ const JoinGamePage = () => {
 
     // 🎯 POST-запрос к /api/session/join
     const joinSession = async (sessionCode, userId) => {
+        console.log("Joining session with code:", sessionCode, "and userId:", userId);
 
+        // Проверка на наличие кода с символом '#'
         const response = await fetch("/api/session/join", {
             method: "POST",
             headers: {
@@ -18,12 +20,15 @@ const JoinGamePage = () => {
             },
             body: JSON.stringify({ "code": sessionCode,"userId": userId}),
         });
-        if (!response.ok) throw new Error("Failed to join session");
-
+        if (response.code == 400) {
+            console.error("❌ Error joining session:", response.statusText);
+            alert("Failed to join session. Please check the code and try again.");
+            return;
+        }
         const data = await response.json();
         return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt":"string", "sessionId":"string"}
+    
     };
-
     useEffect(() => {
         console.log("code updated:", code);
     }, [code]);
@@ -45,6 +50,11 @@ const JoinGamePage = () => {
         if (code) {
             console.log("code updated:", code);
             const sessionData = await joinSession(code ,"PlayerId")
+            if (!sessionData || !sessionData.sessionId) {
+                console.error("❌ Failed to join session or session ID is missing");
+                alert("Failed to join session. Please check the code and try again.");
+                return;
+            }
             connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
