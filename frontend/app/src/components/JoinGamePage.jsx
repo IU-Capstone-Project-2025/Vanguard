@@ -18,7 +18,7 @@ const JoinGamePage = () => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ "code": sessionCode,"userId": userId}),
+            body: JSON.stringify({ "code": sessionCode,"userId": userId }),
         });
         if (response.code == 400) {
             console.error("❌ Error joining session:", response.statusText);
