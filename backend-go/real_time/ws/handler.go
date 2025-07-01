@@ -69,17 +69,16 @@ func NewWebSocketHandler(deps HandlerDeps) http.HandlerFunc {
 		deps.Registry.RegisterSession(token.SessionId)
 
 		// Register this connection
-		if err := deps.Registry.RegisterConnection(token.SessionId, token.UserId, conn); err != nil {
-			log.Printf("Failed to register connection: %v", err)
-			conn.Close()
-			return
-		}
-
-		ctx := &ConnectionContext{
+		ctx := ConnectionContext{
 			Conn:      conn,
 			UserId:    token.UserId,
 			SessionId: token.SessionId,
 			Role:      token.UserType,
+		}
+		if err := deps.Registry.RegisterConnection(ctx); err != nil {
+			log.Printf("Failed to register connection: %v", err)
+			conn.Close()
+			return
 		}
 
 		// Send a welcome message

@@ -50,7 +50,7 @@ func main() {
 	//}
 
 	handlerDeps := ws.HandlerDeps{
-		Tracker:  manager.QuestionTracker,
+		Tracker:  manager.QuizTracker,
 		Registry: manager.ConnectionRegistry,
 	}
 
@@ -67,6 +67,6 @@ func main() {
 	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
 	fmt.Println("Service is up!")
 
-	go broker.ConsumeSessionStart(manager.ConnectionRegistry)
+	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
 	select {}
 }

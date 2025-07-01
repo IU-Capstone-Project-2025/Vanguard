@@ -11,7 +11,7 @@ import (
 type Manager struct {
 	Redis              *redis.Client
 	Rabbit             *amqp.Connection
-	QuestionTracker    *ws.QuizTracker // map[sessionId]questionIndex
+	QuizTracker        *ws.QuizTracker // map[sessionId]questionIndex
 	ConnectionRegistry *ws.ConnectionRegistry
 }
 
@@ -19,7 +19,7 @@ func NewManager() *Manager {
 	return &Manager{
 		Redis:              nil,
 		Rabbit:             nil,
-		QuestionTracker:    ws.NewQuestionTracker(),    // Initialize question tracker
+		QuizTracker:        ws.NewQuizTracker(),        // Initialize question tracker
 		ConnectionRegistry: ws.NewConnectionRegistry(), // Initialize ws connections registry
 	}
 }

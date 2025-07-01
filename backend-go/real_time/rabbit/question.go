@@ -5,6 +5,7 @@ package rabbit
 import (
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"strings"
 	"sync"
 	"xxx/real_time/ws"
 	"xxx/shared"
@@ -16,7 +17,7 @@ import (
 // Returns the queue object itself, or the error if failed.
 func CreateQuestionStartQueue(ch *amqp.Channel) (amqp.Queue, error) {
 	queue, err := ch.QueueDeclare(
-		"question_start",
+		"",
 		false,
 		true, // auto delete
 		false,
@@ -41,11 +42,13 @@ func CreateQuestionStartQueue(ch *amqp.Channel) (amqp.Queue, error) {
 }
 
 // ConsumeQuestionStart method listens to "next question start" events delivered to the corresponding queue.
-func (r *RealTimeRabbit) ConsumeQuestionStart(sessionId string, registry *ws.ConnectionRegistry) {
+func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, tracker *ws.QuizTracker) {
+	q, _ := CreateQuestionStartQueue(r.channel)
+
 	msgs, err := r.channel.Consume(
-		r.QuestionStartedQs[sessionId].Name, // the name of the already created queue
+		q.Name, // the name of the already created queue
 		"",
-		true,  // auto-ack
+		false, // auto-ack
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -61,8 +64,24 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(sessionId string, registry *ws.Con
 	// listen to messages in parallel goroutine
 	go func() {
 		defer wg.Done()
-		for range msgs { // ignore the contents in the queue, since only event itself matters
-			fmt.Println("next question triggered")
+		for d := range msgs { // ignore the contents in the queue, since only event itself matters
+			sessionId := strings.Split(d.RoutingKey, ".")[1]
+
+			tracker.IncQuestionIdx(sessionId)
+
+			qid, question := tracker.GetCurrentQuestion(sessionId)
+
+			fmt.Println("next question triggered: ", qid, "in session ", sessionId)
+
+			questionPayloadMsg := ws.ServerMessage{
+				Type:        ws.MessageTypeQuestion,
+				QuestionIdx: qid,
+				Text:        question.Text,
+				Options:     question.Options,
+			}
+
+			registry.SendToAdmin(sessionId, questionPayloadMsg.Bytes())
+			d.Ack(false)
 		}
 	}()
 
