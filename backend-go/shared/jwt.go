@@ -15,6 +15,7 @@ const (
 // UserToken represents the structure of the user's ephemeral token
 type UserToken struct {
 	UserId           string   `json:"userId"`
+	UserName         string   `json:"userName"`
 	UserType         UserRole `json:"userType"`
 	SessionId        string   `json:"sessionId"`
 	ServerWsEndpoint string   `json:"serverWsEndpoint"`

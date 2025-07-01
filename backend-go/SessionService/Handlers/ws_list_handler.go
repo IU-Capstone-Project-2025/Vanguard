@@ -1,10 +1,12 @@
 package Handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
+	"log"
 	"net/http"
 	"sync"
 	"xxx/real_time/config"
@@ -21,6 +23,7 @@ var upgrader = websocket.Upgrader{
 type ConnectionContext struct {
 	Conn      *websocket.Conn // the connection tunnel with user
 	UserId    string          // unique ID of the connected user
+	UserName  string
 	SessionId string          // session ID of the session user joined in
 	Role      shared.UserRole // the role of the user within the session
 }
@@ -67,7 +70,7 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		registry.RegisterSession(token.SessionId)
 
 		// Register this connection
-		if err := registry.RegisterConnection(token.SessionId, token.UserId, conn); err != nil {
+		if err := registry.RegisterConnection(token.SessionId, token.UserId, token.UserName, conn); err != nil {
 			fmt.Println("error onRegisterConnection", err, token.SessionId, token.UserId, conn)
 			conn.Close()
 			return
@@ -76,6 +79,7 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		ctx := &ConnectionContext{
 			Conn:      conn,
 			UserId:    token.UserId,
+			UserName:  token.UserName,
 			SessionId: token.SessionId,
 			Role:      token.UserType,
 		}
@@ -95,12 +99,14 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 type ConnectionRegistry struct {
 	mu          sync.RWMutex
 	connections map[string]map[string]*websocket.Conn
+	rooms       map[string]map[string]string
 }
 
 // NewConnectionRegistry initializes the ConnectionRegistry
 func NewConnectionRegistry() *ConnectionRegistry {
 	return &ConnectionRegistry{
 		connections: make(map[string]map[string]*websocket.Conn),
+		rooms:       make(map[string]map[string]string),
 	}
 }
 
@@ -110,6 +116,7 @@ func (r *ConnectionRegistry) RegisterSession(sessionID string) {
 	defer r.mu.Unlock()
 	if _, exists := r.connections[sessionID]; !exists {
 		r.connections[sessionID] = make(map[string]*websocket.Conn)
+		r.rooms[sessionID] = make(map[string]string)
 	}
 }
 
@@ -118,10 +125,11 @@ func (r *ConnectionRegistry) UnregisterSession(sessionID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.connections, sessionID)
+	delete(r.rooms, sessionID)
 }
 
 // RegisterConnection adds new joined user connection, mapping to a corresponding session
-func (r *ConnectionRegistry) RegisterConnection(sessionID, userID string, conn *websocket.Conn) error {
+func (r *ConnectionRegistry) RegisterConnection(sessionID, userID, userName string, conn *websocket.Conn) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -130,6 +138,11 @@ func (r *ConnectionRegistry) RegisterConnection(sessionID, userID string, conn *
 		return fmt.Errorf("session %s not found", sessionID)
 	}
 	sessions[userID] = conn
+	rooms, exists := r.rooms[sessionID]
+	if !exists {
+		return fmt.Errorf("session %s not found", sessionID)
+	}
+	rooms[userID] = userName
 	return nil
 }
 
@@ -139,6 +152,9 @@ func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) {
 	defer r.mu.Unlock()
 	if sessions, exists := r.connections[sessionID]; exists {
 		delete(sessions, userID)
+	}
+	if rooms, exists := r.rooms[sessionID]; exists {
+		delete(rooms, userID)
 	}
 }
 
@@ -154,6 +170,18 @@ func (r *ConnectionRegistry) GetConnections(sessionID string) []*websocket.Conn 
 		}
 	}
 	return conns
+}
+
+func (r *ConnectionRegistry) GetRooms(sessionID string) []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var rooms []string
+	if sessions, exists := r.rooms[sessionID]; exists {
+		for _, c := range sessions {
+			rooms = append(rooms, c)
+		}
+	}
+	return rooms
 }
 
 func extractTokenData(tokenString string) (*shared.UserToken, error) {
@@ -183,17 +211,39 @@ func extractTokenData(tokenString string) (*shared.UserToken, error) {
 	return claims, nil
 }
 
+// Всем юзерам он должен отправить свое имя, а себе должен отправить и свое имя и весь список
 func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
-	err := reg.RegisterConnection(ctx.SessionId, ctx.UserId, ctx.Conn)
+	err := reg.RegisterConnection(ctx.SessionId, ctx.UserId, ctx.UserName, ctx.Conn)
 	if err != nil {
 		fmt.Println("ws error in token: %w", err)
 		return
 	}
 	fmt.Println("ws connected to session", len(reg.GetConnections(ctx.SessionId)))
-	for _, conn := range reg.GetConnections(ctx.SessionId) {
-		err = conn.WriteMessage(websocket.TextMessage, []byte(ctx.UserId))
+	m := reg.GetRooms(ctx.SessionId)
+	con := reg.connections[ctx.SessionId][ctx.UserId]
+	jsonData, err := json.Marshal(m)
+	if err != nil {
+		log.Println("Ошибка сериализации:", err)
+		return
+	}
+	if len(m) > 0 {
+		fmt.Println(m)
+		err = con.WriteMessage(websocket.TextMessage, jsonData)
 		if err != nil {
 			fmt.Println("ws error in token: %w", err)
+		}
+	}
+	for _, conn := range reg.GetConnections(ctx.SessionId) {
+		jsonData, err = json.Marshal(ctx.UserId)
+		if err != nil {
+			log.Println("Ошибка сериализации:", err)
+			return
+		}
+		if conn != ctx.Conn {
+			err = conn.WriteMessage(websocket.TextMessage, jsonData)
+			if err != nil {
+				fmt.Println("ws error in token: %w", err)
+			}
 		}
 	}
 }
