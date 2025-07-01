@@ -11,7 +11,7 @@ const CreateSessionPage = () => {
   const [quizzes, setQuizzes] = useState([]);
   const [search, setSearch] = useState("");
   const [sessionCode, setSessionCode] = useState(null);
-  const wsRef = useRef(null);
+  const realTimeWsRef = useRef(null);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -59,31 +59,29 @@ const CreateSessionPage = () => {
     return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt": "string", "sessionId":"string"}
   };
 
-  // 🌐 Устанавливаем WebSocket-соединение
-  const connectToWebSocket = (serverWsEndpoint, token) => {
-      wsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
-      wsRef.current.onopen = () => {
-        console.log("✅ WebSocket connected");
+  // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
+  const connectToWebSocket = (token) => {
+      realTimeWsRef.current = new WebSocket(`/api/ws/ws?token=${token}`);
+      realTimeWsRef.current.onopen = () => {
+          console.log("✅ WebSocket connected with Real-time");
       };
 
-      wsRef.current.onerror = (err) => {
-        console.error("❌ WebSocket error:", err);
+  realTimeWsRef.current.onerror = (err) => {
+    console.error("❌ WebSocket with Real-time error:", err);
 
-      };
-    };
+  };
+}
 
 
   const handlePlay = async () => {
     if (selectedQuiz) {
       const sessionData = await createSession(selectedQuiz.id,"AdminId");
       setSessionCode(sessionData.sessionId);
-      await connectToWebSocket(sessionData.serverWsEndpoint,sessionData.jwt);
+      await connectToWebSocket(sessionData.jwt);
 
       sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
       sessionStorage.setItem('sessionCode', sessionData.sessionId);
-      sessionStorage.setItem('webSocket', wsRef);
       sessionStorage.setItem('jwt', sessionData.jwt);
-      sessionStorage.setItem('serverWsEndpoint', sessionData.serverWsEndpoint);
       navigate(`/ask-to-join/${sessionCode}`);
 
     }
