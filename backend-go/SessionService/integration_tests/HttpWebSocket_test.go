@@ -122,69 +122,95 @@ func Test_HttpWebSocket(t *testing.T) {
 	if err != nil {
 		t.Error("error unmarshalling response body:", err)
 	}
+	user1Chan := make(chan string, 2)
+	user2Chan := make(chan string, 1)
+
+	// Goroutine для user1
 	go func() {
-		scheme := "ws"             // или "wss" если HTTPS
-		wsHost := "localhost:8081" // твой сервер и порт
-		path := "/ws"
-		u := url.URL{Scheme: scheme, Host: wsHost, Path: path}
-		q := u.Query()
-		q.Set("token", user.Jwt)
-		u.RawQuery = q.Encode()
-
-		fmt.Printf("Connecting to %s\n", u.String())
-
-		// Подключаемся
+		u := url.URL{
+			Scheme:   "ws",
+			Host:     "localhost:8081",
+			Path:     "/ws",
+			RawQuery: "token=" + user.Jwt,
+		}
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			fmt.Println("dial error:", err)
+			t.Error("user1 dial error:", err)
+			return
 		}
 		defer conn.Close()
-		for {
-			_, message, err := conn.ReadMessage()
-			var m interface{}
-			err = json.Unmarshal(message, &m)
+
+		for i := 0; i < 2; i++ {
+			_, msg, err := conn.ReadMessage()
 			if err != nil {
-				fmt.Println("read error:", err)
-			}
-			if err != nil {
-				fmt.Println("read error:", err)
+				t.Errorf("user1 read error: %v", err)
 				return
 			}
-			fmt.Printf("Received user1: %s\n", m)
+			user1Chan <- string(msg)
 		}
 	}()
+
+	// Goroutine для user2
 	go func() {
 		time.Sleep(1 * time.Second)
-		scheme := "ws"             // или "wss" если HTTPS
-		wsHost := "localhost:8081" // твой сервер и порт
-		path := "/ws"
-		u := url.URL{Scheme: scheme, Host: wsHost, Path: path}
-		q := u.Query()
-		q.Set("token", user2.Jwt)
-		u.RawQuery = q.Encode()
-
-		fmt.Printf("Connecting to %s\n", u.String())
-
-		// Подключаемся
+		u := url.URL{
+			Scheme:   "ws",
+			Host:     "localhost:8081",
+			Path:     "/ws",
+			RawQuery: "token=" + user2.Jwt,
+		}
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			fmt.Println("dial error:", err)
+			t.Error("user2 dial error:", err)
+			return
 		}
 		defer conn.Close()
-		for {
-			_, message, err := conn.ReadMessage()
-			var m interface{}
-			err = json.Unmarshal(message, &m)
-			if err != nil {
-				fmt.Println("read error:", err)
-			}
-			if err != nil {
-				fmt.Println("read error:", err)
-				return
-			}
-			fmt.Printf("Received user2: %s\n", m)
+
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			t.Errorf("user2 read error: %v", err)
+			return
 		}
+		user2Chan <- string(msg)
 	}()
-	select {}
+
+	// --- Сбор всех сообщений
+	var (
+		msg1a, msg1b, msg2 string
+		received           int
+		timeout            = time.After(5 * time.Second)
+	)
+
+	for received < 3 {
+		select {
+		case m := <-user1Chan:
+			if msg1a == "" {
+				msg1a = m
+			} else {
+				msg1b = m
+			}
+			received++
+		case m := <-user2Chan:
+			msg2 = m
+			received++
+		case <-timeout:
+			t.Fatal("Timeout waiting for WebSocket messages")
+		}
+	}
+
+	// --- Проверка содержимого
+	expected1a := `["user1"]`
+	expected1b := `"user2"`
+	expected2 := `["user1","user2"]`
+
+	if msg1a != expected1a {
+		t.Errorf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
+	}
+	if msg1b != expected1b {
+		t.Errorf("user1 second message mismatch. Got: %s, Want: %s", msg1b, expected1b)
+	}
+	if msg2 != expected2 {
+		t.Errorf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
+	}
 
 }

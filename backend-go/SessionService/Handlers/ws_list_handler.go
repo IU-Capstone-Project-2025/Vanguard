@@ -88,12 +88,12 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		}
 
 		// Send a welcome message
-		welcome := fmt.Sprintf(`{"type":"welcome","sessionId":"%s","userId":"%s"}`, ctx.SessionId, ctx.UserId)
-		err = conn.WriteMessage(websocket.TextMessage, []byte(welcome))
-		if err != nil {
-			registry.logger.Error("WsHandler error to send welcome", "err", err)
-		}
-		registry.logger.Info("WsHandler welcome to connection", "welcome", welcome)
+		//welcome := fmt.Sprintf(`{"type":"welcome","sessionId":"%s","userId":"%s"}`, ctx.SessionId, ctx.UserId)
+		//err = conn.WriteMessage(websocket.TextMessage, []byte(welcome))
+		//if err != nil {
+		//	registry.logger.Error("WsHandler error to send welcome", "err", err)
+		//}
+		//registry.logger.Info("WsHandler welcome to connection", "welcome", welcome)
 		// Start reading messages for this connection in a separate goroutine.
 		go handleRead(ctx, registry)
 	}
