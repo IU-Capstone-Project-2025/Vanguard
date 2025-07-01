@@ -89,12 +89,10 @@ func (manager *SessionManager) ValidateCode(code string) bool {
 
 func (manager *SessionManager) GenerateUserToken(code string, UserId string, UserName string, UserType shared.UserRole) *shared.UserToken {
 	return &shared.UserToken{
-		UserId:           UserId,
-		UserType:         UserType,
-		UserName:         UserName,
-		SessionId:        code,
-		ServerWsEndpoint: shared.GetWsEndpoint(),
-		Exp:              10000,
+		UserId:    UserId,
+		UserType:  UserType,
+		SessionId: code,
+		Exp:       10000,
 	}
 }
 

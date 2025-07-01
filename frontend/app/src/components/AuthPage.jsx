@@ -60,7 +60,7 @@ const AuthPage = () => {
           <h1>Login</h1>
           <input
             type="text"
-            placeholder="Nickname or Email"
+            placeholder="Email"
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className="login-passwd-input"
