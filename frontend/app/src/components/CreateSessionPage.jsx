@@ -39,7 +39,7 @@ const CreateSessionPage = () => {
   };
 
   // 🎯 POST-запрос к /api/session/sessions
-  const createSession = async (sessionCode, userId) => {
+  const createSession = async (quizId, userId) => {
 
     const response = await fetch("/api/session/sessions", {
       method: "POST",
@@ -47,7 +47,7 @@ const CreateSessionPage = () => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-          "quizId":sessionCode,
+          "quizId":quizId,
           "userId": userId,
           "userName": Cookies.get("user_nickname")
       }),
