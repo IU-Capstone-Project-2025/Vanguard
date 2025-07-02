@@ -46,7 +46,7 @@ type ServerMessage struct {
 	// ------ if Type is MessageTypeAnswer ------
 	Correct bool `json:"correct,omitempty"` // for answerResult
 
-	//Payload     interface{}     `json:"payload,omitempty"`    // extra data (e.g. leaderboard)
+	Payload interface{} `json:"payload,omitempty"` // extra data (e.g. leaderboard)
 }
 
 func (m *ServerMessage) Bytes() []byte {

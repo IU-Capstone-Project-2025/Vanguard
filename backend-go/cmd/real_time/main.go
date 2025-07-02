@@ -68,5 +68,6 @@ func main() {
 	fmt.Println("Service is up!")
 
 	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
+	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
 	select {}
 }

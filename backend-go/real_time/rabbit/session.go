@@ -110,6 +110,47 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tr
 	wg.Wait() // defer this function termination while consuming from the queue
 }
 
-func (r *RealTimeRabbit) ConsumeSessionEnd() {
+// ConsumeSessionEnd method listens to "session end" events delivered to the corresponding queue.
+func (r *RealTimeRabbit) ConsumeSessionEnd(registry *ws.ConnectionRegistry, tracker *ws.QuizTracker) {
+	msgs, err := r.channel.Consume(
+		r.SessionEndedQ.Name, // the name of the already created queue
+		"",
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,   // args
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	// listen to messages in parallel goroutine
+	fmt.Println("Listen for new messages in session.end queue")
+	go func() {
+		defer wg.Done()
+		for d := range msgs {
+			fmt.Println("RECEIVED SESSION END")
+
+			var sessionId string
+			if err := json.Unmarshal(d.Body, &sessionId); err != nil {
+				continue
+			}
+
+			// TODO: implement real leaderboard
+			leaderBoard := ws.ServerMessage{
+				Type:    ws.MessageTypeLeaderboard,
+				Payload: tracker.GetAnswers(sessionId),
+			}
+
+			registry.BroadcastToSession(sessionId, leaderBoard.Bytes(), true)
+
+			registry.UnregisterSession(sessionId) // unregister new session
+		}
+	}()
+
+	wg.Wait() // defer this function termination while consuming from the queue
 }

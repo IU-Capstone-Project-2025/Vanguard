@@ -35,6 +35,12 @@ func (r *ConnectionRegistry) RegisterSession(sessionID string) {
 func (r *ConnectionRegistry) UnregisterSession(sessionID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	for userId := range r.connections[sessionID] {
+		fmt.Println("Unregister connection with user: ", userId)
+		r.UnregisterConnection(sessionID, userId)
+	}
+
 	delete(r.connections, sessionID)
 }
 
@@ -117,6 +123,5 @@ func (r *ConnectionRegistry) sendMessage(payload []byte, receivers ...Connection
 			r.UnregisterConnection(ctx.SessionId, ctx.UserId)
 			continue
 		}
-		log.Println("Message sent successfully")
 	}
 }

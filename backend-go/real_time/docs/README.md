@@ -66,3 +66,21 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
   {
     "option": <integer zero-based index>
   }
+
+## 4. Receiving final leaderBoard after game (All users)
+### *P.s. now just an map of arrays, that show which answers were correct*
+
+- **When**: After triggering `session end` event.
+- **Response**: Server broadcasts to participants a **`leaderboard`** message:
+
+  ```json
+  {
+    "type": "leaderboard",
+    "payload": {
+                  "<user_id_1>": [true/false, true/false, ...],
+                  ...
+               },
+  }
+  
+- e.g. game has 5 questions, then the array of user's answers will contain of 5 `true/false` elements, in the order of the questions appearing in the game.
+- `[true, true, false, true, false]` means that answer for the questions 1, 2, 4 was correct, and for questions 3, 5 - incorrect.
