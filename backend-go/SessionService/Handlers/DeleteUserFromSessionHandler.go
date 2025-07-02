@@ -15,24 +15,15 @@ func DeleteUserHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		//   - Ensure that after Upgrade, if token parsing failed, the connection is closed.
 
 		// Extracts the "token" from URL query. If missing, it should reject the request
-		tokenString := r.URL.Query().Get("token")
-		if tokenString == "" {
-			http.Error(w, "missing token", http.StatusBadRequest)
-			return
-		}
-
+		tokenId := r.URL.Query().Get("code")
+		tokenName := r.URL.Query().Get("userId")
 		// Parses and validates the token via extractTokenData. If invalid or expired, it should reject the request
-		token, err := extractTokenData(tokenString)
-		if err != nil {
-			registry.logger.Error("WsHandler error to extract token", "err", err)
-			http.Error(w, "invalid token", http.StatusUnauthorized)
-			return
-		}
-		flag := registry.UnregisterConnection(token.SessionId, token.UserId)
+		flag := registry.UnregisterConnection(tokenId, tokenName)
 		if !flag {
 			registry.logger.Error("DeleteUserFromSessionHandler error to unregister connection",
-				"userId", token.UserId,
-				"sessionId", token.SessionId,
+				"userId", tokenId,
+				"UserName", tokenName,
+				"flag", flag,
 			)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)

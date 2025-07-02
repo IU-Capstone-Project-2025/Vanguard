@@ -87,7 +87,7 @@ func (hs *HttpServer) registerHandlers() *mux.Router {
 	router.HandleFunc("/healthz", hs.HealthHandler).Methods("POST")
 	registry := Handlers.NewConnectionRegistry(hs.logger)
 	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
-
+	router.Handle("/delete-user", Handlers.DeleteUserHandler(registry))
 	hs.logger.Info("Routes registered", "host", hs.Host, "port", hs.Port)
 	return router
 }

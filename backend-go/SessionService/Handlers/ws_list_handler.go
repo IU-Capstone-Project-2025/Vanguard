@@ -185,13 +185,13 @@ func (r *ConnectionRegistry) GetConnections(sessionID string) []*websocket.Conn 
 	return conns
 }
 
-func (r *ConnectionRegistry) GetRooms(sessionID string) []string {
+func (r *ConnectionRegistry) GetRooms(sessionID string) map[string]string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var rooms []string
+	rooms := make(map[string]string)
 	if sessions, exists := r.rooms[sessionID]; exists {
-		for _, c := range sessions {
-			rooms = append(rooms, c)
+		for key, c := range sessions {
+			rooms[key] = c
 		}
 	}
 	return rooms
@@ -247,8 +247,8 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 		}
 	}
 	for _, conn := range reg.GetConnections(ctx.SessionId) {
-		var message []string
-		message = append(message, ctx.UserName)
+		message := make(map[string]string)
+		message[ctx.UserId] = ctx.UserName
 		jsonData, err = json.Marshal(message)
 		if err != nil {
 			reg.logger.Error("WsHandler handleRead error to marshal json",
