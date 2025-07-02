@@ -2,11 +2,11 @@ package integration_tests
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"golang.org/x/net/context"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,7 +17,7 @@ import (
 	"xxx/shared"
 )
 
-func Test_HttpServerNextQuestion(t *testing.T) {
+func Test_HttpServerSessionEnd(t *testing.T) {
 	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
@@ -33,7 +33,7 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 	// Запуск канала RabbitMQ для question.{sessionID}.start
 	rabbitMsgChan := make(chan []byte, 1)
 	go func() {
-		msg := consumeQuestionStartFromRabbit(t, rabbitURL, "123")
+		msg := consumeQuestionStartFromRabbitEnd(t, rabbitURL, "123")
 		rabbitMsgChan <- msg
 	}()
 
@@ -80,7 +80,7 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 	// 📥 Начинаем слушать RabbitMQ по ключу question.{sessionID}.start
 
 	// 📤 Отправляем POST /session/{id}/nextQuestion
-	nextQuestionUrl := fmt.Sprintf("http://%s:%s/session/%s/nextQuestion", host, port, sessionID)
+	nextQuestionUrl := fmt.Sprintf("http://%s:%s/session/%s/end", host, port, sessionID)
 	resp2, err := http.Post(nextQuestionUrl, "application/json", nil)
 	if err != nil {
 		t.Fatalf("error sending nextQuestion request: %v", err)
@@ -100,7 +100,7 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 	}
 }
 
-func consumeQuestionStartFromRabbit(t *testing.T, rabbitURL, sessionID string) []byte {
+func consumeQuestionStartFromRabbitEnd(t *testing.T, rabbitURL, sessionID string) []byte {
 	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
 		t.Fatalf("Failed to connect to RabbitMQ: %s", err)
@@ -136,8 +136,8 @@ func consumeQuestionStartFromRabbit(t *testing.T, rabbitURL, sessionID string) [
 	}
 	err = ch.QueueBind(
 		q.Name,
-		shared.QuestionStartRoutingKey, // например, "session.start"
-		shared.SessionExchange,         // например, "session.events"
+		shared.SessionEndRoutingKey, // например, "session.start"
+		shared.SessionExchange,      // например, "session.events"
 		false,
 		nil,
 	)

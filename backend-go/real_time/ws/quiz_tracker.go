@@ -88,6 +88,14 @@ func (q *QuizTracker) RecordAnswer(sessionId, userId string, correct bool) {
 	q.answers[sessionId][userId] = append(q.answers[sessionId][userId], correct)
 }
 
+// GetAnswers returns the correctness of all answers given by users
+func (q *QuizTracker) GetAnswers(sessionId string) map[string][]bool {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	return q.answers[sessionId]
+}
+
 // NewSession adds new session and links corresponding quiz object to it
 func (q *QuizTracker) NewSession(sessionId string, quizData shared.Quiz) {
 	q.mu.Lock()
@@ -112,6 +120,13 @@ func (q *QuizTracker) GetLeaderboard(sessionId string) map[string][]bool {
 		copyMap[user] = answers
 	}
 	return copyMap
+}
+
+func (q *QuizTracker) GetQuizLen(sessionId string) int {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	return q.tracker[sessionId].QuizData.Len()
 }
 
 // restoreData restores map data from the Redis
