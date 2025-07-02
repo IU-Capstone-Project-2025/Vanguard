@@ -35,13 +35,15 @@ const WaitGameStartAdmin = () => {
       } catch (e) {
         console.error('⚠️ Invalid session WS message:', event.data);
       }
-      console.log('Received session message:', event.data);});
+      console.log('Received session message:', event.data);
+    });
+
     connectRealtime(token, (event) => {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'question') {
-          console.log('Got question:', data.question);
-          // Store or handle question here
+          console.log('Got question:', data);
+          sessionStorage.setItem('currentQuestion', JSON.stringify(data));
         }
       } catch (e) {
         console.error('⚠️ Failed to parse realtime WS message:', event.data);
@@ -55,6 +57,7 @@ const WaitGameStartAdmin = () => {
   };
 
   const toNextQuestion = async (sessionCode) => {
+    console.log("give the next question api call in wait-admin");
     if (!sessionCode) {
       console.error('Session code is not available');
       return;
@@ -66,30 +69,9 @@ const WaitGameStartAdmin = () => {
       if (response.status !== 200) {
         throw new Error('Failed to start next question');
       }
-      const data = await response.json();
-      console.log('Next question started:', data);
+      console.log('Next question started', response);
     } catch (error) {
       console.error('Error starting next question:', error);
-    }
-  };
-
-  const listenQuizQuestion = async (sessionCode, ws) => {
-    if (!sessionCode) {
-      console.error('Session code is not available');
-      return;
-    }
-    try {
-      ws.current.onmessage = (event) => {
-        console.log('Received message:', event.data);
-        const data = JSON.parse(event.data);
-        if (data.type === 'question') {
-          console.log('Received question:', data.question);
-          return data
-        }
-      };
-    } catch (error) {
-      console.error('Error listening for quiz questions:', error);
-      return
     }
   };
 
@@ -97,8 +79,8 @@ const WaitGameStartAdmin = () => {
     const sessionCode = sessionStorage.getItem('sessionCode');
     await toNextQuestion(sessionCode);
 
-    const quizData = await listenQuizQuestion(sessionCode, wsRefRealtime);
-    sessionStorage.setItem('currentQuestion', JSON.stringify(quizData));
+    // const quizData = await listenQuizQuestion(sessionCode, wsRefRealtime);
+    // sessionStorage.setItem('currentQuestion', JSON.stringify(quizData));
 
     navigate(`/game-controller/${sessionCode}`);
   };
