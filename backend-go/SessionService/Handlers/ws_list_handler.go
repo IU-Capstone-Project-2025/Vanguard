@@ -152,15 +152,23 @@ func (r *ConnectionRegistry) RegisterConnection(sessionID, userID, userName stri
 }
 
 // UnregisterConnection removes joined user connection, (e.g., on user disconnect)
-func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) {
+func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if sessions, exists := r.connections[sessionID]; exists {
+	e1 := false
+	e2 := false
+	if sessions, exists1 := r.connections[sessionID]; exists1 {
+		e1 = true
 		delete(sessions, userID)
 	}
-	if rooms, exists := r.rooms[sessionID]; exists {
+	if rooms, exists2 := r.rooms[sessionID]; exists2 {
+		e2 = true
 		delete(rooms, userID)
 	}
+	if e1 == true && e2 == true {
+		return true
+	}
+	return false
 }
 
 // GetConnections gets a snapshot copy of connections to avoid holding lock during WriteMessage

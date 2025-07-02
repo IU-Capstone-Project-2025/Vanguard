@@ -59,7 +59,6 @@ func (hs *HttpServer) Start() {
 
 	<-hs.stopChan
 	hs.logger.Info("Shutdown signal received")
-
 	hs.Stop()
 }
 

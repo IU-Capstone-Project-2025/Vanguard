@@ -35,7 +35,7 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(1 * time.Second) // Даем серверу стартануть
+	time.Sleep(2 * time.Second) // Даем серверу стартануть
 	defer server.Stop()
 
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
