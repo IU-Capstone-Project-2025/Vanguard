@@ -27,21 +27,6 @@ jobs:
         cache: true
         cache-dependency-path: backend-go/go.sum
 
-    # - name: Run unit tests
-    #   working-directory: backend-go/real_time
-    #   env:
-    #     RABBITMQ_USER: admin
-    #     RABBITMQ_PASSWORD: password
-    #     RABBITMQ_HOST: localhost
-    #     RABBITMQ_PORT: "5672"
-    #     REDIS_HOST: localhost
-    #     REDIS_PORT: "6379"
-    #     REALTIME_SERVICE_HOST: "0.0.0.0"
-    #     REALTIME_SERVICE_PORT: "8080"
-    #     JWT_SECRET_KEY: "dummy_secret"
-    #     ENV: "test"
-    #   run: go test -v ./tests/...
-
     - name: Run integration tests
       working-directory: backend-go/real_time
       env:

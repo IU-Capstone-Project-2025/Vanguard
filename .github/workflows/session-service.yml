@@ -14,6 +14,7 @@ jobs:
     env:
       SERVICE_NAME: tryit-session-service
       GO_VERSION: '1.24'
+      TESTCONTAINERS_RYUK_DISABLED: 'true'
 
     steps:
     - name: Checkout code
@@ -26,40 +27,40 @@ jobs:
         cache: true
         cache-dependency-path: backend-go/go.sum
 
-    # - name: Run unit tests
-    #   working-directory: backend-go/SessionService
-    #   env:
-    #     RABBITMQ_USER: admin
-    #     RABBITMQ_PASSWORD: password
-    #     RABBITMQ_HOST: localhost
-    #     RABBITMQ_PORT: "5672"
-    #     REDIS_HOST: localhost
-    #     REDIS_PORT: "6379"
-    #     REALTIME_SERVICE_HOST: "real-time"
-    #     REALTIME_SERVICE_PORT: "8080"
-    #     SESSION_SERVICE_HOST: "0.0.0.0"
-    #     SESSION_SERVICE_PORT: "8081"
-    #     JWT_SECRET_KEY: "dummy_secret"
-    #     ENV: "test"
-    #   run: go test -v ./tests/...
+    - name: Run unit tests
+      working-directory: backend-go/SessionService
+      env:
+        RABBITMQ_USER: admin
+        RABBITMQ_PASSWORD: password
+        RABBITMQ_HOST: localhost
+        RABBITMQ_PORT: "5672"
+        REDIS_HOST: localhost
+        REDIS_PORT: "6379"
+        REALTIME_SERVICE_HOST: "real-time"
+        REALTIME_SERVICE_PORT: "8080"
+        SESSION_SERVICE_HOST: "0.0.0.0"
+        SESSION_SERVICE_PORT: "8081"
+        JWT_SECRET_KEY: "dummy_secret"
+        ENV: "test"
+      run: go test -v ./tests/...
 
-    # - name: Run integration tests
-    #   working-directory: backend-go/SessionService
-    #   env:
-    #     RABBITMQ_USER: admin
-    #     RABBITMQ_PASSWORD: password
-    #     RABBITMQ_HOST: localhost
-    #     RABBITMQ_PORT: "5672"
-    #     REDIS_HOST: localhost
-    #     REDIS_PORT: "6379"
-    #     REALTIME_SERVICE_HOST: "real-time"
-    #     REALTIME_SERVICE_PORT: "8080"
-    #     SESSION_SERVICE_HOST: "0.0.0.0"
-    #     SESSION_SERVICE_PORT: "8081"
-    #     JWT_SECRET_KEY: "dummy_secret"
-    #     ENV: "test"
-    #   run: |
-    #     go test -v -tags=integration ./tests/...
+    - name: Run integration tests
+      working-directory: backend-go/SessionService
+      env:
+        RABBITMQ_USER: admin
+        RABBITMQ_PASSWORD: password
+        RABBITMQ_HOST: localhost
+        RABBITMQ_PORT: "5672"
+        REDIS_HOST: localhost
+        REDIS_PORT: "6379"
+        REALTIME_SERVICE_HOST: "real-time"
+        REALTIME_SERVICE_PORT: "8080"
+        SESSION_SERVICE_HOST: "0.0.0.0"
+        SESSION_SERVICE_PORT: "8081"
+        JWT_SECRET_KEY: "dummy_secret"
+        ENV: "test"
+      run: |
+        go test -v -tags=integration ./tests/...
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2

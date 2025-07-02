@@ -64,6 +64,7 @@ services:
       TEST_DB_URL: ${TEST_DB_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
+      ENVIRONMENT: "prod"
     depends_on:
       postgres:
         condition: service_healthy
