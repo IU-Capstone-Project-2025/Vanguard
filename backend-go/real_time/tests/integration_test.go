@@ -195,6 +195,31 @@ func TestWithTestContainers(t *testing.T) {
 			require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
 		}
 	}
+
+	// trigger session end
+	publishSessionEnd(t, amqpURL, sessionId)
+	t.Log("---- Admin received leaderboard:")
+	readWs(t, adminConn)
+
+	t.Log("---- Users received leaderboards:")
+	for i, user := range usersConn {
+		lb := readWs(t, user)
+		t.Log(lb.Payload)
+		ans, ok := lb.Payload.(map[string]interface{})
+		require.Equal(t, true, ok)
+
+		userChosen, ok := ans[users[i]].([]interface{})
+		require.Equal(t, true, ok)
+
+		for j, isCorrectInter := range userChosen {
+			chosenIdx := usersAnswers[i][j]
+
+			isCorrect, ok := isCorrectInter.(bool)
+			require.Equal(t, true, ok)
+
+			require.Equal(t, quiz.Questions[j].Options[chosenIdx].IsCorrect, isCorrect)
+		}
+	}
 }
 
 func readWs(t *testing.T, conn *websocket.Conn) ws.ServerMessage {
@@ -233,6 +258,23 @@ func publishSessionStart(t *testing.T, amqpURL, sessionId string, quiz shared.Qu
 	}
 	body, _ := json.Marshal(evt)
 	ch.Publish(shared.SessionExchange, "session.start", false, false, amqp.Publishing{
+		ContentType: "application/json",
+		Body:        body,
+	})
+	rabCon.Close()
+}
+
+func publishSessionEnd(t *testing.T, amqpURL, sessionId string) {
+	rabCon, err := amqp.Dial(amqpURL)
+	if err != nil {
+		t.Fatalf("Dial RabbitMQ: %v", err)
+	}
+	ch, err := rabCon.Channel()
+	if err != nil {
+		t.Fatalf("Open channel: %v", err)
+	}
+	body, _ := json.Marshal(sessionId)
+	ch.Publish(shared.SessionExchange, "session.end", false, false, amqp.Publishing{
 		ContentType: "application/json",
 		Body:        body,
 	})
@@ -315,5 +357,6 @@ func startRealTimeServer(t *testing.T, amqpUrl string) {
 	t.Log("Service is up!")
 
 	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
+	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
 	select {}
 }

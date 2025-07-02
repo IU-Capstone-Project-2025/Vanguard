@@ -260,6 +260,21 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 
 		if questionPayload.QuestionIdx == questionPayload.QuestionsAmount {
 			t.Log("Game is finished")
+
+			t.Log("end session ")
+			endSessionResp, err := http.Post(sessionServiceURL+fmt.Sprintf("/session/%s/end", sessionCode),
+				"application/json", nil)
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, endSessionResp.StatusCode, "expected 200 from ending session")
+			endSessionResp.Body.Close()
+
+			t.Log("---- Admin received leaderboard:")
+			readWs(t, adminConn)
+
+			t.Log("---- Users received leaderboards:")
+			for _, user := range usersConn {
+				readWs(t, user)
+			}
 			break
 		}
 	}
@@ -326,6 +341,7 @@ func startRealTimeService(t *testing.T, amqpUrl string) {
 	t.Log("Service is up!")
 
 	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
+	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
 	select {}
 }
 
