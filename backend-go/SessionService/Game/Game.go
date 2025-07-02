@@ -24,6 +24,7 @@ type Manager interface {
 	AddPlayerToSession(quizUUID string, UserName string) error
 	SessionStartMock(quizUUID string, sessionId string) error
 	SessionEnd(code string) error
+	CheckService() error
 }
 
 type SessionManager struct {
@@ -201,6 +202,18 @@ func (manager *SessionManager) SessionEnd(code string) error {
 	err := manager.rabbit.PublishSessionEnd(context.Background(), code, "aboba")
 	if err != nil {
 		return fmt.Errorf("error to send message to rabbit %s", err)
+	}
+	return nil
+}
+
+func (manager *SessionManager) CheckService() error {
+	err := manager.cache.CheckRedisAlive()
+	if err != nil {
+		return fmt.Errorf("redis error %v", err)
+	}
+	err = manager.rabbit.CheckRabbitAlive()
+	if err != nil {
+		return fmt.Errorf("rabbit error %v", err)
 	}
 	return nil
 }
