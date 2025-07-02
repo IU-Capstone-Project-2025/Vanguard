@@ -2,11 +2,7 @@ name: Real-Time Service CI/CD
 
 on:
   workflow_call:
-    secrets:
-      DOCKERHUB_USERNAME:
-        required: true
-      DOCKERHUB_TOKEN:
-        required: true
+
 
 jobs:
   test-build-push-deploy:
@@ -70,12 +66,11 @@ jobs:
 
     - name: Save image tag
       if: github.ref == 'refs/heads/main'
-      working-directory: backend-go/real_time
       run: echo "$DOCKER_IMAGE" > image-tag.txt
 
-    - name: Upload artifact
+    - name: Upload image tag
       if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
-        name: real-time-service-image-tag
-        path: backend-go/real_time/image-tag.txt
+        name: real-time-image-tag
+        path: image-tag.txt

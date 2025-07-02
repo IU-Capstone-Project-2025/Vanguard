@@ -96,3 +96,28 @@ jobs:
     if: ${{ needs.detect-changes.outputs.shared-migrations == 'true'}}
     uses: ./.github/workflows/shared-migrations.yml
     secrets: inherit
+
+  deploy:
+    name: Deploy to Production
+    needs: [ auth-service, quiz-service, real-time-service, session-service, frontend, shared-migrations ]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all image tags
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Generate compose override
+      run: |
+        echo "services:" >> docker-compose.override.yml
+
+        for service in migrator auth quiz real-time session frontend; do
+          if [ -f "artifacts/${service}-image-tag/image-tag.txt" ]; then
+            IMAGE_TAG=$(cat "artifacts/${service}-image-tag/image-tag.txt")
+            echo "  ${service}: " >> docker-compose.override.yml
+            echo "    image: $IMAGE_TAG" >> docker-compose.override.yml
+          fi
+        done
+
+        cat docker-compose.override.yml

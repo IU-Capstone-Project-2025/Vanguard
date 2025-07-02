@@ -2,11 +2,7 @@ name: Frontend CI/CD
 
 on:
   workflow_call:
-    secrets:
-      DOCKERHUB_USERNAME:
-        required: true
-      DOCKERHUB_TOKEN:
-        required: true
+
 
 jobs:
   build-push-deploy:
@@ -45,7 +41,6 @@ jobs:
 
     - name: Save image tag
       if: github.ref == 'refs/heads/main'
-      working-directory: frontend
       run: echo "$DOCKER_IMAGE" > image-tag.txt
 
     - name: Upload image tag
@@ -53,4 +48,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: frontend-image-tag
-        path: frontend/image-tag.txt
+        path: image-tag.txt

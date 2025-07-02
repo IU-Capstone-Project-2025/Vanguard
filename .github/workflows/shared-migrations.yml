@@ -2,11 +2,7 @@ name: Migrator CI/CD
 
 on:
   workflow_call:
-    secrets:
-      DOCKERHUB_USERNAME:
-        required: true
-      DOCKERHUB_TOKEN:
-        required: true
+
 
 jobs:
   build-push-deploy:
@@ -45,12 +41,11 @@ jobs:
 
     - name: Save image tag
       if: github.ref == 'refs/heads/main'
-      working-directory: backend-python/shared
       run: echo "$DOCKER_IMAGE" > image-tag.txt
 
     - name: Upload image tag
       if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
-        name: migrations-image-tag
-        path: backend-python/shared/image-tag.txt
+        name: migrator-image-tag
+        path: image-tag.txt
