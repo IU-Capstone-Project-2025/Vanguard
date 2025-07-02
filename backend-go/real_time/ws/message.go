@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"log"
 	"xxx/shared"
 )
@@ -64,6 +65,7 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 	defer func() {
 		// On exit, clean up
 		deps.Registry.UnregisterConnection(ctx.SessionId, ctx.UserId)
+		fmt.Println("CLOSING GA")
 		ctx.Conn.Close()
 	}()
 
@@ -71,9 +73,12 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 
 	for {
 		_, raw, err := ctx.Conn.ReadMessage()
-		fmt.Printf("ws connection received message: '%s'\n", string(raw))
 		if err != nil {
-			fmt.Println(fmt.Errorf("ws error reading message: %w", err).Error())
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				fmt.Println(fmt.Errorf("ws error reading message: %w", err).Error())
+			} else {
+				log.Printf("websocket closed: %v\n", err)
+			}
 			return
 		}
 
@@ -86,7 +91,6 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 		switch ctx.Role {
 		case shared.RoleParticipant:
 			go processAnswer(ctx, deps, &msg)
-
 		}
 	}
 }

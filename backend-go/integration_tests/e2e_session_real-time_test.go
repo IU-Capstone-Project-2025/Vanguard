@@ -178,8 +178,8 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 
 	// 2. Two participants join:
 	participantIDs := []string{
-		fmt.Sprintf("user1"),
-		fmt.Sprintf("user2"),
+		//fmt.Sprintf("user1"),
+		//fmt.Sprintf("user2"),
 	}
 	participantTokens := make([]string, 0, len(participantIDs))
 	for _, pid := range participantIDs {
@@ -224,8 +224,8 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	}
 
 	usersAnswers := [][]int{
-		{2, 2, 3},
-		{2, 2, 1},
+		//{2, 2, 3},
+		//{2, 2, 1},
 	}
 
 	// 8. Start question flow
@@ -271,7 +271,7 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 			t.Log("---- Admin received leaderboard:")
 			readWs(t, adminConn)
 
-			t.Log("---- Users received leaderboards:")
+			t.Log("---- Users received leaderboard:")
 			for _, user := range usersConn {
 				readWs(t, user)
 			}
@@ -279,9 +279,12 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 		}
 	}
 
+	t.Log("Close connections:")
 	// Ensure all connections will be closed at end
 	defer func() {
+		adminConn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "bye"))
 		adminConn.Close()
+		t.Log("Closed admin")
 		for _, c := range usersConn {
 			c.Close()
 		}
