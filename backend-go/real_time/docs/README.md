@@ -14,7 +14,7 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
           ```yaml
           userId: string
           sessionId: string
-          userType: "admin" | "participant"
+          userType: "admin" / "participant"
           exp: integer
           ```  
 - **Response**:
@@ -30,20 +30,31 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
 
 ---
 
-## 2. Receiving a New Question (Only Admin)
+## 2.1 Receiving a New Question (Only Admin)
 
 - **When**: After the admin triggers the next question (or when the session starts).
 - **Response**: Server sends to admin a **`question`** message:
   ```json
   {
     "type": "question",
-    "questionIdx": <zero-based index of the question>,
+    "questionIdx": <one-based index of the question>,
+    "questionsAmount": <total number of the questions in the quiz>,
     "text": "<question text>",
     "options": [
       { "text": "<option 1>", "is_correct": true/false },
       { "text": "<option 2>", "is_correct": true/false },
       …
     ]
+  }
+
+## 2.2 Receiving an acknowledgement that game was started (Only Participants before 1st question)
+
+- **When**: After the admin triggers the next question for first time and receives question payload, participants receive this message.
+- **Response**: Server broadcasts to participants a **`game_start`** message:
+  ```json
+  {
+    "type": "game_start",
+    "isGameStarted": true,
   }
 
 ## 3. Submitting an Answer (Participant Only)
