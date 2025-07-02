@@ -2,6 +2,7 @@ package integration_tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -15,7 +16,7 @@ import (
 )
 
 func Test_HttpValidateSessionCode(t *testing.T) {
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
 		}
@@ -24,11 +25,10 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
 
-	rabbitURL := fmt.Sprintf("amqp://%s:%s@%s:%s/",
-		os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASSWORD"),
-		os.Getenv("RABBITMQ_HOST"), os.Getenv("RABBITMQ_PORT"))
-
-	redisURL := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+	rabbitC, rabbitURL := startRabbit(context.Background(), t)
+	redisC, redisURL := startRedis(context.Background(), t)
+	defer redisC.Terminate(context.Background())
+	defer rabbitC.Terminate(context.Background())
 	log := setupLogger(envLocal)
 	server, err := httpServer.InitHttpServer(log, host, port, rabbitURL, redisURL)
 	if err != nil {
@@ -36,8 +36,9 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 	}
 	go server.Start()
 	time.Sleep(1 * time.Second) // Даем серверу стартануть
+	defer server.Stop()
 
-	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessions", host, port)
+	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
 		UserId: "1",
 		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
@@ -54,17 +55,17 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
+		t.Fatalf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.Errorf("error reading response body: %s", err.Error())
+		t.Fatalf("error reading response body: %s", err.Error())
 		return
 	}
 
 	if len(body) == 0 {
-		t.Errorf("response body is empty")
+		t.Fatalf("response body is empty")
 		return
 	}
 
@@ -74,7 +75,7 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 	var token models.SessionCreateResponse
 	err = json.Unmarshal(body, &token)
 	if err != nil {
-		t.Errorf("error unmarshalling response: %s", err.Error())
+		t.Fatalf("error unmarshalling response: %s", err.Error())
 		return
 	}
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/validate", host, port)
@@ -91,10 +92,10 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 		t.Fatal("error making request:", err)
 	}
 	if err != nil {
-		t.Error("error reading response body:", err)
+		t.Fatal("error reading response body:", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
+		t.Fatalf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
 	}
 
 }

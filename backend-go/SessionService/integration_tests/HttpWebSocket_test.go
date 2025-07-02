@@ -2,6 +2,7 @@ package integration_tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -20,7 +21,7 @@ func Test_HttpWebSocket(t *testing.T) {
 	cwd, _ := os.Getwd()
 	fmt.Println("Working dir:", cwd)
 
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
 		}
@@ -28,11 +29,10 @@ func Test_HttpWebSocket(t *testing.T) {
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
 
-	rabbitURL := fmt.Sprintf("amqp://%s:%s@%s:%s/",
-		os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASSWORD"),
-		os.Getenv("RABBITMQ_HOST"), os.Getenv("RABBITMQ_PORT"))
-
-	redisURL := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
+	rabbitC, rabbitURL := startRabbit(context.Background(), t)
+	redisC, redisURL := startRedis(context.Background(), t)
+	defer redisC.Terminate(context.Background())
+	defer rabbitC.Terminate(context.Background())
 	log := setupLogger(envLocal)
 	server, err := httpServer.InitHttpServer(log, host, port, rabbitURL, redisURL)
 	if err != nil {
@@ -40,8 +40,9 @@ func Test_HttpWebSocket(t *testing.T) {
 	}
 	go server.Start()
 	time.Sleep(1 * time.Second)
+	defer server.Stop()
 
-	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessions", host, port)
+	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
 		UserId: "1",
 		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
@@ -89,12 +90,12 @@ func Test_HttpWebSocket(t *testing.T) {
 	defer resp.Body.Close()
 	body2, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.Error("error reading response body:", err)
+		t.Fatal("error reading response body:", err)
 	}
 	var user models.SessionCreateResponse
 	err = json.Unmarshal(body2, &user)
 	if err != nil {
-		t.Error("error unmarshalling response body:", err)
+		t.Fatal("error unmarshalling response body:", err)
 	}
 
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
@@ -115,12 +116,12 @@ func Test_HttpWebSocket(t *testing.T) {
 	defer resp.Body.Close()
 	body3, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.Error("error reading response body:", err)
+		t.Fatal("error reading response body:", err)
 	}
 	var user2 models.SessionCreateResponse
 	err = json.Unmarshal(body3, &user2)
 	if err != nil {
-		t.Error("error unmarshalling response body:", err)
+		t.Fatal("error unmarshalling response body:", err)
 	}
 	user1Chan := make(chan string, 2)
 	user2Chan := make(chan string, 1)
@@ -135,7 +136,7 @@ func Test_HttpWebSocket(t *testing.T) {
 		}
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			t.Error("user1 dial error:", err)
+			t.Fatal("user1 dial error:", err)
 			return
 		}
 		defer conn.Close()
@@ -161,14 +162,14 @@ func Test_HttpWebSocket(t *testing.T) {
 		}
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			t.Error("user2 dial error:", err)
+			t.Fatal("user2 dial error:", err)
 			return
 		}
 		defer conn.Close()
 
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			t.Errorf("user2 read error: %v", err)
+			t.Fatalf("user2 read error: %v", err)
 			return
 		}
 		user2Chan <- string(msg)
@@ -200,17 +201,17 @@ func Test_HttpWebSocket(t *testing.T) {
 
 	// --- Проверка содержимого
 	expected1a := `["user1"]`
-	expected1b := `"user2"`
-	expected2 := `["user1","user2"]`
+	expected1b := `["user2"]`
+	expected2 := `["user2","user1"]`
 
 	if msg1a != expected1a {
-		t.Errorf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
+		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
 	}
 	if msg1b != expected1b {
-		t.Errorf("user1 second message mismatch. Got: %s, Want: %s", msg1b, expected1b)
+		t.Fatalf("user1 second message mismatch. Got: %s, Want: %s", msg1b, expected1b)
 	}
 	if msg2 != expected2 {
-		t.Errorf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
+		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
 	}
 
 }

@@ -13,6 +13,7 @@ const (
 	MessageTypeAnswer      = MessageType("result")
 	MessageTypeQuestion    = MessageType("question")
 	MessageTypeLeaderboard = MessageType("leaderboard")
+	MessageTypeAck         = MessageType("game_start")
 )
 
 // ClientMessage describes what we get from the user
@@ -30,12 +31,22 @@ func (m *ClientMessage) Bytes() []byte {
 
 // ServerMessage describes what we send back (to quiz host or participant).
 type ServerMessage struct {
-	Type        MessageType     `json:"type"`                 // "question", "result", "leaderboard"
-	QuestionIdx int             `json:"questionId,omitempty"` // for question & answerResult
-	Text        string          `json:"text,omitempty"`       // question text or feedback
-	Options     []shared.Option `json:"options,omitempty"`    // for question
-	Correct     bool            `json:"correct,omitempty"`    // for answerResult
-	//Payload     interface{}     `json:"payload,omitempty"`    // extra data (e.g. leaderboard)
+	// ------ response message type; on each response ------
+	Type MessageType `json:"type"` // "question", "result", "leaderboard"
+
+	// ------ if Type is MessageTypeAck ------
+	IsGameStarted bool `json:"isGameStarted,omitempty"` // broadcasting ack when first question triggered
+
+	// ------ 'question payload' response to admin (triggered on next_question event); if Type is MessageTypeQuestion ------
+	QuestionIdx     int             `json:"questionId,omitempty"`      // if Type is MessageTypeAnswer or MessageTypeQuestion
+	QuestionsAmount int             `json:"questionsAmount,omitempty"` //
+	Text            string          `json:"text,omitempty"`            // question text or feedback
+	Options         []shared.Option `json:"options,omitempty"`         // for question
+
+	// ------ if Type is MessageTypeAnswer ------
+	Correct bool `json:"correct,omitempty"` // for answerResult
+
+	Payload interface{} `json:"payload,omitempty"` // extra data (e.g. leaderboard)
 }
 
 func (m *ServerMessage) Bytes() []byte {
@@ -56,11 +67,7 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 		ctx.Conn.Close()
 	}()
 
-	err := deps.Registry.RegisterConnection(ctx)
-	if err != nil {
-		fmt.Printf("failed to register joined user: %v", err)
-		return
-	}
+	fmt.Println("Reach handleRead function for user", ctx.UserId)
 
 	for {
 		_, raw, err := ctx.Conn.ReadMessage()
@@ -72,15 +79,14 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 
 		var msg ClientMessage
 		if err := json.Unmarshal(raw, &msg); err != nil {
-			log.Printf("invalid ws message: %v", err)
+			fmt.Printf("invalid ws message: %v", err)
 			continue
 		}
 
 		switch ctx.Role {
 		case shared.RoleParticipant:
 			go processAnswer(ctx, deps, &msg)
-		case shared.RoleAdmin:
-			log.Printf("ws message from the quizz host is ignored")
+
 		}
 	}
 }
@@ -105,7 +111,7 @@ func processAnswer(ctx ConnectionContext, deps HandlerDeps, msg *ClientMessage) 
 	isCorrect := chosen == correctIdx
 	resp := ServerMessage{
 		Type:        MessageTypeAnswer,
-		QuestionIdx: qid,
+		QuestionIdx: qid + 1,
 		Correct:     isCorrect,
 	}
 	deps.Registry.sendMessage(resp.Bytes(), ctx)

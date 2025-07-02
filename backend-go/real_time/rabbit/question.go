@@ -20,8 +20,8 @@ func CreateQuestionStartQueue(ch *amqp.Channel) (amqp.Queue, error) {
 		"",
 		false,
 		true, // auto delete
-		false,
 		true,
+		false,
 		nil)
 
 	if err != nil {
@@ -32,7 +32,7 @@ func CreateQuestionStartQueue(ch *amqp.Channel) (amqp.Queue, error) {
 		queue.Name,
 		shared.QuestionStartRoutingKey,
 		shared.SessionExchange,
-		true,
+		false,
 		nil)
 	if err != nil {
 		return amqp.Queue{}, err
@@ -48,7 +48,7 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 	msgs, err := r.channel.Consume(
 		q.Name, // the name of the already created queue
 		"",
-		false, // auto-ack
+		true,  // auto-ack
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -60,6 +60,8 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
+
+	fmt.Printf("Listen for new messages in question.*.start queue\n")
 
 	// listen to messages in parallel goroutine
 	go func() {
@@ -74,14 +76,22 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 			fmt.Println("next question triggered: ", qid, "in session ", sessionId)
 
 			questionPayloadMsg := ws.ServerMessage{
-				Type:        ws.MessageTypeQuestion,
-				QuestionIdx: qid,
-				Text:        question.Text,
-				Options:     question.Options,
+				Type:            ws.MessageTypeQuestion,
+				QuestionIdx:     qid + 1,
+				QuestionsAmount: tracker.GetQuizLen(sessionId),
+				Text:            question.Text,
+				Options:         question.Options,
 			}
 
 			registry.SendToAdmin(sessionId, questionPayloadMsg.Bytes())
-			d.Ack(false)
+
+			if qid == 0 {
+				gameStartAck := ws.ServerMessage{
+					Type:          ws.MessageTypeAck,
+					IsGameStarted: true,
+				}
+				registry.BroadcastToSession(sessionId, gameStartAck.Bytes(), false)
+			}
 		}
 	}()
 

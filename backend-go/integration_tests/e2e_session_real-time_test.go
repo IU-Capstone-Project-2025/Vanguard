@@ -7,10 +7,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -19,15 +20,11 @@ import (
 	"testing"
 	"time"
 	"xxx/SessionService/httpServer"
+	"xxx/SessionService/models"
 	"xxx/real_time/app"
 	"xxx/real_time/config"
 	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
-	"xxx/shared"
-
-	"github.com/gorilla/websocket"
-	"github.com/joho/godotenv"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -145,39 +142,38 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 		startRealTimeService(t, amqpUrl)
 	}()
 	t.Log("------------ wait for real time service -----------------")
-	time.Sleep(10 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	go func() {
 		startSessionService(t, amqpUrl, redisUrl)
 	}()
 	t.Log("------------ wait for session service -----------------")
-	time.Sleep(10 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// 1. Create a new session as admin
-	// Use a random userId for admin
-	adminUserId := fmt.Sprintf("admin-%d", time.Now().UnixNano())
+	adminId := "admin_id"
 	createReq := CreateSessionReq{
 		QuizId: "1",
-		UserId: adminUserId,
+		UserId: adminId,
 	}
 	createReqBody, err := json.Marshal(createReq)
 	require.NoError(t, err)
 
-	createResp, err := http.Post(sessionServiceURL+"/sessions", "application/json", bytes.NewReader(createReqBody))
+	createResp, err := http.Post(sessionServiceURL+"/sessionsMock", "application/json", bytes.NewReader(createReqBody))
 	require.NoError(t, err)
 	defer createResp.Body.Close()
 	require.Equal(t, http.StatusOK, createResp.StatusCode, "expected 200 from create session")
 
-	var adminTokenResp shared.UserToken
-	err = json.NewDecoder(createResp.Body).Decode(&adminTokenResp)
+	var adminResp models.SessionCreateResponse
+	err = json.NewDecoder(createResp.Body).Decode(&adminResp)
 	require.NoError(t, err, "decoding create session response")
 
 	// Extract the WebSocket endpoint and session code.
-	wsEndpointBase := shared.GetWsEndpoint()
+	wsEndpointBase := adminResp.ServerWsEndpoint
 	require.NotEmpty(t, wsEndpointBase, "serverWsEndpoint must be provided by create session response")
 
 	// Determine the session code needed for join.
-	sessionCode := adminTokenResp.SessionId
+	sessionCode := adminResp.SessionId
 	require.NotEmpty(t, sessionCode, "session code must be in ID (adjust if different)")
 
 	// 2. Two participants join:
@@ -185,7 +181,7 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 		fmt.Sprintf("user1"),
 		fmt.Sprintf("user2"),
 	}
-	participantTokens := make([]shared.UserToken, 0, 2)
+	participantTokens := make([]string, 0, len(participantIDs))
 	for _, pid := range participantIDs {
 		joinReq := ValidateCodeReq{
 			Code:   sessionCode,
@@ -199,78 +195,118 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 		defer joinResp.Body.Close()
 		require.Equal(t, http.StatusOK, joinResp.StatusCode, "expected 200 from join for user %s", pid)
 
-		var userTokenResp shared.UserToken
-		err = json.NewDecoder(joinResp.Body).Decode(&userTokenResp)
+		var userResp models.SessionCreateResponse
+		err = json.NewDecoder(joinResp.Body).Decode(&userResp)
 		require.NoError(t, err, "decoding join response for user %s", pid)
 
 		// The returned ServerWsEndpoint should match admin's or be same base:
 		require.Equal(t, wsEndpointBase, wsEndpointBase, "WS endpoint mismatch for participant")
 
-		participantTokens = append(participantTokens, userTokenResp)
+		t.Log("Store new token for", pid)
+		participantTokens = append(participantTokens, userResp.Jwt)
 	}
 
-	// 3. Connect two WebSocket clients to Real-Time Service
-	// Use goroutines to connect concurrently and store connections
-	type wsClient struct {
-		Conn *websocket.Conn
-		ID   string
+	var adminConn *websocket.Conn
+	var usersConn []*websocket.Conn
+
+	// 6. Admin WS connection
+	adminConn = connectWs(t, adminResp.Jwt)
+
+	// 7. Read welcome, send ping, etc.
+	readWs(t, adminConn)
+
+	// join users
+	for _, userToken := range participantTokens {
+		conn := connectWs(t, userToken)
+		usersConn = append(usersConn, conn)
+
+		readWs(t, conn)
 	}
-	wsClients := make([]wsClient, 0, 2)
-	dialTimeout := 5 * time.Second
 
-	for i, tokResp := range participantTokens {
-		wsURL := shared.GetWsEndpoint()
+	usersAnswers := [][]int{
+		{2, 2, 3},
+		{2, 2, 1},
+	}
 
-		claims := shared.UserToken{
-			UserId:    tokResp.UserId,
-			UserType:  tokResp.UserType,
-			SessionId: tokResp.SessionId,
-			Exp:       tokResp.Exp,
-			RegisteredClaims: jwt.RegisteredClaims{
-				IssuedAt:  jwt.NewNumericDate(time.Now()),
-				ExpiresAt: jwt.NewNumericDate(time.Unix(0, tokResp.Exp)),
-			},
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		rawJwt, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	// 8. Start question flow
+	for {
+		t.Log("trigger question ")
+		nextQuestionResp, err := http.Post(sessionServiceURL+fmt.Sprintf("/session/%s/nextQuestion", sessionCode),
+			"application/json", nil)
 		require.NoError(t, err)
-		// Parse and dial
-		u, err := url.Parse(wsURL)
-		require.NoError(t, err, "invalid WS endpoint URL for client %d", i)
-		q := u.Query()
-		q.Set("token", rawJwt)
-		u.RawQuery = q.Encode()
+		require.Equal(t, http.StatusOK, nextQuestionResp.StatusCode, "expected 200 from join for user ", adminId)
+		nextQuestionResp.Body.Close()
 
-		// Attempt connection with timeout:
-		var conn *websocket.Conn
-		deadline := time.Now().Add(dialTimeout)
-		for {
-			conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
-			if err == nil {
-				break
+		t.Log("Listen for messages")
+		questionPayload := readWs(t, adminConn)
+		t.Logf("checking question %d payload: %v", questionPayload.QuestionIdx, questionPayload)
+
+		if questionPayload.QuestionIdx == 1 {
+			for _, user := range usersConn {
+				readWs(t, user)
 			}
-			if time.Now().After(deadline) {
-				t.Fatalf("WebSocket dial failed for client %s: %v", tokResp.UserId, err)
-			}
-			time.Sleep(200 * time.Millisecond)
 		}
-		wsClients = append(wsClients, wsClient{Conn: conn, ID: tokResp.UserId})
-		// Optionally: read any immediate welcome message:
-		conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-		_, welcomeMsg, err := conn.ReadMessage()
-		if err == nil {
-			t.Logf("Client %s received initial message: %s", tokResp.UserId, string(welcomeMsg))
-		} else {
-			t.Logf("Client %s: no initial message or read timeout: %v", tokResp.UserId, err)
+
+		for j, user := range usersConn {
+			option := usersAnswers[j][questionPayload.QuestionIdx-1]
+			t.Logf("user %s sending answer: %d", participantIDs[j], option)
+			msg := ws.ClientMessage{Option: option}
+			user.WriteMessage(websocket.TextMessage, msg.Bytes())
+
+			resp := readWs(t, user)
+			require.Equal(t, ws.MessageTypeAnswer, resp.Type)
+			t.Log("answer is correct: ", resp.Correct)
+		}
+
+		if questionPayload.QuestionIdx == questionPayload.QuestionsAmount {
+			t.Log("Game is finished")
+
+			t.Log("end session ")
+			endSessionResp, err := http.Post(sessionServiceURL+fmt.Sprintf("/session/%s/end", sessionCode),
+				"application/json", nil)
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, endSessionResp.StatusCode, "expected 200 from ending session")
+			endSessionResp.Body.Close()
+
+			t.Log("---- Admin received leaderboard:")
+			readWs(t, adminConn)
+
+			t.Log("---- Users received leaderboards:")
+			for _, user := range usersConn {
+				readWs(t, user)
+			}
+			break
 		}
 	}
+
 	// Ensure all connections will be closed at end
 	defer func() {
-		for _, c := range wsClients {
-			c.Conn.Close()
+		adminConn.Close()
+		for _, c := range usersConn {
+			c.Close()
 		}
 	}()
+}
+
+func readWs(t *testing.T, conn *websocket.Conn) ws.ServerMessage {
+	_, msg, err := conn.ReadMessage()
+	require.NoError(t, err)
+
+	var serverMsg ws.ServerMessage
+	err = json.Unmarshal(msg, &serverMsg)
+
+	t.Logf("Received: %s", msg)
+	return serverMsg
+}
+
+func connectWs(t *testing.T, token string) *websocket.Conn {
+	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws", RawQuery: "token=" + token}
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		t.Fatalf("WebSocket dial failed: %v", err)
+	}
+
+	return conn
 }
 
 func startRealTimeService(t *testing.T, amqpUrl string) {
@@ -282,7 +318,7 @@ func startRealTimeService(t *testing.T, amqpUrl string) {
 	t.Log("Connecting to broker")
 	err := manager.ConnectRabbitMQ(amqpUrl)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	t.Log("Connected to broker")
 
@@ -305,6 +341,7 @@ func startRealTimeService(t *testing.T, amqpUrl string) {
 	t.Log("Service is up!")
 
 	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
+	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
 	select {}
 }
 
