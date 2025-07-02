@@ -6,19 +6,12 @@ definitions:
         type: string
       userId:
         type: string
+      userName:
+        type: string
     type: object
   xxx_SessionService_models.ErrorResponse:
     properties:
       message:
-        type: string
-    type: object
-  xxx_SessionService_models.GetPlayersResponse:
-    properties:
-      players:
-        items:
-          type: string
-        type: array
-      sessionCode:
         type: string
     type: object
   xxx_SessionService_models.SessionCreateResponse:
@@ -79,34 +72,6 @@ paths:
           schema:
             $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
       summary: Validate session code
-      tags:
-      - sessions
-  /session/{id}/list:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/xxx_SessionService_models.GetPlayersResponse'
-        "405":
-          description: Method not allowed, only GET is allowed
-          schema:
-            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
-      summary: sends list of users
       tags:
       - sessions
   /session/{id}/nextQuestion:

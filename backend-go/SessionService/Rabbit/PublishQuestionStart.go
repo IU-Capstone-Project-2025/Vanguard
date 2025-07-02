@@ -26,5 +26,6 @@ func (r *Rabbit) PublishQuestionStart(ctx context.Context, SessionCode string, p
 	if err != nil {
 		return err
 	}
+	fmt.Println("Publish Question Start Success")
 	return nil
 }

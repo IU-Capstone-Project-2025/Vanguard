@@ -15,7 +15,7 @@ import (
 	"xxx/SessionService/models"
 )
 
-func Test_HttpServerValidate(t *testing.T) {
+func Test_HttpValidateSessionCode(t *testing.T) {
 	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
@@ -55,17 +55,17 @@ func Test_HttpServerValidate(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
+		t.Fatalf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.Errorf("error reading response body: %s", err.Error())
+		t.Fatalf("error reading response body: %s", err.Error())
 		return
 	}
 
 	if len(body) == 0 {
-		t.Errorf("response body is empty")
+		t.Fatalf("response body is empty")
 		return
 	}
 
@@ -75,13 +75,12 @@ func Test_HttpServerValidate(t *testing.T) {
 	var token models.SessionCreateResponse
 	err = json.Unmarshal(body, &token)
 	if err != nil {
-		t.Errorf("error unmarshalling response: %s", err.Error())
+		t.Fatalf("error unmarshalling response: %s", err.Error())
 		return
 	}
-	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
-	req2 := models.ValidateCodeReq{
-		UserId: "1",
-		Code:   token.SessionId,
+	SessionServiceUrl = fmt.Sprintf("http://%s:%s/validate", host, port)
+	req2 := models.ValidateSessionCodeReq{
+		Code: token.SessionId,
 	}
 	jsonBytes, err = json.Marshal(req2)
 	if err != nil {
@@ -92,19 +91,11 @@ func Test_HttpServerValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal("error making request:", err)
 	}
-	defer resp.Body.Close()
-	defer resp.Body.Close()
-	body2, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal("error reading response body:", err)
 	}
-	var user models.SessionCreateResponse
-	err = json.Unmarshal(body2, &user)
-	if err != nil {
-		t.Fatal("error unmarshalling response body:", err)
-	}
-	if user.SessionId != token.SessionId {
-		t.Fatal("response body does not match session id")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
 	}
 
 }
