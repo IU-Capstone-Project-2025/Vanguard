@@ -107,7 +107,7 @@ func getEnvFilePath() string {
 	return absPath
 }
 func Test_PublishQuestionStart(t *testing.T) {
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
 		}
@@ -115,17 +115,17 @@ func Test_PublishQuestionStart(t *testing.T) {
 	_, rabbitURL := startRabbit(context.Background(), t)
 	rabbit, err := Rabbit.NewRabbit(rabbitURL)
 	if err != nil {
-		t.Errorf("Failed to open Rabbit: %s", err)
+		t.Fatalf("Failed to open Rabbit: %s", err)
 	}
 	done := make(chan shared.Session)
 	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
-		t.Errorf("Failed to connect to RabbitMQ: %s", err)
+		t.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}
 	defer conn.Close()
 	ch, err := conn.Channel()
 	if err != nil {
-		t.Errorf("Failed to open a channel: %s", err)
+		t.Fatalf("Failed to open a channel: %s", err)
 	}
 	defer ch.Close()
 	err = ch.ExchangeDeclare(
@@ -138,7 +138,7 @@ func Test_PublishQuestionStart(t *testing.T) {
 		nil,                    // arguments
 	)
 	if err != nil {
-		t.Errorf("Failed to declare an exchange: %s", err)
+		t.Fatalf("Failed to declare an exchange: %s", err)
 	}
 	q, err := ch.QueueDeclare(
 		"",    // пустое имя = сгенерировать уникальное
@@ -149,7 +149,7 @@ func Test_PublishQuestionStart(t *testing.T) {
 		nil,
 	)
 	if err != nil {
-		t.Errorf("Failed to declare a queue: %s", err)
+		t.Fatalf("Failed to declare a queue: %s", err)
 	}
 	err = ch.QueueBind(
 		q.Name,
@@ -159,7 +159,7 @@ func Test_PublishQuestionStart(t *testing.T) {
 		nil,
 	)
 	if err != nil {
-		t.Errorf("Failed to bind a queue: %s", err)
+		t.Fatalf("Failed to bind a queue: %s", err)
 	}
 	msgs, err := ch.Consume(
 		q.Name, // queue
@@ -175,7 +175,7 @@ func Test_PublishQuestionStart(t *testing.T) {
 		for m := range msgs {
 			err := json.Unmarshal(m.Body, &s)
 			if err != nil {
-				t.Errorf("Failed to unmarshal: %s", err)
+				t.Fatalf("Failed to unmarshal: %s", err)
 			}
 			done <- s
 			return
@@ -188,7 +188,7 @@ func Test_PublishQuestionStart(t *testing.T) {
 		ServerWsEndpoint: "123",
 	})
 	if err != nil {
-		t.Errorf("Failed to publish session start: %s", err)
+		t.Fatalf("Failed to publish session start: %s", err)
 	}
 	var s shared.Session
 	select {

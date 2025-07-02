@@ -7,8 +7,8 @@ import (
 	"xxx/shared"
 )
 
-func (r *Rabbit) PublishSessionEnd(ctx context.Context, payload interface{}) error {
-	body, err := json.Marshal(payload)
+func (r *Rabbit) PublishSessionEnd(ctx context.Context, SessionCode string, payload interface{}) error {
+	body, err := json.Marshal(SessionCode)
 	if err != nil {
 		return err
 	}

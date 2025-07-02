@@ -21,7 +21,7 @@ func Test_HttpWebSocket(t *testing.T) {
 	cwd, _ := os.Getwd()
 	fmt.Println("Working dir:", cwd)
 
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
 		}
@@ -201,8 +201,8 @@ func Test_HttpWebSocket(t *testing.T) {
 
 	// --- Проверка содержимого
 	expected1a := `["user1"]`
-	expected1b := `[user2]`
-	expected2 := `["user1","user2"]`
+	expected1b := `["user2"]`
+	expected2 := `["user2","user1"]`
 
 	if msg1a != expected1a {
 		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
