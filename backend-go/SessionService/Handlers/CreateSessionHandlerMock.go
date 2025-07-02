@@ -74,7 +74,7 @@ func (h *SessionManagerHandler) CreateSessionHandlerMock(w http.ResponseWriter, 
 	}
 	response := models.SessionCreateResponse{
 		Jwt:              token,
-		ServerWsEndpoint: AdminToken.ServerWsEndpoint,
+		ServerWsEndpoint: shared.GetWsEndpoint(),
 		SessionId:        AdminToken.SessionId,
 	}
 	err = json.NewEncoder(w).Encode(response)

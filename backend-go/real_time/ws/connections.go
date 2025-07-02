@@ -27,6 +27,7 @@ func (r *ConnectionRegistry) RegisterSession(sessionID string) {
 	defer r.mu.Unlock()
 	if _, exists := r.connections[sessionID]; !exists {
 		r.connections[sessionID] = make(map[string]ConnectionContext)
+		fmt.Println("Register new session:", r.connections)
 	}
 }
 
@@ -47,6 +48,7 @@ func (r *ConnectionRegistry) RegisterConnection(ctx ConnectionContext) error {
 		return fmt.Errorf("session %s not found", ctx.SessionId)
 	}
 	r.connections[ctx.SessionId][ctx.UserId] = ctx
+	fmt.Println("Register new connection:", r.connections)
 	return nil
 }
 
@@ -75,8 +77,16 @@ func (r *ConnectionRegistry) GetConnections(sessionID string) []ConnectionContex
 
 // BroadcastToSession sends the given payload to all users connected to a specific session.
 // It uses the session ID to retrieve all active WebSocket connections and broadcasts the message.
-func (r *ConnectionRegistry) BroadcastToSession(sessionId string, payload []byte) {
+func (r *ConnectionRegistry) BroadcastToSession(sessionId string, payload []byte, sendToAdmin bool) {
 	receivers := r.GetConnections(sessionId)
+	if !sendToAdmin {
+		for i, rcv := range receivers {
+			if rcv.Role == shared.RoleAdmin {
+				receivers = append(receivers[:i], receivers[i+1:]...)
+				fmt.Println("Receivers after admin removing:", receivers)
+			}
+		}
+	}
 	r.sendMessage(payload, receivers...)
 }
 

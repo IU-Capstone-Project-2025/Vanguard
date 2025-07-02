@@ -27,7 +27,7 @@ type ConnectionContext struct {
 	Role      shared.UserRole // the role of the user within the session
 }
 
-// NewWebSocketHandler returns an http.HandlerFunc that uses the given registry.
+// NewWebSocketHandler returns a http.HandlerFunc that uses the given registry.
 // It handles WebSocket upgrade requests for real-time connections.
 // It expects a query parameter "token" containing a valid JWT (ephemeral token).
 //

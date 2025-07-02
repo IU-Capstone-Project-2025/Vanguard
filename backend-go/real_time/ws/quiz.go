@@ -114,6 +114,13 @@ func (q *QuizTracker) GetLeaderboard(sessionId string) map[string][]bool {
 	return copyMap
 }
 
+func (q *QuizTracker) GetQuizLen(sessionId string) int {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
+	return q.tracker[sessionId].QuizData.Len()
+}
+
 // restoreData restores map data from the Redis
 func (q *QuizTracker) restoreData() {
 	// TODO: implement data restoring

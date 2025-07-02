@@ -153,7 +153,7 @@ func TestWithTestContainers(t *testing.T) {
 	// 6. Admin WS connection
 	adminConn = connectWs(t, adminToken)
 
-	// 7. Read welcome, send ping, etc.
+	// 7. Read welcome
 	readWs(t, adminConn)
 
 	// join users
@@ -174,8 +174,14 @@ func TestWithTestContainers(t *testing.T) {
 		t.Log("checking question payload:")
 		require.Equal(t, q.Text, questionPayload.Text)
 		require.Equal(t, ws.MessageTypeQuestion, questionPayload.Type)
-		require.Equal(t, i, questionPayload.QuestionIdx)
+		require.Equal(t, i+1, questionPayload.QuestionIdx)
 		require.Equal(t, q.Options, questionPayload.Options)
+
+		if i == 0 {
+			for _, user := range usersConn {
+				readWs(t, user)
+			}
+		}
 
 		for j, user := range usersConn {
 			option := usersAnswers[j][i]
@@ -185,10 +191,9 @@ func TestWithTestContainers(t *testing.T) {
 
 			resp := readWs(t, user)
 			require.Equal(t, ws.MessageTypeAnswer, resp.Type)
-			require.Equal(t, i, resp.QuestionIdx)
+			require.Equal(t, i+1, resp.QuestionIdx)
 			require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
 		}
-
 	}
 }
 

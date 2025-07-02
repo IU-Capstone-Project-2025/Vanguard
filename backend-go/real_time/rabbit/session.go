@@ -88,15 +88,18 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tr
 	wg.Add(1)
 
 	// listen to messages in parallel goroutine
+	fmt.Println("Listen for new messages in session.start queue")
 	go func() {
 		defer wg.Done()
 		for d := range msgs {
+			fmt.Println("RECEIVED SESSION START")
+
 			var msg shared.QuizMessage
 			if err := json.Unmarshal(d.Body, &msg); err != nil {
 				continue
 			}
 
-			fmt.Println(msg)
+			fmt.Println("Rabbit msg from Real Time", msg)
 			registry.RegisterSession(msg.SessionId) // register new session
 			tracker.NewSession(msg.SessionId, msg.Quiz)
 
