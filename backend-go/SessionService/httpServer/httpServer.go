@@ -84,6 +84,7 @@ func (hs *HttpServer) registerHandlers() *mux.Router {
 	router.HandleFunc("/start", hs.StartSessionHandler).Methods("POST")
 	router.HandleFunc("/validate", hs.ValidateSessionCodeHandler).Methods("POST")
 	router.HandleFunc("/sessionsMock", hs.CreateSessionHandlerMock).Methods("POST")
+	router.HandleFunc("/session/{id}/end", hs.SessionEndHandler).Methods("POST")
 
 	registry := Handlers.NewConnectionRegistry(hs.logger)
 	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))

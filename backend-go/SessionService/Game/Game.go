@@ -23,6 +23,7 @@ type Manager interface {
 	GetListOfUsers(quizUUID string) ([]string, error)
 	AddPlayerToSession(quizUUID string, UserName string) error
 	SessionStartMock(quizUUID string, sessionId string) error
+	SessionEnd(code string) error
 }
 
 type SessionManager struct {
@@ -195,6 +196,13 @@ func (manager *SessionManager) SessionStartMock(quizUUID string, sessionId strin
 	err := manager.rabbit.PublishSessionStart(context.Background(), message)
 	if err != nil {
 		return fmt.Errorf("error on SessionStart with publish quiz to rabbit %s %s", quizUUID, err.Error())
+	}
+	return nil
+}
+func (manager *SessionManager) SessionEnd(code string) error {
+	err := manager.rabbit.PublishSessionEnd(context.Background(), code, "aboba")
+	if err != nil {
+		return fmt.Errorf("error to send message to rabbit %s", err)
 	}
 	return nil
 }
