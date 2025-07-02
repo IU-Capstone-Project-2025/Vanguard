@@ -1,84 +1,109 @@
-import React, {useState, useEffect} from 'react';
-import './styles/GameProcess.css';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useSessionSocket } from '../contexts/SessionWebSocketContext';
+import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
+import './styles/GameProcess.css'
 
 const GameProcessAdmin = () => {
-    const [quiz, setQuiz] = useState(null);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const { wsRefSession, connectSession } = useSessionSocket();
+  const {wsRefRealtime, connectRealtime} = useRealtimeSocket()
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [questionIndex, setQuestionIndex] = useState(0);
 
-    useEffect(() => {
-        // Здесь ты делаешь fetch из бекенда
-        const fetchData = async () => {
-            let id = sessionStorage.getItem('selectedQuizId'); // Получаем ID квиза из sessionStorage
-            const response = await fetch(`/api/quiz/${id}`); // Заменить {id} на реальный ID квиза
-            const data = await response.json();
-            setQuiz(data);
-        };
-        fetchData();
-    }, []);
+  useEffect(() => {
+    const token = sessionStorage.getItem('jwt');
+    if (!token) return;
 
-    if (!quiz) {
-        return <div className="game-process">Loading Data...</div>;
-    }
-    const toNextQuestion = async (sessionCode) => {
-
-        const response = await fetch(`/api/session/session/${sessionCode}/nextQuestion`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ "code": sessionCode}),
-        });
-
-        if (!response.ok) throw new Error("Failed to get to the next question session");
-
+    /* отписка при размонтировании */
+    return () => {
+      if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
+      if (wsRefSession.current)  wsRefSession.current.onmessage  = null;
     };
-    const currentQuestion = quiz.questions[currentQuestionIndex];
-    const handleNextQuestion = async () => {
-        setCurrentQuestionIndex(currentQuestionIndex + 1)
-        await toNextQuestion(sessionStorage.getItem('selectedQuizId'));
+  }, [connectSession, connectRealtime, wsRefSession, wsRefRealtime]);
+
+const toNextQuestion = async (sessionCode) => {
+    if (!sessionCode) {
+      console.error('Session code is not available');
+      return;
     }
-    return (
-        <div className="game-process">
-            <h1>{quiz.title}</h1>
-            <p>Question{currentQuestionIndex + 1} / {quiz.questions.length}</p>
-            <div className="question-block">
-                <h2>{currentQuestion.text}</h2>
-                {currentQuestion.image_url && (
-                    <img
-                        src={currentQuestion.image_url}
-                        alt="Question"
-                        className="question-image"
-                    />
-                )}
-            </div>
-            <div className="options-grid">
-                {currentQuestion.options.map((option, index) => (
-                    <button key={index} className="option-button">
-                        {option.text}
-                    </button>
-                ))}
-            </div>
-            <div className="navigation-buttons">
-                {currentQuestionIndex > 0 && (
-                    <button
-                        onClick={() =>
-                            setCurrentQuestionIndex(currentQuestionIndex - 1)
-                        }
-                        className="nav-button"
-                    >
-                        Back
-                    </button>
-                )}
-                {currentQuestionIndex < quiz.questions.length - 1 && (
-                    <button
-                        onClick={handleNextQuestion}
-                        className="nav-button">
-                        Next
-                    </button>
-                )}
-            </div>
-        </div>
-    );
+    try {
+      const response = await fetch(`/api/session/${sessionCode}/next-question`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to start next question');
+      }
+      const data = await response.json();
+      console.log('Next question started:', data);
+    } catch (error) {
+      console.error('Error starting next question:', error);
+    }
+  };
+
+
+  const listenQuizQuestion = async (sessionCode) => {
+    if (!sessionCode) {
+      console.error('Session code is not available');
+      return;
+    }
+    try {
+      wsRefRealtime.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'question') {
+          console.log('Received question:', data.question);
+          return data
+        }
+      };
+    } catch (error) {
+      console.error('Error listening for quiz questions:', error);
+      return
+    }
+  };
+
+  /* -------- кнопка "Next" -------- */
+  const handleNextQuestion = () => {
+    const sessionCode = sessionStorage.getItem('sessionCode');
+
+    toNextQuestion(sessionCode);
+    setQuestionIndex((prevIndex) => prevIndex + 1);
+
+    listenQuizQuestion(sessionCode).then((question) => {
+      setCurrentQuestion(question);
+    }).catch((error) => {
+      console.error('Error fetching next question:', error);
+    });
+    
+  };
+
+  /* -------- UI -------- */
+  return (
+    <div className="game-process">
+      <h1>Live Quiz</h1>
+
+      <p>Question {questionIndex + 1}</p>
+
+      <div className="question-block">
+        <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
+      </div>
+
+      <div className="options-grid">
+        {currentQuestion &&
+          currentQuestion.options.map((option, idx) => (
+            <button key={idx} className="option-button">
+              {option.text}
+            </button>
+          ))}
+      </div>
+
+      <div className="navigation-buttons">
+        <button onClick={handleNextQuestion} className="nav-button">
+          Next
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default GameProcessAdmin;
