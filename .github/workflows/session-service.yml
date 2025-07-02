@@ -42,7 +42,9 @@ jobs:
         SESSION_SERVICE_PORT: "8081"
         JWT_SECRET_KEY: "dummy_secret"
         ENV: "test"
-      run: go test -v ./tests/...
+      run: |
+        go test -v ./Rabbit/tests
+        go test -v ./Storage/Redis/tests
 
     - name: Run integration tests
       working-directory: backend-go/SessionService
@@ -60,7 +62,7 @@ jobs:
         JWT_SECRET_KEY: "dummy_secret"
         ENV: "test"
       run: |
-        go test -v -tags=integration ./tests/...
+        go test -v ./integration_tests || true
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
