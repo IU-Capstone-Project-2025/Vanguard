@@ -32,6 +32,11 @@ definitions:
       userName:
         type: string
     type: object
+  xxx_SessionService_models.ValidateSessionCodeReq:
+    properties:
+      code:
+        type: string
+    type: object
 host: localhost:8081
 info:
   contact: {}
@@ -39,6 +44,27 @@ info:
   title: Пример API
   version: "1.0"
 paths:
+  /healthz:
+    post:
+      consumes:
+      - application/json
+      description: Checks if RabbitMQ and Redis services are operational.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully moved to the next question
+        "405":
+          description: Method not allowed
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+        "500":
+          description: Internal server error (e.g. Redis or RabbitMQ down)
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+      summary: Health check
+      tags:
+      - health
   /join:
     post:
       consumes:
@@ -74,6 +100,34 @@ paths:
       summary: Validate session code
       tags:
       - sessions
+  /session/{id}/end:
+    post:
+      consumes:
+      - application/json
+      description: Delete session from redis, send message to rabbit that session
+        deleted
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully moved to the next question
+        "405":
+          description: Method not allowed
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+      summary: delete session, send message to rabbit
+      tags:
+      - sessions
   /session/{id}/nextQuestion:
     post:
       consumes:
@@ -89,7 +143,7 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
+        "200":
           description: Successfully moved to the next question
         "405":
           description: Method not allowed
@@ -133,6 +187,38 @@ paths:
       summary: Create a new session and get an admin token
       tags:
       - sessions
+  /sessionsMock:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new session and returns an admin token for the specified
+        user by userId.
+      parameters:
+      - description: ' Create Session req'
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/xxx_SessionService_models.CreateSessionReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Admin token in JSON format
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.SessionCreateResponse'
+        "405":
+          description: Method not allowed, only GET is allowed
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+      summary: Create a new session and get an admin token. Mock endpoint, no req
+        to another service
+      tags:
+      - sessions
   /start:
     post:
       consumes:
@@ -158,6 +244,37 @@ paths:
           schema:
             $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
       summary: Start a session
+      tags:
+      - sessions
+  /validate:
+    post:
+      consumes:
+      - application/json
+      description: Validates a session code and returns a user token for the specified
+        user if the code is valid.
+      parameters:
+      - description: ' Create Session req'
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/xxx_SessionService_models.ValidateSessionCodeReq'
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Invalid code
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+        "405":
+          description: Only GET method is allowed
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/xxx_SessionService_models.ErrorResponse'
+      summary: Validate session code
       tags:
       - sessions
 swagger: "2.0"

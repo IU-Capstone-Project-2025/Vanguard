@@ -6,6 +6,16 @@ import (
 	"xxx/SessionService/models"
 )
 
+// HealthHandler Health check
+// @Summary      Health check
+// @Description  Checks if RabbitMQ and Redis services are operational.
+// @Tags         health
+// @Accept       json
+// @Produce      json
+// @Success 200 "Successfully moved to the next question"
+// @Failure      405 {object} models.ErrorResponse "Method not allowed"
+// @Failure      500 {object} models.ErrorResponse "Internal server error (e.g. Redis or RabbitMQ down)"
+// @Router       /healthz [post]
 func (h *SessionManagerHandler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.logger.Info("CreateSessionHandler request method not allowed ", "Request Method", r.Method)

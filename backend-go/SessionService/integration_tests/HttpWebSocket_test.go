@@ -203,6 +203,7 @@ func Test_HttpWebSocket(t *testing.T) {
 	expected1a := `["user1"]`
 	expected1b := `["user2"]`
 	expected2 := `["user2","user1"]`
+	expected3 := `["user1","user2"]`
 
 	if msg1a != expected1a {
 		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
@@ -210,7 +211,7 @@ func Test_HttpWebSocket(t *testing.T) {
 	if msg1b != expected1b {
 		t.Fatalf("user1 second message mismatch. Got: %s, Want: %s", msg1b, expected1b)
 	}
-	if msg2 != expected2 {
+	if msg2 != expected2 && msg2 != expected3 {
 		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
 	}
 

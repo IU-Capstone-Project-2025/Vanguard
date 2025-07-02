@@ -223,7 +223,7 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 		reg.logger.Error("WsHandler handleRead error to register connection")
 		return
 	}
-	reg.logger.Info("ws connected to user", ctx.UserId, ctx.UserName)
+	reg.logger.Info("ws connected to user", "userId", ctx.UserId, "userName", ctx.UserName)
 	m := reg.GetRooms(ctx.SessionId)
 	con := reg.connections[ctx.SessionId][ctx.UserId]
 	jsonData, err := json.Marshal(m)
@@ -252,7 +252,7 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 			if err != nil {
 				reg.logger.Error("WsHandler handleRead error to write json", "err", err)
 			}
-			reg.logger.Info("ws sends to all", message)
+			reg.logger.Info("ws sends to all", "message", message)
 		}
 	}
 }
