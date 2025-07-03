@@ -15,7 +15,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param   id   path   string  true  "Session ID"
-// @Success 201 "Successfully moved to the next question"
+// @Success 200 "Successfully moved to the next question"
 // @Failure 405 {object} models.ErrorResponse "Method not allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
 // @Router /session/{id}/nextQuestion [post]

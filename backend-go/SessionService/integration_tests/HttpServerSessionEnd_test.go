@@ -23,7 +23,6 @@ func Test_HttpServerSessionEnd(t *testing.T) {
 			t.Fatalf("could not load .env file: %v", err)
 		}
 	}
-
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
 	rabbitC, rabbitURL := startRabbit(context.Background(), t)
@@ -44,7 +43,7 @@ func Test_HttpServerSessionEnd(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	defer server.Stop()
 	// 🛠️ Создаем сессию
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
@@ -89,6 +88,24 @@ func Test_HttpServerSessionEnd(t *testing.T) {
 
 	if resp2.StatusCode != http.StatusOK {
 		t.Fatalf("unexpected status code: got %d", resp2.StatusCode)
+	}
+	SessionServiceUrl = fmt.Sprintf("http://%s:%s/validate", host, port)
+
+	req2 := models.ValidateSessionCodeReq{
+		Code: sessionID,
+	}
+	jsonBytes, err = json.Marshal(req2)
+	if err != nil {
+		t.Fatal("error marshaling json:", err)
+	}
+
+	resp, err = http.Post(SessionServiceUrl, "application/json", bytes.NewReader(jsonBytes))
+	if err != nil {
+		t.Fatal("error making request:", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("unexpected status code: got %d, wanted %d", resp.StatusCode, http.StatusBadRequest)
 	}
 
 	// ✅ Проверка сообщения из RabbitMQ
