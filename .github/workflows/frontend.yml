@@ -31,14 +31,19 @@ jobs:
 
     - name: Start frontend dev server
       working-directory: frontend/app
-      run: npm run dev &
+      run: |
+        nohup npm run dev > dev.log 2>&1 &
 
     - name: Wait for frontend to be ready
-      run: npx wait-on http://localhost:3000
+      run: npx wait-on http://localhost:3000 --timeout 60000
 
     - name: Run frontend tests
       working-directory: frontend/app
       run: npm run test
+
+    - name: Dump server logs (if tests fail)
+      if: failure()
+      run: cat frontend/app/dev.log
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
