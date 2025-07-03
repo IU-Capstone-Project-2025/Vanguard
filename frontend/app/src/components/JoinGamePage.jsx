@@ -73,8 +73,12 @@ const JoinGamePage = () => {
                     <input
                         type="text"
                         placeholder="enter a code here"
-                        value={`${code.toUpperCase()}`}
-                        onChange={(e) => setCode(e.target.value)} // Remove '#' and convert to uppercase
+                        value={code}
+                        onChange={(e) => {
+                            const value = e.target.value.toUpperCase();
+                            if (/^[A-Z0-9]*$/.test(value)){
+                                setCode(value);
+                        }}} // Remove '#' and convert to uppercase
                         required
                         autoFocus
                         pattern="^[A-Z0-9]+$" // Ensure only alphanumeric characters are
