@@ -16,12 +16,22 @@ jobs:
   set-globals:
     runs-on: ubuntu-latest
     outputs:
-      auth-service-name: "tryit-auth-service"
-      quiz-service-name: "tryit-quiz-service"
-      realtime-service-name: "tryit-real-time-service"
-      session-service-name: "tryit-session-service"
-      frontend-service-name: "tryit-frontend"
-      migrator-service-name: "tryit-migrator"
+      auth-service-name: ${{ steps.set.outputs.auth-service-name }}
+      quiz-service-name: ${{ steps.set.outputs.quiz-service-name }}
+      realtime-service-name: ${{ steps.set.outputs.realtime-service-name }}
+      session-service-name: ${{ steps.set.outputs.session-service-name }}
+      frontend-service-name: ${{ steps.set.outputs.frontend-service-name }}
+      migrator-service-name: ${{ steps.set.outputs.migrator-service-name }}
+    steps:
+    - name: Define service name outputs
+      id: set
+      run: |
+        echo "auth-service-name=tryit-auth-service"     >> $GITHUB_OUTPUT
+        echo "quiz-service-name=tryit-quiz-service"     >> $GITHUB_OUTPUT
+        echo "realtime-service-name=tryit-real-time-service" >> $GITHUB_OUTPUT
+        echo "session-service-name=tryit-session-service"   >> $GITHUB_OUTPUT
+        echo "frontend-service-name=tryit-frontend"          >> $GITHUB_OUTPUT
+        echo "migrator-service-name=tryit-migrator"          >> $GITHUB_OUTPUT
 
   detect-changes:
     name: Detect Service Changes
