@@ -37,7 +37,7 @@ func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 	// 1. Start RabbitMQ container
 	rabbitReq := testcontainers.ContainerRequest{
 		Image:        "rabbitmq:3-management",
-		ExposedPorts: []string{"5672:5672/tcp", "15672:15672/tcp"},
+		ExposedPorts: []string{"5672/tcp"},
 		Env: map[string]string{
 			"RABBITMQ_LOAD_DEFINITIONS": "true",
 			"RABBITMQ_DEFINITIONS_FILE": "/etc/rabbitmq/definitions.json",
