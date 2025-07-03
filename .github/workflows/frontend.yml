@@ -29,6 +29,13 @@ jobs:
       working-directory: frontend/app
       run: npm ci
 
+    - name: Start frontend dev server
+      working-directory: frontend/app
+      run: npm run dev &
+
+    - name: Wait for frontend to be ready
+      run: npx wait-on http://localhost:3000
+
     - name: Run frontend tests
       working-directory: frontend/app
       run: npm run test
