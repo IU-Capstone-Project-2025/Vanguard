@@ -32,7 +32,7 @@ jobs:
     - name: Start frontend dev server
       working-directory: frontend/app
       run: |
-        nohup npm run dev > dev.log 2>&1 &
+        nohup npm run start > dev.log 2>&1 &
 
     - name: Wait for frontend to be ready
       run: npx wait-on http://localhost:3000 --timeout 60000
