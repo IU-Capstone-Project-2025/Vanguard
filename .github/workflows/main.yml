@@ -12,6 +12,14 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  AUTH_SERVICE_NAME: tryit-auth-service
+  QUIZ_SERVICE_NAME: tryit-quiz-service
+  REALTIME_SERVICE_NAME: tryit-real-time-service
+  SESSION_SERVICE_NAME: tryit-session-service
+  FRONTEND_SERVICE_NAME: tryit-frontend
+  MIGRATOR_SERVICE_NAME: tryit-migrator
+
 jobs:
   detect-changes:
     name: Detect Service Changes
@@ -60,6 +68,8 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.auth-service == 'true' }}
     uses: ./.github/workflows/auth-service.yml
+    with:
+      service-name: ${{ env.AUTH_SERVICE_NAME }}
     secrets: inherit
 
   quiz-service:
@@ -67,6 +77,8 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.quiz-service == 'true' }}
     uses: ./.github/workflows/quiz-service.yml
+    with:
+      service-name: ${{ env.QUIZ_SERVICE_NAME }}
     secrets: inherit
 
   real-time-service:
@@ -74,6 +86,8 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.real-time-service == 'true' }}
     uses: ./.github/workflows/real-time-service.yml
+    with:
+      service-name: ${{ env.REALTIME_SERVICE_NAME }}
     secrets: inherit
 
   session-service:
@@ -81,6 +95,8 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.session-service == 'true' }}
     uses: ./.github/workflows/session-service.yml
+    with:
+      service-name: ${{ env.SESSION_SERVICE_NAME }}
     secrets: inherit
 
   frontend:
@@ -88,6 +104,8 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     uses: ./.github/workflows/frontend.yml
+    with:
+      service-name: ${{ env.FRONTEND_SERVICE_NAME }}
     secrets: inherit
 
   shared-migrations:
@@ -95,6 +113,8 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.shared-migrations == 'true'}}
     uses: ./.github/workflows/shared-migrations.yml
+    with:
+      service-name: ${{ env.MIGRATOR_SERVICE_NAME }}
     secrets: inherit
 
   deploy:
@@ -102,22 +122,88 @@ jobs:
     needs: [ auth-service, quiz-service, real-time-service, session-service, frontend, shared-migrations ]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+      SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+      SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+      SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+      SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
     steps:
-    - name: Download all image tags
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - name: Generate compose override
+    - name: Assemble final image refs
+      id: assemble
       run: |
-        echo "services:" >> docker-compose.override.yml
+        AUTH_IMAGE=${{ needs.auth-service.outputs.image }}
+        [ -z "$AUTH_IMAGE" ] && AUTH_IMAGE="$DOCKERHUB_USER/${{ env.AUTH_SERVICE_NAME }}:latest"
+        QUIZ_IMAGE=${{ needs.quiz-service.outputs.image }}
+        [ -z "$QUIZ_IMAGE" ] && QUIZ_IMAGE="$DOCKERHUB_USER/${{ env.QUIZ_SERVICE_NAME }}:latest"
+        REALTIME_IMAGE=${{ needs.real-time-service.outputs.image }}
+        [ -z "$REALTIME_IMAGE" ] && REALTIME_IMAGE="$DOCKERHUB_USER/${{ env.REALTIME_SERVICE_NAME }}:latest"
+        SESSION_IMAGE=${{ needs.session-service.outputs.image }}
+        [ -z "$SESSION_IMAGE" ] && SESSION_IMAGE="$DOCKERHUB_USER/${{ env.SESSION_SERVICE_NAME }}:latest"
+        FRONTEND_IMAGE=${{ needs.frontend.outputs.image }}
+        [ -z "$FRONTEND_IMAGE" ] && FRONTEND_IMAGE="$DOCKERHUB_USER/${{ env.FRONTEND_SERVICE_NAME }}:latest"
+        MIGRATOR_IMAGE=${{ needs.shared-migrations.outputs.image }}
+        [ -z "$MIGRATOR_IMAGE" ] && MIGRATOR_IMAGE="$DOCKERHUB_USER/${{ env.MIGRATOR_SERVICE_NAME }}:latest"
 
-        for service in migrator auth quiz real-time session frontend; do
-          if [ -f "artifacts/${service}-image-tag/image-tag.txt" ]; then
-            IMAGE_TAG=$(cat "artifacts/${service}-image-tag/image-tag.txt")
-            echo "  ${service}: " >> docker-compose.override.yml
-            echo "    image: $IMAGE_TAG" >> docker-compose.override.yml
-          fi
-        done
+        echo "AUTH_IMAGE=$AUTH_IMAGE" >> $GITHUB_ENV
+        echo "QUIZ_IMAGE=$QUIZ_IMAGE" >> $GITHUB_ENV
+        echo "REALTIME_IMAGE=$REALTIME_IMAGE" >> $GITHUB_ENV
+        echo "SESSION_IMAGE=$SESSION_IMAGE" >> $GITHUB_ENV
+        echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> $GITHUB_ENV
+        echo "MIGRATOR_IMAGE=$MIGRATOR_IMAGE" >> $GITHUB_ENV
 
-        cat docker-compose.override.yml
+    - name: Set up SSH key
+      uses: webfactory/ssh-agent@v0.7.4
+      with:
+        ssh-private-key: ${{ env.SSH_KEY }}
+
+    - name: Create Docker SSH context
+      run: |
+        docker context create remote \
+          --docker "host=ssh://$SSH_USER@$SSH_HOST:$SSH_PORT" \
+          || echo "context exists"
+        docker context use remote
+
+    - name: Create .env file
+      run: |
+        cat <<EOF > deploy.env
+        AUTH_IMAGE=${{ env.AUTH_IMAGE }}
+        QUIZ_IMAGE=${{ env.QUIZ_IMAGE }}
+        REALTIME_IMAGE=${{ env.REALTIME_IMAGE }}
+        SESSION_IMAGE=${{ env.SESSION_IMAGE }}
+        FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
+        MIGRATOR_IMAGE=${{ env.MIGRATOR_IMAGE }}
+
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        TEST_POSTGRES_DB=${{ secrets.TEST_POSTGRES_DB }}
+        TZ=UTC
+        RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+        RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+        CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+        DB_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB }}
+        TEST_DB_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.TEST_POSTGRES_DB }}
+        AUTH_JWT_SECRET_KEY=${{ secrets.AUTH_JWT_SECRET_KEY }}
+        GO_JWT_SECRET_KEY=${{ secrets.GO_JWT_SECRET_KEY }}
+        S3_REGION=${{ secrets.S3_REGION }}
+        S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}
+        S3_BUCKET=${{ secrets.S3_BUCKET }}
+        S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}
+        S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}
+        MAX_IMAGE_SIZE=5242880
+        NODE_ENV=development
+        CHOKIDAR_USEPOLLING=true
+        GO_ENV=production
+        EOF
+
+    - name: Deploy with Docker Compose
+      run: |
+        docker compose \
+          -f docker-compose.yaml \
+          -f docker-compose.prod.yaml \
+          --env-file deploy.env \
+          up -d --remove-orphans

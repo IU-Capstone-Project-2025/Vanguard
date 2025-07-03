@@ -81,6 +81,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
       ENVIRONMENT: "prod"
+      DEBUG: "true"
     depends_on:
       - migrator
 
@@ -102,6 +103,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       MAX_IMAGE_SIZE: ${MAX_IMAGE_SIZE}
       ENVIRONMENT: "prod"
+      DEBUG: "true"
     depends_on:
       - auth
 

@@ -1,162 +1,21 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      TZ: ${TZ}
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6739:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    hostname: rabbit
-    container_name: rabbit
-    ports:
-      - "15672:15672"  # Management UI
-      - "5672:5672"    # AMQP port
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-      - ./rabbit/definitions.json:/etc/rabbitmq/definitions.json:ro
-      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-    environment:
-      RABBITMQ_LOAD_DEFINITIONS: "true"
-      RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "rabbitmqctl",
-          "status"
-        ]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-
   migrator:
-    build:
-      context: backend-python/shared
-      dockerfile: Dockerfile
-    environment:
-      DB_URL: ${DB_URL}
-      TEST_DB_URL: ${TEST_DB_URL}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
-      ENVIRONMENT: "prod"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    image: ${MIGRATOR_IMAGE}
 
   auth:
-    build:
-      context: backend-python
-      dockerfile: auth_service/Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      DB_URL: ${DB_URL}
-      TEST_DB_URL: ${TEST_DB_URL}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
-      ENVIRONMENT: "prod"
-    depends_on:
-      - migrator
+    image: ${AUTH_IMAGE}
 
   quiz:
-    build:
-      context: backend-python
-      dockerfile: quiz_service/Dockerfile
-    ports:
-      - "8001:8000"
-    environment:
-      DB_URL: ${DB_URL}
-      TEST_DB_URL: ${TEST_DB_URL}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
-      S3_REGION: ${S3_REGION}
-      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
-      S3_BUCKET: ${S3_BUCKET}
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
-      MAX_IMAGE_SIZE: ${MAX_IMAGE_SIZE}
-      ENVIRONMENT: "prod"
-    depends_on:
-      - auth
+    image: ${QUIZ_IMAGE}
 
   real-time:
-    build:
-      context: backend-go
-      dockerfile: real_time/Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_HOST: rabbit
-      RABBITMQ_PORT: "5672"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REALTIME_SERVICE_HOST: "0.0.0.0"
-      REALTIME_SERVICE_PORT: "8080"
-      JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
-      ENV: ${GO_ENV}
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+    image: ${REALTIME_IMAGE}
 
   session:
-    build:
-      context: backend-go
-      dockerfile: SessionService/Dockerfile
-    ports:
-      - "8081:8081"
-    environment:
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_HOST: rabbit
-      RABBITMQ_PORT: "5672"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REALTIME_SERVICE_HOST: "real-time"
-      REALTIME_SERVICE_PORT: "8080"
-      SESSION_SERVICE_HOST: "0.0.0.0"
-      SESSION_SERVICE_PORT: "8081"
-      JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
-      ENV: ${GO_ENV}
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+    image: ${SESSION_IMAGE}
 
   frontend:
-    build:
-      context: frontend
-      dockerfile: Dockerfile
+    image: ${FRONTEND_IMAGE}
     restart: unless-stopped
     ports:
       - "80:80"
@@ -166,9 +25,6 @@ services:
       - /app/node_modules
       - /opt/certbot/www:/var/www/certbot:rw
       - /opt/certbot/conf:/etc/letsencrypt:rw
-    environment:
-      - NODE_ENV=${NODE_ENV}
-      - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING}
     command: >
       sh -c "
       while :; do
@@ -177,10 +33,6 @@ services:
       done &
       nginx -g 'daemon off;'
       "
-    depends_on:
-      - quiz
-      - real-time
-      - session
 
   certbot:
     image: certbot/certbot:latest
@@ -189,11 +41,3 @@ services:
       - /opt/certbot/www:/var/www/certbot:rw
       - /opt/certbot/conf:/etc/letsencrypt:rw
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-
-volumes:
-  postgres_data:
-  rabbitmq_data:
-
-networks:
-  default:
-    driver: bridge
