@@ -12,15 +12,17 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  AUTH_SERVICE_NAME: tryit-auth-service
-  QUIZ_SERVICE_NAME: tryit-quiz-service
-  REALTIME_SERVICE_NAME: tryit-real-time-service
-  SESSION_SERVICE_NAME: tryit-session-service
-  FRONTEND_SERVICE_NAME: tryit-frontend
-  MIGRATOR_SERVICE_NAME: tryit-migrator
-
 jobs:
+  set-globals:
+    runs-on: ubuntu-latest
+    outputs:
+      auth-service-name: "tryit-auth-service"
+      quiz-service-name: "tryit-quiz-service"
+      realtime-service-name: "tryit-real-time-service"
+      session-service-name: "tryit-session-service"
+      frontend-service-name: "tryit-frontend"
+      migrator-service-name: "tryit-migrator"
+
   detect-changes:
     name: Detect Service Changes
     runs-on: ubuntu-latest
@@ -65,61 +67,61 @@ jobs:
 
   auth-service:
     name: Auth Service CI/CD
-    needs: detect-changes
+    needs: [ set-globals, detect-changes ]
     if: ${{ needs.detect-changes.outputs.auth-service == 'true' }}
     uses: ./.github/workflows/auth-service.yml
     with:
-      service-name: ${{ env.AUTH_SERVICE_NAME }}
+      service-name: ${{ needs.set-globals.outputs.auth-service-name }}
     secrets: inherit
 
   quiz-service:
     name: Quiz Service CI/CD
-    needs: detect-changes
+    needs: [ set-globals, detect-changes ]
     if: ${{ needs.detect-changes.outputs.quiz-service == 'true' }}
     uses: ./.github/workflows/quiz-service.yml
     with:
-      service-name: ${{ env.QUIZ_SERVICE_NAME }}
+      service-name: ${{ needs.set-globals.outputs.quiz-service-name }}
     secrets: inherit
 
   real-time-service:
     name: Real-Time Service CI/CD
-    needs: detect-changes
+    needs: [ set-globals, detect-changes ]
     if: ${{ needs.detect-changes.outputs.real-time-service == 'true' }}
     uses: ./.github/workflows/real-time-service.yml
     with:
-      service-name: ${{ env.REALTIME_SERVICE_NAME }}
+      service-name: ${{ needs.set-globals.outputs.realtime-service-name }}
     secrets: inherit
 
   session-service:
     name: Session Service CI/CD
-    needs: detect-changes
+    needs: [ set-globals, detect-changes ]
     if: ${{ needs.detect-changes.outputs.session-service == 'true' }}
     uses: ./.github/workflows/session-service.yml
     with:
-      service-name: ${{ env.SESSION_SERVICE_NAME }}
+      service-name: ${{ needs.set-globals.outputs.session-service-name }}
     secrets: inherit
 
   frontend:
     name: Frontend CI/CD
-    needs: detect-changes
+    needs: [ set-globals, detect-changes ]
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     uses: ./.github/workflows/frontend.yml
     with:
-      service-name: ${{ env.FRONTEND_SERVICE_NAME }}
+      service-name: ${{ needs.set-globals.outputs.frontend-service-name }}
     secrets: inherit
 
   shared-migrations:
     name: Shared Migrations CI/CD
-    needs: detect-changes
+    needs: [ set-globals, detect-changes ]
     if: ${{ needs.detect-changes.outputs.shared-migrations == 'true'}}
     uses: ./.github/workflows/shared-migrations.yml
     with:
-      service-name: ${{ env.MIGRATOR_SERVICE_NAME }}
+      service-name: ${{ needs.set-globals.outputs.migrator-service-name }}
     secrets: inherit
 
   deploy:
     name: Deploy to Production
-    needs: [ auth-service, quiz-service, real-time-service, session-service, frontend, shared-migrations ]
+    needs: [ set-globals, auth-service, quiz-service, real-time-service, session-service, frontend, shared-migrations ]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
@@ -136,17 +138,17 @@ jobs:
       id: assemble
       run: |
         AUTH_IMAGE=${{ needs.auth-service.outputs.image }}
-        [ -z "$AUTH_IMAGE" ] && AUTH_IMAGE="$DOCKERHUB_USER/${{ env.AUTH_SERVICE_NAME }}:latest"
+        [ -z "$AUTH_IMAGE" ] && AUTH_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.auth-service-name }}:latest"
         QUIZ_IMAGE=${{ needs.quiz-service.outputs.image }}
-        [ -z "$QUIZ_IMAGE" ] && QUIZ_IMAGE="$DOCKERHUB_USER/${{ env.QUIZ_SERVICE_NAME }}:latest"
+        [ -z "$QUIZ_IMAGE" ] && QUIZ_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.quiz-service-name }}:latest"
         REALTIME_IMAGE=${{ needs.real-time-service.outputs.image }}
-        [ -z "$REALTIME_IMAGE" ] && REALTIME_IMAGE="$DOCKERHUB_USER/${{ env.REALTIME_SERVICE_NAME }}:latest"
+        [ -z "$REALTIME_IMAGE" ] && REALTIME_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.realtime-service-name }}:latest"
         SESSION_IMAGE=${{ needs.session-service.outputs.image }}
-        [ -z "$SESSION_IMAGE" ] && SESSION_IMAGE="$DOCKERHUB_USER/${{ env.SESSION_SERVICE_NAME }}:latest"
+        [ -z "$SESSION_IMAGE" ] && SESSION_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.session-service-name }}:latest"
         FRONTEND_IMAGE=${{ needs.frontend.outputs.image }}
-        [ -z "$FRONTEND_IMAGE" ] && FRONTEND_IMAGE="$DOCKERHUB_USER/${{ env.FRONTEND_SERVICE_NAME }}:latest"
+        [ -z "$FRONTEND_IMAGE" ] && FRONTEND_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.frontend-service-name }}:latest"
         MIGRATOR_IMAGE=${{ needs.shared-migrations.outputs.image }}
-        [ -z "$MIGRATOR_IMAGE" ] && MIGRATOR_IMAGE="$DOCKERHUB_USER/${{ env.MIGRATOR_SERVICE_NAME }}:latest"
+        [ -z "$MIGRATOR_IMAGE" ] && MIGRATOR_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.migrator-service-name }}:latest"
 
         echo "AUTH_IMAGE=$AUTH_IMAGE" >> $GITHUB_ENV
         echo "QUIZ_IMAGE=$QUIZ_IMAGE" >> $GITHUB_ENV
