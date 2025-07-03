@@ -11,8 +11,8 @@ jobs:
   test-build-push:
     runs-on: ubuntu-latest
     env:
-      IMAGE_SHA: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:${{ github.sha }}
-      IMAGE_LATEST: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:latest
+      IMAGE_SHA: ${{ vars.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:${{ github.sha }}
+      IMAGE_LATEST: ${{ vars.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:latest
       TEST_DB_URL: "postgresql+asyncpg://postgres:password@localhost:5432/test_db"
       PY_VERSION: '3.12'
 
@@ -67,7 +67,7 @@ jobs:
     - name: Login to DockerHub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Build Docker image

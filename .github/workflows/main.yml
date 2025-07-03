@@ -49,41 +49,31 @@ jobs:
       with:
         fetch-depth: 0
 
-    # - name: Detect Changes
-    #   id: changes
-    #   uses: dorny/paths-filter@v2
-    #   with:
-    #     filters: |
-    #       auth-service:
-    #         - 'backend-python/auth_service/**'
-    #         - 'backend-python/shared/**'
-    #       quiz-service:
-    #         - 'backend-python/quiz_service/**'
-    #         - 'backend-python/shared/**'
-    #       real-time-service:
-    #         - 'backend-go/cmd/real_time/**'
-    #         - 'backend-go/real_time/**'
-    #         - 'backend-go/shared/**'
-    #       session-service:
-    #         - 'backend-go/cmd/SessionService/**'
-    #         - 'backend-go/SessionService/**'
-    #         - 'backend-go/shared/**'
-    #       frontend:
-    #         - 'frontend/**'
-    #       shared-migrations:
-    #         - 'backend-python/shared/Dockerfile'
-    #         - 'backend-python/shared/alembic/**'
-    #         - 'backend-python/shared/shared/db/**'
-
     - name: Detect Changes
       id: changes
-      run: |
-        echo "frontend=true" >> $GITHUB_OUTPUT
-        echo "auth-service=false" >> $GITHUB_OUTPUT
-        echo "quiz-service=false" >> $GITHUB_OUTPUT
-        echo "real-time-service=false" >> $GITHUB_OUTPUT
-        echo "session-service=false" >> $GITHUB_OUTPUT
-        echo "shared-migrations=false" >> $GITHUB_OUTPUT
+      uses: dorny/paths-filter@v2
+      with:
+        filters: |
+          auth-service:
+            - 'backend-python/auth_service/**'
+            - 'backend-python/shared/**'
+          quiz-service:
+            - 'backend-python/quiz_service/**'
+            - 'backend-python/shared/**'
+          real-time-service:
+            - 'backend-go/cmd/real_time/**'
+            - 'backend-go/real_time/**'
+            - 'backend-go/shared/**'
+          session-service:
+            - 'backend-go/cmd/SessionService/**'
+            - 'backend-go/SessionService/**'
+            - 'backend-go/shared/**'
+          frontend:
+            - 'frontend/**'
+          shared-migrations:
+            - 'backend-python/shared/Dockerfile'
+            - 'backend-python/shared/alembic/**'
+            - 'backend-python/shared/shared/db/**'
 
   auth-service:
     name: Auth Service CI/CD
@@ -145,7 +135,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
-      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
       SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
       SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
       SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
