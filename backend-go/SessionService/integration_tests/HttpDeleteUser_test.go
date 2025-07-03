@@ -2,11 +2,11 @@ package integration_tests
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
+	"golang.org/x/net/context"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -17,7 +17,7 @@ import (
 	"xxx/SessionService/models"
 )
 
-func Test_HttpWebSocket(t *testing.T) {
+func Test_HttpDeleteUser(t *testing.T) {
 	cwd, _ := os.Getwd()
 	fmt.Println("Working dir:", cwd)
 
@@ -123,8 +123,35 @@ func Test_HttpWebSocket(t *testing.T) {
 	if err != nil {
 		t.Fatal("error unmarshalling response body:", err)
 	}
+
+	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
+	req4 := models.ValidateCodeReq{
+		UserId:   "test3",
+		UserName: "user3",
+		Code:     token.SessionId,
+	}
+	jsonBytes, err = json.Marshal(req4)
+	if err != nil {
+		t.Fatal("error marshaling json:", err)
+	}
+
+	resp, err = http.Post(SessionServiceUrl, "application/json", bytes.NewReader(jsonBytes))
+	if err != nil {
+		t.Fatal("error making request:", err)
+	}
+	defer resp.Body.Close()
+	body4, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("error reading response body:", err)
+	}
+	var user3 models.SessionCreateResponse
+	err = json.Unmarshal(body4, &user3)
+	if err != nil {
+		t.Fatal("error unmarshalling response body:", err)
+	}
 	user1Chan := make(chan string, 2)
 	user2Chan := make(chan string, 1)
+	user3Chan := make(chan string, 1)
 
 	// Goroutine для user1
 	go func() {
@@ -139,6 +166,8 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatal("user1 dial error:", err)
 			return
 		}
+		defer conn.Close()
+
 		for i := 0; i < 2; i++ {
 			_, msg, err := conn.ReadMessage()
 			if err != nil {
@@ -163,6 +192,8 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatal("user2 dial error:", err)
 			return
 		}
+		defer conn.Close()
+
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			t.Fatalf("user2 read error: %v", err)
@@ -209,5 +240,52 @@ func Test_HttpWebSocket(t *testing.T) {
 	}
 	if msg2 != expected2 && msg2 != expected3 {
 		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
+	}
+	uuuu := fmt.Sprintf("http://%s:%s/delete-user?code=%s&userId=%s", host, port, token.SessionId, "test1")
+	resp, err = http.Get(uuuu)
+	if err != nil {
+		t.Fatalf("Request failed: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Request failed: %v", resp.StatusCode)
+	}
+
+	go func() {
+		time.Sleep(1 * time.Second)
+		u := url.URL{
+			Scheme:   "ws",
+			Host:     "localhost:8081",
+			Path:     "/ws",
+			RawQuery: "token=" + user3.Jwt,
+		}
+		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+		if err != nil {
+			t.Fatal("user2 dial error:", err)
+			return
+		}
+		defer conn.Close()
+
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			t.Fatalf("user2 read error: %v", err)
+			return
+		}
+		fmt.Println(string(msg))
+		user3Chan <- string(msg)
+
+	}()
+	timeout2 := time.After(5 * time.Second)
+	var msg3 string
+	select {
+	case m := <-user3Chan:
+		msg3 = m
+	case <-timeout2:
+		t.Fatal("Timeout waiting for WebSocket messages")
+	}
+	expected4 := `{"test2":"user2","test3":"user3"}`
+	expected5 := `{"test3":"user3","test2":"user2"}`
+	if msg3 != expected4 && msg3 != expected5 {
+		t.Fatalf("user3 second message mismatch. Got: %s, Want: %s", msg3, expected5)
 	}
 }

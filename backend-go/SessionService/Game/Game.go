@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
+	"time"
 	"xxx/SessionService/Rabbit"
 	"xxx/SessionService/Storage/Redis"
 	"xxx/SessionService/models"
@@ -24,6 +26,7 @@ type Manager interface {
 	AddPlayerToSession(quizUUID string, UserName string) error
 	SessionStartMock(quizUUID string, sessionId string) error
 	SessionEnd(code string) error
+	CheckService() error
 }
 
 type SessionManager struct {
@@ -90,11 +93,16 @@ func (manager *SessionManager) ValidateCode(code string) bool {
 }
 
 func (manager *SessionManager) GenerateUserToken(code string, UserId string, UserName string, UserType shared.UserRole) *shared.UserToken {
+	expirationTime := time.Now().Add(10000 * time.Second)
 	return &shared.UserToken{
 		UserId:    UserId,
 		UserType:  UserType,
 		SessionId: code,
 		Exp:       10000,
+		UserName:  UserName,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
 	}
 }
 
@@ -198,9 +206,25 @@ func (manager *SessionManager) SessionStartMock(quizUUID string, sessionId strin
 	return nil
 }
 func (manager *SessionManager) SessionEnd(code string) error {
-	err := manager.rabbit.PublishSessionEnd(context.Background(), code, "aboba")
+	err := manager.cache.DeleteSession(code)
+	if err != nil {
+		return fmt.Errorf("error delete session from redis: %v", err)
+	}
+	err = manager.rabbit.PublishSessionEnd(context.Background(), code, "aboba")
 	if err != nil {
 		return fmt.Errorf("error to send message to rabbit %s", err)
+	}
+	return nil
+}
+
+func (manager *SessionManager) CheckService() error {
+	err := manager.cache.CheckRedisAlive()
+	if err != nil {
+		return fmt.Errorf("redis error %v", err)
+	}
+	err = manager.rabbit.CheckRabbitAlive()
+	if err != nil {
+		return fmt.Errorf("rabbit error %v", err)
 	}
 	return nil
 }

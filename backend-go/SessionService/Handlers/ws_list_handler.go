@@ -152,15 +152,23 @@ func (r *ConnectionRegistry) RegisterConnection(sessionID, userID, userName stri
 }
 
 // UnregisterConnection removes joined user connection, (e.g., on user disconnect)
-func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) {
+func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if sessions, exists := r.connections[sessionID]; exists {
+	e1 := false
+	e2 := false
+	if sessions, exists1 := r.connections[sessionID]; exists1 {
+		e1 = true
 		delete(sessions, userID)
 	}
-	if rooms, exists := r.rooms[sessionID]; exists {
+	if rooms, exists2 := r.rooms[sessionID]; exists2 {
+		e2 = true
 		delete(rooms, userID)
 	}
+	if e1 == true && e2 == true {
+		return true
+	}
+	return false
 }
 
 // GetConnections gets a snapshot copy of connections to avoid holding lock during WriteMessage
@@ -177,13 +185,13 @@ func (r *ConnectionRegistry) GetConnections(sessionID string) []*websocket.Conn 
 	return conns
 }
 
-func (r *ConnectionRegistry) GetRooms(sessionID string) []string {
+func (r *ConnectionRegistry) GetRooms(sessionID string) map[string]string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var rooms []string
+	rooms := make(map[string]string)
 	if sessions, exists := r.rooms[sessionID]; exists {
-		for _, c := range sessions {
-			rooms = append(rooms, c)
+		for key, c := range sessions {
+			rooms[key] = c
 		}
 	}
 	return rooms
@@ -223,7 +231,7 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 		reg.logger.Error("WsHandler handleRead error to register connection")
 		return
 	}
-	reg.logger.Info("ws connected to user", ctx.UserId, ctx.UserName)
+	reg.logger.Info("ws connected to user", "userId", ctx.UserId, "userName", ctx.UserName)
 	m := reg.GetRooms(ctx.SessionId)
 	con := reg.connections[ctx.SessionId][ctx.UserId]
 	jsonData, err := json.Marshal(m)
@@ -239,8 +247,8 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 		}
 	}
 	for _, conn := range reg.GetConnections(ctx.SessionId) {
-		var message []string
-		message = append(message, ctx.UserName)
+		message := make(map[string]string)
+		message[ctx.UserId] = ctx.UserName
 		jsonData, err = json.Marshal(message)
 		if err != nil {
 			reg.logger.Error("WsHandler handleRead error to marshal json",
@@ -252,7 +260,7 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 			if err != nil {
 				reg.logger.Error("WsHandler handleRead error to write json", "err", err)
 			}
-			reg.logger.Info("ws sends to all", message)
+			reg.logger.Info("ws sends to all", "message", message)
 		}
 	}
 }
