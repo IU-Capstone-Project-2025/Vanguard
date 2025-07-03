@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie"; // добавляем библиотеку для работы с cookies
 import "./styles/RegisterPage.css";
 
@@ -9,6 +10,7 @@ const RegisterPage = () => {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate(); // используем хук useNavigate для перенаправления
 
   const handleSubmit = async (e) => {
     e.preventDefault();
