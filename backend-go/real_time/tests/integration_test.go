@@ -99,8 +99,8 @@ func TestWithTestContainers(t *testing.T) {
 	// 3. Start RealTime service in a goroutine or exec.Command, configuring it to connect to amqpURL and Redis.
 	//    For brevity, assume RealTime service can be started in-process or as a subprocess, reading env vars:
 	// Start your RealTime main in a goroutine if possible, or exec binary.
-	go startRealTimeServer(t, amqpURL)
-	time.Sleep(2 * time.Second)
+	cancel := startRealTimeServer(t, amqpURL)
+	defer cancel()
 
 	adminId := "admin"
 	users := []string{"navalniy"}
@@ -325,9 +325,10 @@ func getEnvFilePath() string {
 	return filepath.Join(root, ".env")
 }
 
-func startRealTimeServer(t *testing.T, amqpUrl string) {
-	cfg := config.LoadConfig()
+func startRealTimeServer(t *testing.T, amqpUrl string) (ctxCancel context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
 
+	cfg := config.LoadConfig()
 	manager := app.NewManager()
 
 	// Connect to the rabbit MQ
@@ -342,21 +343,31 @@ func startRealTimeServer(t *testing.T, amqpUrl string) {
 		Tracker:  manager.QuizTracker,
 		Registry: manager.ConnectionRegistry,
 	}
+	mux := http.NewServeMux()
+	mux.Handle("/ws", ws.NewWebSocketHandler(handlerDeps))
 
-	// SetCurrQuestionIdx route handler
-	http.Handle("/ws", ws.NewWebSocketHandler(handlerDeps))
-
+	srv := &http.Server{Addr: cfg.Host + ":" + cfg.Port, Handler: mux}
 	go func() {
-		err := http.ListenAndServe(
-			fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
-			nil)
-		t.Fatal(err)
+		t.Log("HTTP server starting")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		t.Fatalf("http listen: %v", err)
+		}
 	}()
 
 	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
-	t.Log("Service is up!")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
 	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
-	select {}
+
+	go func() {
+		<-ctx.Done()
+		t.Log("Shutting down HTTP server...")
+		_ = srv.Shutdown(context.Background())
+	}()
+
+	t.Log("Real-time server fully up")
+	return cancel
 }
