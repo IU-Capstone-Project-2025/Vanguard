@@ -10,7 +10,7 @@ const WaitGameStartPlayer = () => {
     
     const sessionServiceWsRef = useRef(null);
 
-    const [players, setPlayers] = useState([]);
+    const [players, setPlayers] = useState(new Map());
 
     // 🌐 Устанавливаем WebSocket-соединение с Session Service
     const connectToWebSocket = (token) => {
@@ -29,23 +29,21 @@ const WaitGameStartPlayer = () => {
 
         sessionServiceWsRef.current.onmessage = (message) => {
             try {
-                const incomingNames = JSON.parse(message.data); // пример: ["Alice"] или ["Alice", "Bob"]
+                const incoming = JSON.parse(message.data); // { user123: "Alice", user456: "Bob" }
 
-                if (!Array.isArray(incomingNames)) return;
+                setPlayers((prevMap) => {
+                    const updatedMap = new Map(prevMap); // Копируем старую Map
 
-                setPlayers((prevPlayers) => {
+                    for (const [userId, name] of Object.entries(incoming)) {
+                        if (!updatedMap.has(userId)) {
+                            updatedMap.set(userId, name); // Добавляем только новых
+                        }
+                    }
 
-                    // Фильтруем новых
-                    const newPlayers = incomingNames
-                        .map((name, index) => ({
-                            id: prevPlayers.length + index + 1,
-                            name: name
-                        }));
-
-                    return [...prevPlayers, ...newPlayers];
+                    return updatedMap;
                 });
 
-                console.log("📨 Received JSON message:",incomingNames);
+                console.log("📨 Received JSON message:",incoming);
             } catch (e){
                 console.error("⚠️ Failed to parse incoming WebSocket message:", message.data);
             }
@@ -73,9 +71,9 @@ const WaitGameStartPlayer = () => {
             <button onClick={handleLeave}>🔙Leave</button>
             </div>
             <div className="players-grid">
-            {players.map((player) => (
-                <div key={player.id} className="player-box">
-                <span>{player.name}</span>
+                {Array.from(players.entries()).map(([id, name]) => (
+                    <div key={id} className="player-box">
+                        <span>{name}</span>
                 </div>
             ))}
             </div>

@@ -6,7 +6,7 @@ const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
   const sessionServiceWsRef = useRef(null);
 
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState(new Map());
 
   // 🌐 Устанавливаем WebSocket-соединение с Session Service
   const connectToWebSocket = (token) => {
@@ -25,23 +25,21 @@ const WaitGameStartAdmin = () => {
 
     sessionServiceWsRef.current.onmessage = (message) => {
       try {
-        const incomingNames = JSON.parse(message.data); // пример: ["Alice"] или ["Alice", "Bob"]
+        const incoming = JSON.parse(message.data); // { user123: "Alice", user456: "Bob" }
 
-        if (!Array.isArray(incomingNames)) return;
+        setPlayers((prevMap) => {
+          const updatedMap = new Map(prevMap); // Копируем старую Map
 
-        setPlayers((prevPlayers) => {
+          for (const [userId, name] of Object.entries(incoming)) {
+            if (!updatedMap.has(userId)) {
+              updatedMap.set(userId, name); // Добавляем только новых
+            }
+          }
 
-          // Фильтруем новых
-          const newPlayers = incomingNames
-              .map((name, index) => ({
-                id: prevPlayers.length + index + 1,
-                name: name
-              }));
-
-          return [...prevPlayers, ...newPlayers];
+          return updatedMap;
         });
 
-        console.log("📨 Received JSON message:",incomingNames);
+        console.log("📨 Received JSON message:",incoming);
       } catch (e){
         console.error("⚠️ Failed to parse incoming WebSocket message:", message.data);
       }
@@ -53,7 +51,11 @@ const WaitGameStartAdmin = () => {
   },[])
 
   const handleKick = (idToRemove) => {
-    setPlayers(prev => prev.filter(player => player.id !== idToRemove));
+    setPlayers(prev =>{
+      const updated = new Map(prev);
+      updated.delete(idToRemove);
+      return updated;
+    });
     // TODO: отправить на backend сигнал о кике игрока по id
   };
 
@@ -82,29 +84,29 @@ const WaitGameStartAdmin = () => {
   };
 
   return (
-    <div className="wait-admin-container">
-      <div className="wait-admin-panel">
-        <h1>Now let's wait your friends</h1>
-        <div className="admin-button-group">
-          <button onClick={handleStart}>▶ Start</button>
-          <button onClick={handleTerminate}>▶ Terminate</button>
-        </div>
-        <div className="players-grid">
-          {players.map((player) => (
-            <div key={player.id} className="player-box">
-              <span>{player.name}</span>
-              <button
-                className="kick-button"
-                onClick={() => handleKick(player.id)}
-                title={`Kick ${player.name}`}
-              >
-                ❌
-              </button>
-            </div>
-          ))}
+      <div className="wait-admin-container">
+        <div className="wait-admin-panel">
+          <h1>Now let's wait your friends</h1>
+          <div className="admin-button-group">
+            <button onClick={handleStart}>▶ Start</button>
+            <button onClick={handleTerminate}>▶ Terminate</button>
+          </div>
+          <div className="players-grid">
+            {Array.from(players.entries()).map(([id, name]) => (
+                <div key={id} className="player-box">
+                  <span>{name}</span>
+                  <button
+                      className="kick-button"
+                      onClick={() => handleKick(id)}
+                      title={`Kick ${name}`}
+                  >
+                    ❌
+                  </button>
+                </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 
