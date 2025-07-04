@@ -79,7 +79,7 @@ jobs:
         docker build -t $IMAGE_SHA -t $IMAGE_LATEST -f quiz_service/Dockerfile .
 
     - name: Push Docker image
-      # if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main'
       run: |
         docker push $IMAGE_SHA
         docker push $IMAGE_LATEST
