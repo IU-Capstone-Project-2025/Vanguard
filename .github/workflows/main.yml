@@ -212,6 +212,10 @@ jobs:
         GO_ENV=production
         EOF
 
+    - name: Upload configs to VM
+      run: |
+        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf ./rabbit/definitions.json $SSH_USER@$SSH_HOST:/tmp/
+
     - name: Deploy with Docker Compose
       run: |
         docker compose \
