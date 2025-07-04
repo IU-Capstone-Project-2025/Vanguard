@@ -150,6 +150,20 @@ func TestWithTestContainers(t *testing.T) {
 	// 5. Publish session.start
 	publishSessionStart(t, amqpURL, sessionId, quiz)
 
+	// ========================================================================
+	// START OF THE DUMMY FIX
+	// ========================================================================
+	//
+	// Give the server a moment to consume the 'session.start' message and
+	// create the dynamic consumer for 'question.<session_id>.start'.
+	// This value may need to be increased if the CI runner is slow.
+	t.Log("Waiting for 5 seconds for the server to set up session consumers...")
+	time.Sleep(5 * time.Second)
+	//
+	// ========================================================================
+	// END OF THE DUMMY FIX
+	// ========================================================================
+
 	// 6. Admin WS connection
 	adminConn = connectWs(t, adminToken)
 
