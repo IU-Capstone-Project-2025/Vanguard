@@ -1,7 +1,12 @@
-from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
+import os
 
-load_dotenv()
+from pydantic_settings import BaseSettings
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
+
+if ENVIRONMENT != "prod" and ENVIRONMENT != "test":
+    from dotenv import load_dotenv
+    load_dotenv()
 
 
 class Settings(BaseSettings):
