@@ -35,7 +35,7 @@ services:
       "
 
   certbot:
-    image: certbot/certbot:latest
+    image: certbot/certbot:v4.1.1
     container_name: certbot
     volumes:
       - /opt/certbot/www:/var/www/certbot:rw

@@ -6,6 +6,9 @@ on:
       service-name:
         required: true
         type: string
+    outputs:
+      image:
+        value: ${{ jobs.test-build-push.outputs.image }}
 
 jobs:
   test-build-push:

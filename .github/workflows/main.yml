@@ -78,7 +78,7 @@ jobs:
   auth-service:
     name: Auth Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.auth-service == 'true' }}
+    if: ${{ needs.detect-changes.outputs.auth-service == 'true' || github.ref == 'refs/heads/main' }}
     uses: ./.github/workflows/auth-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.auth-service-name }}
@@ -87,7 +87,7 @@ jobs:
   quiz-service:
     name: Quiz Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.quiz-service == 'true' }}
+    if: ${{ needs.detect-changes.outputs.quiz-service == 'true' || github.ref == 'refs/heads/main' }}
     uses: ./.github/workflows/quiz-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.quiz-service-name }}
@@ -96,7 +96,7 @@ jobs:
   real-time-service:
     name: Real-Time Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.real-time-service == 'true' }}
+    if: ${{ needs.detect-changes.outputs.real-time-service == 'true' || github.ref == 'refs/heads/main' }}
     uses: ./.github/workflows/real-time-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.realtime-service-name }}
@@ -105,7 +105,7 @@ jobs:
   session-service:
     name: Session Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.session-service == 'true' }}
+    if: ${{ needs.detect-changes.outputs.session-service == 'true' || github.ref == 'refs/heads/main' }}
     uses: ./.github/workflows/session-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.session-service-name }}
@@ -117,13 +117,13 @@ jobs:
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     uses: ./.github/workflows/frontend.yml
     with:
-      service-name: ${{ needs.set-globals.outputs.frontend-service-name }}
+      service-name: ${{ needs.set-globals.outputs.frontend-service-name || github.ref == 'refs/heads/main' }}
     secrets: inherit
 
   shared-migrations:
     name: Shared Migrations CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.shared-migrations == 'true'}}
+    if: ${{ needs.detect-changes.outputs.shared-migrations == 'true' || github.ref == 'refs/heads/main' }}
     uses: ./.github/workflows/shared-migrations.yml
     with:
       service-name: ${{ needs.set-globals.outputs.migrator-service-name }}
@@ -147,30 +147,30 @@ jobs:
     - name: Assemble final image refs
       id: assemble
       run: |
-        AUTH_IMAGE=${{ needs.auth-service.outputs.image }}
-        [ -z "$AUTH_IMAGE" ] && AUTH_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.auth-service-name }}:latest"
-        QUIZ_IMAGE=${{ needs.quiz-service.outputs.image }}
-        [ -z "$QUIZ_IMAGE" ] && QUIZ_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.quiz-service-name }}:latest"
-        REALTIME_IMAGE=${{ needs.real-time-service.outputs.image }}
-        [ -z "$REALTIME_IMAGE" ] && REALTIME_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.realtime-service-name }}:latest"
-        SESSION_IMAGE=${{ needs.session-service.outputs.image }}
-        [ -z "$SESSION_IMAGE" ] && SESSION_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.session-service-name }}:latest"
-        FRONTEND_IMAGE=${{ needs.frontend.outputs.image }}
-        [ -z "$FRONTEND_IMAGE" ] && FRONTEND_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.frontend-service-name }}:latest"
-        MIGRATOR_IMAGE=${{ needs.shared-migrations.outputs.image }}
-        [ -z "$MIGRATOR_IMAGE" ] && MIGRATOR_IMAGE="$DOCKERHUB_USER/${{ needs.set-globals.outputs.migrator-service-name }}:latest"
+        echo "AUTH_IMAGE=${{ needs.auth-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "QUIZ_IMAGE=${{ needs.quiz-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "REALTIME_IMAGE=${{ needs.real-time-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "SESSION_IMAGE=${{ needs.session-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "FRONTEND_IMAGE=${{ needs.frontend.outputs.image }}" >> $GITHUB_ENV  
+        echo "MIGRATOR_IMAGE=${{ needs.shared-migrations.outputs.image }}" >> $GITHUB_ENV 
 
-        echo "AUTH_IMAGE=$AUTH_IMAGE" >> $GITHUB_ENV
-        echo "QUIZ_IMAGE=$QUIZ_IMAGE" >> $GITHUB_ENV
-        echo "REALTIME_IMAGE=$REALTIME_IMAGE" >> $GITHUB_ENV
-        echo "SESSION_IMAGE=$SESSION_IMAGE" >> $GITHUB_ENV
-        echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> $GITHUB_ENV
-        echo "MIGRATOR_IMAGE=$MIGRATOR_IMAGE" >> $GITHUB_ENV
+    - name: Verify all images exist
+      run: |
+        if [ -z "$AUTH_IMAGE" ] || [ -z "$QUIZ_IMAGE" ] || [ -z "$REALTIME_IMAGE" ] || \  
+          [ -z "$SESSION_IMAGE" ] || [ -z "$FRONTEND_IMAGE" ] || [ -z "$MIGRATOR_IMAGE" ]; then  
+          echo "::error::One or more images are missing!"  
+          exit 1  
+        fi
 
     - name: Set up SSH key
       uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ env.SSH_KEY }}
+
+    - name: Add SSH host to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts
 
     - name: Create Docker SSH context
       run: |
