@@ -83,7 +83,7 @@ jobs:
 
     - name: Set output image
       id: out
-      run: echo "::set-output name=image::$IMAGE_SHA"
+      run: echo "image=$IMAGE_SHA" >> $GITHUB_OUTPUT
 
     outputs:
       image: ${{ steps.out.outputs.image }}
