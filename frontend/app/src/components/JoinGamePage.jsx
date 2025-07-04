@@ -34,19 +34,6 @@ const JoinGamePage = () => {
         console.log("code updated:", code);
     }, [code]);
 
-    // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
-    const connectToWebSocket = (token) => {
-        realTimeWsRef.current = new WebSocket(`/api/ws/ws?token=${token}`);
-        realTimeWsRef.current.onopen = () => {
-            console.log("✅ WebSocket connected with Real-time");
-        };
-
-        realTimeWsRef.current.onerror = (err) => {
-            console.error("❌ WebSocket with Real-time error:", err);
-
-        };
-    };
-
     const handlePlay = async () => {
         if (code) {
             console.log("code updated:", code);
@@ -56,7 +43,6 @@ const JoinGamePage = () => {
                 alert("Failed to join session. Please check the code and try again.");
                 return;
             }
-            connectToWebSocket(sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             sessionStorage.setItem('jwt', sessionData.jwt);
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code

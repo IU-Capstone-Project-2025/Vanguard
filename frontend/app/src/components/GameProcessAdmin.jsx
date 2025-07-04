@@ -6,8 +6,8 @@
   const GameProcessAdmin = () => {
     const { wsRefSession, connectSession } = useSessionSocket();
     const { wsRefRealtime, connectRealtime } = useRealtimeSocket();
-    const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') ?
-      JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
+    const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') != undefined ?
+    JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
     const [questionIndex, setQuestionIndex] = useState(0);
     
     useEffect(() => {
@@ -57,6 +57,8 @@
           const data = JSON.parse(event.data);
           if (data.type === 'question') {
             console.log('Received question:', data);
+            setCurrentQuestion(data);
+            sessionStorage.setItem('currentQuestion', JSON.stringify(data));
             return data
           }
         };
@@ -67,16 +69,14 @@
     };
 
     /* -------- кнопка "Next" -------- */
-    const handleNextQuestion = async () => {
+    const handleNextQuestion = async (e) => {
+      e.preventDefault();
       const sessionCode = sessionStorage.getItem('sessionCode');
 
       toNextQuestion(sessionCode);
       setQuestionIndex((prevIndex) => prevIndex + 1);
 
       const quizData = await listenQuizQuestion(sessionCode)
-      sessionStorage.setItem('currentQuestion', JSON.stringify(quizData));
-      setCurrentQuestion(quizData);
-      console.log('Current question updated:', quizData);
     };
 
     /* -------- UI -------- */

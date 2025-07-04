@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"log"
 	"xxx/shared"
 )
@@ -73,9 +74,14 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 		_, raw, err := ctx.Conn.ReadMessage()
 		fmt.Printf("ws connection received message: '%s'\n", string(raw))
 		if err != nil {
+		if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 			fmt.Println(fmt.Errorf("ws error reading message: %w", err).Error())
-			return
+		} else {
+			log.Printf("websocket closed: %v\n", err)
 		}
+		return
+    }
+
 
 		var msg ClientMessage
 		if err := json.Unmarshal(raw, &msg); err != nil {
