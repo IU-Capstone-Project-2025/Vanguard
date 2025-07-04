@@ -17,6 +17,7 @@ type Cache interface {
 	CodeExist(code string) bool
 	GetPlayersForSession(sessionCode string) ([]string, error)
 	AddPlayerToSession(sessionCode string, playerName string) error
+	CheckRedisAlive() error
 }
 
 type Redis struct {
@@ -134,4 +135,12 @@ func (r *Redis) GetPlayersForSession(sessionCode string) ([]string, error) {
 	}
 
 	return players, nil
+}
+
+func (r *Redis) CheckRedisAlive() error {
+	_, err := r.Client.Ping(context.Background()).Result()
+	if err != nil {
+		return err
+	}
+	return nil
 }

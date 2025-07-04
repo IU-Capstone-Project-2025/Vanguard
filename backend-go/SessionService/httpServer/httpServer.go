@@ -59,7 +59,6 @@ func (hs *HttpServer) Start() {
 
 	<-hs.stopChan
 	hs.logger.Info("Shutdown signal received")
-
 	hs.Stop()
 }
 
@@ -85,10 +84,10 @@ func (hs *HttpServer) registerHandlers() *mux.Router {
 	router.HandleFunc("/validate", hs.ValidateSessionCodeHandler).Methods("POST")
 	router.HandleFunc("/sessionsMock", hs.CreateSessionHandlerMock).Methods("POST")
 	router.HandleFunc("/session/{id}/end", hs.SessionEndHandler).Methods("POST")
-
+	router.HandleFunc("/healthz", hs.HealthHandler).Methods("POST")
 	registry := Handlers.NewConnectionRegistry(hs.logger)
 	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
-
+	router.Handle("/delete-user", Handlers.DeleteUserHandler(registry))
 	hs.logger.Info("Routes registered", "host", hs.Host, "port", hs.Port)
 	return router
 }

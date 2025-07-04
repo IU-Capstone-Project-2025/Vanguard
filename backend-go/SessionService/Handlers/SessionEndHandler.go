@@ -7,18 +7,18 @@ import (
 	"xxx/SessionService/models"
 )
 
-// SessionEndHandler advances to the next question for the given session code.
+// SessionEndHandler used to end session.
 //
-// @Summary Move to the next question
-// @Description Advances to the next question in the session identified by the provided code.
+// @Summary delete session, send message to rabbit
+// @Description Delete session from redis, send message to rabbit that session deleted
 // @Tags sessions
 // @Accept  json
 // @Produce  json
 // @Param   id   path   string  true  "Session ID"
-// @Success 201 "Successfully moved to the next question"
+// @Success 200 "Successfully moved to the next question"
 // @Failure 405 {object} models.ErrorResponse "Method not allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /session/{id}/SessionEnd [post]
+// @Router /session/{id}/end [post]
 func (h *SessionManagerHandler) SessionEndHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.logger.Info("SessionEndHandler request method not allowed ", "Request Method", r.Method)

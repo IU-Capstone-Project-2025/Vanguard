@@ -2,11 +2,10 @@ package integration_tests
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/joho/godotenv"
-	"io/ioutil"
+	"golang.org/x/net/context"
 	"net/http"
 	"os"
 	"testing"
@@ -15,7 +14,7 @@ import (
 	"xxx/SessionService/models"
 )
 
-func Test_HttpValidateSessionCode(t *testing.T) {
+func Test_HttpServerHealth(t *testing.T) {
 	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		if err := godotenv.Load(getEnvFilePath()); err != nil {
 			t.Fatalf("could not load .env file: %v", err)
@@ -24,21 +23,22 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 
 	host := os.Getenv("SESSION_SERVICE_HOST")
 	port := os.Getenv("SESSION_SERVICE_PORT")
-
 	rabbitC, rabbitURL := startRabbit(context.Background(), t)
 	redisC, redisURL := startRedis(context.Background(), t)
 	defer redisC.Terminate(context.Background())
 	defer rabbitC.Terminate(context.Background())
+	// Запуск канала RabbitMQ для question.{sessionID}.start
+	// ⚙️ Создаем логгер и запускаем сервер
 	log := setupLogger(envLocal)
 	server, err := httpServer.InitHttpServer(log, host, port, rabbitURL, redisURL)
 	if err != nil {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(2 * time.Second) // Даем серверу стартануть
+	time.Sleep(2 * time.Second)
 	defer server.Stop()
-
-	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
+	// 🛠️ Создаем сессию
+	SessionServiceUrl := fmt.Sprintf("http://%s:%s/healthz", host, port)
 	req := models.CreateSessionReq{
 		UserId: "1",
 		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
@@ -47,7 +47,6 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 	if err != nil {
 		t.Fatal("error marshaling json:", err)
 	}
-
 	resp, err := http.Post(SessionServiceUrl, "application/json", bytes.NewReader(jsonBytes))
 	if err != nil {
 		t.Fatal("error making request:", err)
@@ -55,47 +54,6 @@ func Test_HttpValidateSessionCode(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
+		t.Fatalf("unexpected status code: got %d", resp.StatusCode)
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatalf("error reading response body: %s", err.Error())
-		return
-	}
-
-	if len(body) == 0 {
-		t.Fatalf("response body is empty")
-		return
-	}
-
-	fmt.Println("get body:")
-	fmt.Println(string(body))
-
-	var token models.SessionCreateResponse
-	err = json.Unmarshal(body, &token)
-	if err != nil {
-		t.Fatalf("error unmarshalling response: %s", err.Error())
-		return
-	}
-	SessionServiceUrl = fmt.Sprintf("http://%s:%s/validate", host, port)
-	req2 := models.ValidateSessionCodeReq{
-		Code: token.SessionId,
-	}
-	jsonBytes, err = json.Marshal(req2)
-	if err != nil {
-		t.Fatal("error marshaling json:", err)
-	}
-
-	resp, err = http.Post(SessionServiceUrl, "application/json", bytes.NewReader(jsonBytes))
-	if err != nil {
-		t.Fatal("error making request:", err)
-	}
-	if err != nil {
-		t.Fatal("error reading response body:", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected status code: got %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-
 }

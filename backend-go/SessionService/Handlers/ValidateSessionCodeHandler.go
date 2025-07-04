@@ -6,19 +6,19 @@ import (
 	"xxx/SessionService/models"
 )
 
-// ValidateSessionCodeHandler validates a session code and returns a user token if valid.
+// ValidateSessionCodeHandler validates a session code.
 //
 // @Summary Validate session code
 // @Description Validates a session code and returns a user token for the specified user if the code is valid.
 // @Tags sessions
 // @Accept  json
 // @Produce  json
-// @Param   request  body  models.ValidateCodeReq  true  " Create Session req"
-// @Success 200 {object} models.SessionCreateResponse "User token in JSON format"
+// @Param   request  body  models.ValidateSessionCodeReq  true  " Create Session req"
+// 200 {string} string "OK
 // @Failure 400 {object} models.ErrorResponse "Invalid code"
 // @Failure 405 {object} models.ErrorResponse "Only GET method is allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /join [post]
+// @Router /validate [post]
 func (h *SessionManagerHandler) ValidateSessionCodeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.logger.Info("ValidateCodeHandler request method not allowed ", "Request Method", r.Method)

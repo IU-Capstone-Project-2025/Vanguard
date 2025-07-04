@@ -11,7 +11,7 @@ import (
 
 // CreateSessionHandlerMock creates a new session and generates an admin token for the user.
 //
-// @Summary Create a new session and get an admin token
+// @Summary Create a new session and get an admin token. Mock endpoint, no req to another service
 // @Description Creates a new session and returns an admin token for the specified user by userId.
 // @Tags sessions
 // @Accept  json
@@ -20,7 +20,7 @@ import (
 // @Success 200 {object} models.SessionCreateResponse "Admin token in JSON format"
 // @Failure 405 {object} models.ErrorResponse "Method not allowed, only GET is allowed"
 // @Failure 500 {object} models.ErrorResponse "Internal server error"
-// @Router /sessions [post]
+// @Router /sessionsMock [post]
 func (h *SessionManagerHandler) CreateSessionHandlerMock(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.logger.Info("CreateSessionHandler request method not allowed ", "Request Method", r.Method)
