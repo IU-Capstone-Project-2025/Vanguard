@@ -10,6 +10,7 @@ const WaitGameStartAdmin = () => {
   const { wsRefRealtime, connectRealtime } = useRealtimeSocket();
   const [sessionCode, setSessionCode] = useState(sessionStorage.getItem('sessionCode') || null);
   const [players, setPlayers] = useState([]);
+  const [hasClickedNext, setHasClickedNext] = useState(false)
 
   const extractPlayersFromMessage = (data) => {
     if (!Array.isArray(data)) return;
@@ -75,7 +76,9 @@ const WaitGameStartAdmin = () => {
     }
   };
 
-  const handleStart = async () => {
+  const handleStart = async (e) => {
+    e.preventDefault()
+    setHasClickedNext(true)
     const sessionCode = sessionStorage.getItem('sessionCode');
     await toNextQuestion(sessionCode);
 
@@ -94,7 +97,7 @@ const WaitGameStartAdmin = () => {
       <div className="wait-admin-panel">
         <h1>Now let's wait your friends <br/> Code: #{sessionCode}</h1>
         <div className="admin-button-group">
-          <button onClick={handleStart}>▶️ Start</button>
+          <button onClick={(e)=>{handleStart(e);}} disabled={hasClickedNext}>▶️ Start</button>
           <button onClick={handleTerminate}>▶️ Terminate</button>
         </div>
         <div className="players-grid">

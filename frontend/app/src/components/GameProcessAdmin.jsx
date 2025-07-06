@@ -1,7 +1,8 @@
-  import React, { useEffect, useState, useCallback } from 'react';
-  import { useSessionSocket } from '../contexts/SessionWebSocketContext';
-  import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
-  import './styles/GameProcess.css'
+import React, { useEffect, useState, useCallback } from 'react';
+import { useSessionSocket } from '../contexts/SessionWebSocketContext';
+import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
+import './styles/GameProcess.css'
+import { useNavigate } from 'react-router-dom';
 
   const GameProcessAdmin = () => {
     const { wsRefSession, connectSession } = useSessionSocket();
@@ -9,6 +10,8 @@
     const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') != undefined ?
     JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
     const [questionIndex, setQuestionIndex] = useState(0);
+    const questionsAmount = useState(currentQuestion.quiestionsAmount - 1);
+    const navigate = useNavigate()
     
     useEffect(() => {
       const token = sessionStorage.getItem('jwt');
@@ -68,10 +71,33 @@
       }
     };
 
+    const finishSession = async (code) => {
+      try {
+        const response = await fetch(`/api/session/session/${code}/end`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to end session with code: ${code}`);
+        }
+        console.log(`end session with code: [${code}] response:`, response);
+        navigate('/')
+      } catch (error) {
+        console.error('Error end the session:', error);
+      }
+      
+    }
+
     /* -------- кнопка "Next" -------- */
     const handleNextQuestion = async (e) => {
       e.preventDefault();
       const sessionCode = sessionStorage.getItem('sessionCode');
+
+      // if (questionIndex === questionsAmount) {
+      //   await finishSession(sessionCode)
+      // }
 
       toNextQuestion(sessionCode);
       setQuestionIndex((prevIndex) => prevIndex + 1);
@@ -101,6 +127,7 @@
 
         <div className="navigation-buttons">
           <button onClick={handleNextQuestion} className="nav-button">
+            {/* { (questionIndex < questionsAmount) ? "Next" : "Finish" } */}
             Next
           </button>
         </div>
