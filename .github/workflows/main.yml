@@ -1,0 +1,225 @@
+name: Main CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, ci-pipeline ]
+    paths-ignore:
+    - 'docker-compose.yaml'
+    - '.env.example'
+    - '.gitignore'
+    - 'LICENSE'
+    - 'README.md'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  set-globals:
+    runs-on: ubuntu-latest
+    outputs:
+      auth-service-name: ${{ steps.set.outputs.auth-service-name }}
+      quiz-service-name: ${{ steps.set.outputs.quiz-service-name }}
+      realtime-service-name: ${{ steps.set.outputs.realtime-service-name }}
+      session-service-name: ${{ steps.set.outputs.session-service-name }}
+      frontend-service-name: ${{ steps.set.outputs.frontend-service-name }}
+      migrator-service-name: ${{ steps.set.outputs.migrator-service-name }}
+    steps:
+    - name: Define service name outputs
+      id: set
+      run: |
+        echo "auth-service-name=tryit-auth-service"     >> $GITHUB_OUTPUT
+        echo "quiz-service-name=tryit-quiz-service"     >> $GITHUB_OUTPUT
+        echo "realtime-service-name=tryit-real-time-service" >> $GITHUB_OUTPUT
+        echo "session-service-name=tryit-session-service"   >> $GITHUB_OUTPUT
+        echo "frontend-service-name=tryit-frontend"          >> $GITHUB_OUTPUT
+        echo "migrator-service-name=tryit-migrator"          >> $GITHUB_OUTPUT
+
+  detect-changes:
+    name: Detect Service Changes
+    runs-on: ubuntu-latest
+    outputs:
+      auth-service: ${{ steps.changes.outputs.auth-service }}
+      quiz-service: ${{ steps.changes.outputs.quiz-service }}
+      real-time-service: ${{ steps.changes.outputs.real-time-service }}
+      session-service: ${{ steps.changes.outputs.session-service }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      shared-migrations: ${{ steps.changes.outputs.shared-migrations }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Detect Changes
+      id: changes
+      uses: dorny/paths-filter@v2
+      with:
+        filters: |
+          auth-service:
+            - 'backend-python/auth_service/**'
+            - 'backend-python/shared/**'
+          quiz-service:
+            - 'backend-python/quiz_service/**'
+            - 'backend-python/shared/**'
+          real-time-service:
+            - 'backend-go/cmd/real_time/**'
+            - 'backend-go/real_time/**'
+            - 'backend-go/shared/**'
+          session-service:
+            - 'backend-go/cmd/SessionService/**'
+            - 'backend-go/SessionService/**'
+            - 'backend-go/shared/**'
+          frontend:
+            - 'frontend/**'
+          shared-migrations:
+            - 'backend-python/shared/Dockerfile'
+            - 'backend-python/shared/alembic/**'
+            - 'backend-python/shared/shared/db/**'
+
+  auth-service:
+    name: Auth Service CI/CD
+    needs: [ set-globals, detect-changes ]
+    if: ${{ needs.detect-changes.outputs.auth-service == 'true' || github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/auth-service.yml
+    with:
+      service-name: ${{ needs.set-globals.outputs.auth-service-name }}
+    secrets: inherit
+
+  quiz-service:
+    name: Quiz Service CI/CD
+    needs: [ set-globals, detect-changes ]
+    if: ${{ needs.detect-changes.outputs.quiz-service == 'true' || github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/quiz-service.yml
+    with:
+      service-name: ${{ needs.set-globals.outputs.quiz-service-name }}
+    secrets: inherit
+
+  real-time-service:
+    name: Real-Time Service CI/CD
+    needs: [ set-globals, detect-changes ]
+    if: ${{ needs.detect-changes.outputs.real-time-service == 'true' || github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/real-time-service.yml
+    with:
+      service-name: ${{ needs.set-globals.outputs.realtime-service-name }}
+    secrets: inherit
+
+  session-service:
+    name: Session Service CI/CD
+    needs: [ set-globals, detect-changes ]
+    if: ${{ needs.detect-changes.outputs.session-service == 'true' || github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/session-service.yml
+    with:
+      service-name: ${{ needs.set-globals.outputs.session-service-name }}
+    secrets: inherit
+
+  frontend:
+    name: Frontend CI/CD
+    needs: [ set-globals, detect-changes ]
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+    uses: ./.github/workflows/frontend.yml
+    with:
+      service-name: ${{ needs.set-globals.outputs.frontend-service-name || github.ref == 'refs/heads/main' }}
+    secrets: inherit
+
+  shared-migrations:
+    name: Shared Migrations CI/CD
+    needs: [ set-globals, detect-changes ]
+    if: ${{ needs.detect-changes.outputs.shared-migrations == 'true' || github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/shared-migrations.yml
+    with:
+      service-name: ${{ needs.set-globals.outputs.migrator-service-name }}
+    secrets: inherit
+
+  deploy:
+    name: Deploy to Production
+    needs: [ set-globals, auth-service, quiz-service, real-time-service, session-service, frontend, shared-migrations ]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
+      SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+      SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+      SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+      SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Assemble final image refs
+      id: assemble
+      run: |
+        echo "AUTH_IMAGE=${{ needs.auth-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "QUIZ_IMAGE=${{ needs.quiz-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "REALTIME_IMAGE=${{ needs.real-time-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "SESSION_IMAGE=${{ needs.session-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "FRONTEND_IMAGE=${{ needs.frontend.outputs.image }}" >> $GITHUB_ENV  
+        echo "MIGRATOR_IMAGE=${{ needs.shared-migrations.outputs.image }}" >> $GITHUB_ENV 
+
+    - name: Verify all images exist
+      run: |
+        if [ -z "$AUTH_IMAGE" ] || [ -z "$QUIZ_IMAGE" ] || [ -z "$REALTIME_IMAGE" ] || \  
+          [ -z "$SESSION_IMAGE" ] || [ -z "$FRONTEND_IMAGE" ] || [ -z "$MIGRATOR_IMAGE" ]; then  
+          echo "::error::One or more images are missing!"  
+          exit 1  
+        fi
+
+    - name: Set up SSH key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ env.SSH_KEY }}
+
+    - name: Add SSH host to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts
+
+    - name: Create Docker SSH context
+      run: |
+        docker context create remote \
+          --docker "host=ssh://$SSH_USER@$SSH_HOST:$SSH_PORT" \
+          || echo "context exists"
+        docker context use remote
+
+    - name: Create .env file
+      run: |
+        cat <<EOF > deploy.env
+        AUTH_IMAGE=${{ env.AUTH_IMAGE }}
+        QUIZ_IMAGE=${{ env.QUIZ_IMAGE }}
+        REALTIME_IMAGE=${{ env.REALTIME_IMAGE }}
+        SESSION_IMAGE=${{ env.SESSION_IMAGE }}
+        FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
+        MIGRATOR_IMAGE=${{ env.MIGRATOR_IMAGE }}
+
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        TEST_POSTGRES_DB=${{ secrets.TEST_POSTGRES_DB }}
+        TZ=UTC
+        RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+        RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+        CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+        DB_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB }}
+        TEST_DB_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.TEST_POSTGRES_DB }}
+        AUTH_JWT_SECRET_KEY=${{ secrets.AUTH_JWT_SECRET_KEY }}
+        GO_JWT_SECRET_KEY=${{ secrets.GO_JWT_SECRET_KEY }}
+        S3_REGION=${{ secrets.S3_REGION }}
+        S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}
+        S3_BUCKET=${{ secrets.S3_BUCKET }}
+        S3_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+        S3_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        MAX_IMAGE_SIZE=5242880
+        NODE_ENV=development
+        CHOKIDAR_USEPOLLING=true
+        GO_ENV=production
+        EOF
+
+    - name: Upload configs to VM
+      run: |
+        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf ./rabbit/definitions.json $SSH_USER@$SSH_HOST:/tmp/
+
+    - name: Deploy with Docker Compose
+      run: |
+        docker compose \
+          -f docker-compose.yaml \
+          -f docker-compose.prod.yaml \
+          --env-file deploy.env \
+          up -d --remove-orphans

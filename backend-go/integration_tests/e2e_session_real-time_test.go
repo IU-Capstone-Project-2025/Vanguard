@@ -43,7 +43,7 @@ type ValidateCodeReq struct {
 
 func loadEnv(t *testing.T) {
 	// Optionally load .env if needed for configuration
-	if os.Getenv("ENV") != "production" {
+	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
 		// Assume .env is at project root; adapt path as needed
 		if err := godotenv.Load("../../.env"); err != nil {
 			// Not fatal if .env missing, but log
