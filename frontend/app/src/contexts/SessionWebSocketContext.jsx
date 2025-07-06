@@ -30,7 +30,6 @@ export const SessionWebSocketProvider = ({ children }) => {
     ws.onerror = (e) => console.error('⚠️ Session WebSocket error:', e);
     ws.onclose = () => {
       console.warn('ℹ️ Session WebSocket closed');
-      wsRefSession.current = null;
     };
 
     wsRefSession.current = ws;

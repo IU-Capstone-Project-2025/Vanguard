@@ -30,7 +30,6 @@ export const RealtimeWebSocketProvider = ({ children }) => {
     ws.onerror = (e) => console.error('⚠️ Realtime WebSocket error:', e);
     ws.onclose = () => {
       console.warn('ℹ️ Realtime WebSocket closed');
-      wsRefRealtime.current = null;
     };
 
     wsRefRealtime.current = ws;

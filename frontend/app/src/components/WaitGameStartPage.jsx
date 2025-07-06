@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSessionSocket } from "../contexts/SessionWebSocketContext";
+import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext"
 import "./styles/WaitGameStartPlayer.css";
 
 const WaitGameStartPlayer = () => {
   const navigate = useNavigate();
   const { sessionCode } = useParams();
   const { wsRefSession, connectSession } = useSessionSocket();
+  const { wsRefRealtime, connectRealtime} = useRealtimeSocket();
 
   const [players, setPlayers] = useState([]);
 

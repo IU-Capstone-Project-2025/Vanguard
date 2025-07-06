@@ -23,6 +23,8 @@ import { useNavigate } from 'react-router-dom';
       return () => {
         if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
         if (wsRefSession.current)  wsRefSession.current.onmessage  = null;
+        if (wsRefRealtime.current) wsRefRealtime.current.onclose = {finishSession}
+        if (wsRefSession.current) wsRefSession.current.onclose = {finishSession}
       };
     }, [connectSession, connectRealtime, wsRefSession, wsRefRealtime]);
 
