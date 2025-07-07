@@ -92,13 +92,13 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 				}
 			registry.BroadcastToSession(sessionId, nextQuestionAck.Bytes(), false)
 
-			if qid == 0 {
-				gameStartAck := ws.ServerMessage{
-					Type:          ws.MessageTypeAck,
-					IsGameStarted: true,
-				}
-				registry.BroadcastToSession(sessionId, gameStartAck.Bytes(), false)
-			}
+			// if qid == 0 {
+			// 	gameStartAck := ws.ServerMessage{
+			// 		Type:          ws.MessageTypeAck,
+			// 		IsGameStarted: true,
+			// 	}
+			// 	registry.BroadcastToSession(sessionId, gameStartAck.Bytes(), false)
+			// }
 		}
 		
 	}()
