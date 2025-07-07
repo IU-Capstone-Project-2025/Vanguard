@@ -117,7 +117,9 @@ func (r *ConnectionRegistry) sendMessage(payload []byte, receivers ...Connection
 			log.Println("Skipped sending message: connection is nil")
 			continue
 		}
+		r.mu.Lock()
 		err := ctx.Conn.WriteMessage(websocket.TextMessage, payload)
+		r.mu.Unlock()
 		if err != nil {
 			log.Printf("Failed to send message to connection: %v", err)
 			r.UnregisterConnection(ctx.SessionId, ctx.UserId)

@@ -1,54 +1,66 @@
 import React, { useState, useEffect } from "react";
-import GameProcess from "./GameProcessPage";
+import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext";
+import "./styles/GameProcess.css";
+import { useNavigate } from "react-router-dom";
 
-const GameController = ({ sessionId }) => {
-  const [question, setQuestion] = useState(null);
-  const [options, setOptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [socket, setSocket] = useState(null);
+const GameController = () => {
+  const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
+  const [question, setQuestion] = useState(
+    {"options": [
+      "⬣",
+      "⬥",
+      "✠",
+      "❇"
+    ]} // Default empty question to avoid errors
+  )
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const sessionCode = sessionStorage.getItem("sessionCode");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Подключаем WebSocket
-    const ws = new WebSocket(`wss://example.com/sessions/${sessionId}`);
-    setSocket(ws);
+    const token = sessionStorage.getItem("jwt");
+    const sessionCode = sessionStorage.getItem("sessionCode");
 
-    ws.onopen = () => {
-      console.log("✅ WebSocket connected");
-      // Дополнительно можно отправить сообщение для инициализации
-      ws.send(JSON.stringify({ action: "join", sessionId }));
-    };
-    ws.onerror = (error) => {
-      console.error("❌ WebSocket error:", error);
-    };
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    if (!token || !sessionCode) return;
 
-      if (data.type === "new_question") {
-        setQuestion(data.question);
-        setOptions(data.options);
-        setLoading(false);
-      } else if (data.type === "end") {
-        setQuestion(null);
-        setOptions([]);
+    connectRealtime(token, sessionCode);
+
+    if (wsRefRealtime.current) {
+      wsRefRealtime.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === "end") {
+          endSession();
+        }
+        if (data.type === "next_question") {
+          setHasAnswered(false);
+          setLoading(false);
+        }
+        
+      };
+
+      wsRefRealtime.current.onclose = () => {
+        endSession();
       }
-    };
-    ws.onclose = () => {
-      console.log("ℹ️ WebSocket closed");
-    };
+    }
+
     return () => {
-      ws.close();
+      if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
     };
-  }, [sessionId]);
+  }, [connectRealtime, wsRefRealtime]);
 
-  const handleAnswer = (selectedOption) => {
-    if (!socket) return;
+  const endSession = () => {
+    console.log(`Ending session... ${sessionCode}`);
+    sessionStorage.removeItem('sessionCode');
+    closeWsRefRealtime();
+    navigate('/');
+  }
 
-    const message = {
-      action: "submit_answer",
-      sessionId,
-      answer: selectedOption,
-    };
-    socket.send(JSON.stringify(message));
+  const handleAnswer = (index) => {
+    if (!wsRefRealtime.current) return;
+    wsRefRealtime.current.send(JSON.stringify({ option: index }));
+    setHasAnswered(true);
   };
 
   if (loading) {
@@ -59,20 +71,24 @@ const GameController = ({ sessionId }) => {
     );
   }
 
-  if (!question) {
-    return (
-      <div style={{ color: "#F9F3EB", padding: "2vw" }}>
-        Игра окончена или нет активных вопросов.
-      </div>
-    );
-  }
-
   return (
-    <GameProcess
-      question={question}
-      options={options}
-      onAnswer={handleAnswer}
-    />
+    <div className="game-process-container">
+      {hasAnswered ? (
+        <p className="waiting-text">Ожидание следующего вопроса…</p>
+      ) : (
+        <div className="options-grid">
+          {question.options.map((option, idx) => (
+            <button
+              key={idx}
+              className="option-button"
+              onClick={() => handleAnswer(idx)}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

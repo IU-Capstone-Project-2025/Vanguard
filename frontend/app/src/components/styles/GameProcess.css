@@ -109,3 +109,10 @@
   border-radius: 5px;
   cursor: pointer;
 }
+
+.waiting-text {
+  font-size: 1.5rem;
+  color: #F9F3EB;
+  text-align: center;
+  margin-top: 3vh;
+}

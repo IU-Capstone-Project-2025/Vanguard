@@ -41,16 +41,16 @@ const CreateSessionPage = () => {
 
   // 🎯 POST-запрос к /api/session/sessions
   const createSession = async (quizId, userId) => {
-
+    console.log("Creating session with quizId:", quizId, "and userId:", userId, "userName:", Cookies.get("user_nickname"));
     const response = await fetch(`${API_ENDPOINTS.SESSION}/sessions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-          "quizId":quizId,
-          "userId": userId,
-          "userName": Cookies.get("user_nickname")
+        "userId": userId,
+        "userName": Cookies.get("user_nickname"),
+        "quizId": quizId,
       }),
     });
 
@@ -62,13 +62,13 @@ const CreateSessionPage = () => {
 
   // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
   const connectToWebSocket = (token) => {
-      realTimeWsRef.current = new WebSocket(`${API_ENDPOINTS.REALTIME_WS}?token=${token}`);
+      realTimeWsRef.current = new WebSocket(`${API_ENDPOINTS.SESSION_WS}?token=${token}`)
       realTimeWsRef.current.onopen = () => {
-          console.log("✅ WebSocket connected with Real-time");
+          console.log("✅ WebSocket connected with Session Service");
       };
 
   realTimeWsRef.current.onerror = (err) => {
-    console.error("❌ WebSocket with Real-time error:", err);
+    console.error("❌ WebSocket with Session Service error:", err);
 
   };
 }
@@ -76,14 +76,14 @@ const CreateSessionPage = () => {
 
   const handlePlay = async () => {
     if (selectedQuiz) {
-      const sessionData = await createSession(selectedQuiz.id,"AdminId");
-      alert(`Session created with code: ${sessionData.sessionId}`);
+      const sessionData = await createSession(selectedQuiz.id, "AdminId");
       setSessionCode(sessionData.sessionId);
-      await connectToWebSocket(sessionData.jwt);
+      // await connectToWebSocket(sessionData.jwt);
 
       sessionStorage.setItem('selectedQuizId', selectedQuiz.id);
       sessionStorage.setItem('sessionCode', sessionData.sessionId);
       sessionStorage.setItem('jwt', sessionData.jwt);
+
       navigate(`/ask-to-join/${sessionData.sessionId}`); // Navigate to the waiting page with the session code
 
     }
