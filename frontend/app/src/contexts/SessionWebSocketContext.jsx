@@ -36,7 +36,14 @@ export const SessionWebSocketProvider = ({ children }) => {
   }, []);
 
   return (
-    <SessionWebSocketContext.Provider value={{ wsRefSession, connectSession }}>
+    <SessionWebSocketContext.Provider value={{ wsRefSession, connectSession, closeWsRefSession: () => {
+      if (wsRefSession.current) {
+        wsRefSession.current.close(
+          1000, // Normal closure
+          'Closing Session WebSocket connection'
+        );
+      }
+    }}}>
       {children}
     </SessionWebSocketContext.Provider>
   );

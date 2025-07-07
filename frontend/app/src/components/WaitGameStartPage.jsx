@@ -25,19 +25,51 @@ const WaitGameStartPlayer = () => {
     }
 
     if (!wsRefSession.current || wsRefSession.current.readyState > 1) {
-      connectSession(token, handleMessage);
+      connectSession(token, handleMessageSession);
     } else {
-      wsRefSession.current.onmessage = handleMessage;
+      wsRefSession.current.onmessage = handleMessageSession;
+    }
+
+    if (!wsRefRealtime.current || wsRefRealtime.current.readyState > 1) {
+      connectRealtime(token, handleMessageRealtime);
+    } else {
+      wsRefRealtime.current.onmessage = handleMessageRealtime;
     }
 
     return () => {
       if (wsRefSession.current) {
         wsRefSession.current.onmessage = null;
       }
+      if (wsRefRealtime.current) {
+        wsRefRealtime.current.onmessage = null;
+      }
     };
-  }, [connectSession, navigate, sessionCode, wsRefSession]);
+  }, [connectSession, navigate, sessionCode, wsRefSession, wsRefRealtime, connectRealtime]);
 
-  const handleMessage = (event) => {
+  const handleStartGame = async () => {
+    if (!sessionCode) {
+      console.error("Session code is not available");
+      return;
+    }
+
+    navigate(`/game-process/${sessionCode}`);
+  }
+
+  const handleMessageRealtime = (event) => {
+    try {
+      const incomingData = JSON.parse(event.data);
+      if (incomingData.type === "next_question") {
+        console.log("📨 Received start game signal:", incomingData);
+        handleStartGame();
+      } else {
+        console.warn("⚠️ Unknown message type:", incomingData.type);
+      }
+    } catch (error) {
+      console.error("Failed to parse WebSocket message:", event.data);
+    }
+  };
+
+  const handleMessageSession = (event) => {
     try {
       const incomingNames = JSON.parse(event.data); // ["Alice", "Bob", ...]
 

@@ -36,7 +36,14 @@ export const RealtimeWebSocketProvider = ({ children }) => {
   }, []);
 
   return (
-    <RealtimeWebSocketContext.Provider value={{ wsRefRealtime, connectRealtime }}>
+    <RealtimeWebSocketContext.Provider value={{ wsRefRealtime, connectRealtime, closeWsRefRealtime: () => {
+      if (wsRefRealtime.current) {
+        wsRefRealtime.current.close(
+          1000, // Normal closure
+          'Closing Realtime WebSocket connection'
+        );
+      }
+    }}}>
       {children}
     </RealtimeWebSocketContext.Provider>
   );
