@@ -5,7 +5,6 @@ const GameProcess = ({ question, options, onAnswer }) => {
   return (
     <div className="game-process-container">
       <div className="game-process-panel">
-        <h1>{question}</h1>
         <p>And choose the correct answer</p>
         <div className="options-grid">
           {options.map((option, index) => (

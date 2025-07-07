@@ -65,9 +65,11 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 
 	// listen to messages in parallel goroutine
 	go func() {
+		var sessionId string
+
 		defer wg.Done()
 		for d := range msgs { // ignore the contents in the queue, since only event itself matters
-			sessionId := strings.Split(d.RoutingKey, ".")[1]
+			sessionId = strings.Split(d.RoutingKey, ".")[1]
 
 			tracker.IncQuestionIdx(sessionId)
 
@@ -85,6 +87,11 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 
 			registry.SendToAdmin(sessionId, questionPayloadMsg.Bytes())
 
+			nextQuestionAck := ws.ServerMessage{
+					Type:          ws.MessageTypeNextQuestion,
+				}
+			registry.BroadcastToSession(sessionId, nextQuestionAck.Bytes(), false)
+
 			if qid == 0 {
 				gameStartAck := ws.ServerMessage{
 					Type:          ws.MessageTypeAck,
@@ -93,6 +100,7 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 				registry.BroadcastToSession(sessionId, gameStartAck.Bytes(), false)
 			}
 		}
+		
 	}()
 
 	wg.Wait() // defer this function termination while consuming from the queue
