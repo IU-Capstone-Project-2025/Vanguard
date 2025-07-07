@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./styles/WaitGameStartPlayer.css";
+import { API_ENDPOINTS } from '../constants/api';
 
 const WaitGameStartPlayer = () => {
     const navigate = useNavigate();
@@ -14,8 +15,7 @@ const WaitGameStartPlayer = () => {
 
     // 🌐 Устанавливаем WebSocket-соединение с Session Service
     const connectToWebSocket = (token) => {
-        let serverWsEndpoint = "ws://localhost:8081/ws";
-        sessionServiceWsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
+        sessionServiceWsRef.current = new WebSocket(`${API_ENDPOINTS.SESSION_WS}?token=${token}`);
         sessionServiceWsRef.current.onopen = () => {
             console.log("✅ WebSocket connected with Session Service");
         };

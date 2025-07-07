@@ -158,15 +158,21 @@ services:
   frontend:
     build:
       context: frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
-      - "3000:80"
+      - "3000:3000"
     volumes:
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/app:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING}
+      NODE_ENV: ${NODE_ENV}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING}
+      REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
+      REACT_APP_AUTH_API: ${REACT_APP_AUTH_API}
+      REACT_APP_QUIZ_API: ${REACT_APP_QUIZ_API}
+      REACT_APP_SESSION_API: ${REACT_APP_SESSION_API}
+      REACT_APP_SESSION_WS: ${REACT_APP_SESSION_WS}
+      REACT_APP_REALTIME_WS: ${REACT_APP_REALTIME_WS}
     depends_on:
       - quiz
       - real-time

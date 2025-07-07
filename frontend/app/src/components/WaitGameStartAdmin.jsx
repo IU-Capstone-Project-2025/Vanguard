@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/WaitGameStartAdmin.css";
+import { API_ENDPOINTS } from '../constants/api';
 
 const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
@@ -10,8 +11,7 @@ const WaitGameStartAdmin = () => {
 
   // 🌐 Устанавливаем WebSocket-соединение с Session Service
   const connectToWebSocket = (token) => {
-    let serverWsEndpoint = "ws://localhost:8081/ws";
-    sessionServiceWsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
+    sessionServiceWsRef.current = new WebSocket(`${API_ENDPOINTS.SESSION_WS}?token=${token}`);
     sessionServiceWsRef.current.onopen = () => {
       console.log("✅ WebSocket connected with Session Service");
     };
@@ -59,7 +59,7 @@ const WaitGameStartAdmin = () => {
 
   const toNextQuestion = async (sessionCode) => {
 
-    const response = await fetch(`/api/session/session/${sessionCode}/nextQuestion`, {
+    const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

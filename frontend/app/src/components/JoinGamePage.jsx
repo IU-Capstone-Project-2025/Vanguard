@@ -3,6 +3,7 @@ import './styles/styles.css'
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
 import Cookies from "js-cookie";
+import { API_ENDPOINTS } from '../constants/api';
 
 const JoinGamePage = () => {
     const [code, setCode] = useState("");
@@ -14,7 +15,7 @@ const JoinGamePage = () => {
         console.log("Joining session with code:", sessionCode, "and userId:", userId);
 
         // Проверка на наличие кода с символом '#'
-        const response = await fetch("/api/session/join", {
+        const response = await fetch(`${API_ENDPOINTS.SESSION}/join`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -36,7 +37,7 @@ const JoinGamePage = () => {
 
     // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
     const connectToWebSocket = (token) => {
-        realTimeWsRef.current = new WebSocket(`/api/ws/ws?token=${token}`);
+        realTimeWsRef.current = new WebSocket(`${API_ENDPOINTS.REALTIME_WS}?token=${token}`);
         realTimeWsRef.current.onopen = () => {
             console.log("✅ WebSocket connected with Real-time");
         };

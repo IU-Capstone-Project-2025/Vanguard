@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie"; // добавляем библиотеку для работы с cookies
 import "./styles/RegisterPage.css";
+import { API_ENDPOINTS } from '../constants/api';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState("");
@@ -23,7 +24,7 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(`${API_ENDPOINTS.AUTH}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

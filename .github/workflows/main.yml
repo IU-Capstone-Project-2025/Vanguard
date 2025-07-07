@@ -2,7 +2,10 @@ name: Main CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, ci-pipeline ]
+    branches:
+    - main
+    - 'release**'
+    - ci-pipeline
     paths-ignore:
     - 'docker-compose.yaml'
     - '.env.example'
@@ -10,7 +13,35 @@ on:
     - 'LICENSE'
     - 'README.md'
   pull_request:
-    branches: [ main ]
+    branches:
+    - main
+    - 'release**'
+  workflow_dispatch:
+    inputs:
+      auth_service:
+        description: 'Run Auth Service job'
+        required: false
+        type: boolean
+      quiz_service:
+        description: 'Run Quiz Service job'
+        required: false
+        type: boolean
+      real_time_service:
+        description: 'Run Real-Time Service job'
+        required: false
+        type: boolean
+      session_service:
+        description: 'Run Session Service job'
+        required: false
+        type: boolean
+      frontend:
+        description: 'Run Frontend job'
+        required: false
+        type: boolean
+      shared_migrations:
+        description: 'Run Shared Migrations job'
+        required: false
+        type: boolean
 
 jobs:
   set-globals:
@@ -36,6 +67,7 @@ jobs:
   detect-changes:
     name: Detect Service Changes
     runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch'
     outputs:
       auth-service: ${{ steps.changes.outputs.auth-service }}
       quiz-service: ${{ steps.changes.outputs.quiz-service }}
@@ -78,7 +110,11 @@ jobs:
   auth-service:
     name: Auth Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.auth-service == 'true' || github.ref == 'refs/heads/main' }}
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.auth_service == true ||
+      needs.detect-changes.outputs.auth-service == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release')
     uses: ./.github/workflows/auth-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.auth-service-name }}
@@ -87,7 +123,11 @@ jobs:
   quiz-service:
     name: Quiz Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.quiz-service == 'true' || github.ref == 'refs/heads/main' }}
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.quiz_service == true ||
+      needs.detect-changes.outputs.quiz-service == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release')
     uses: ./.github/workflows/quiz-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.quiz-service-name }}
@@ -96,7 +136,11 @@ jobs:
   real-time-service:
     name: Real-Time Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.real-time-service == 'true' || github.ref == 'refs/heads/main' }}
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.real_time_service == true ||
+      needs.detect-changes.outputs.real-time-service == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release')
     uses: ./.github/workflows/real-time-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.realtime-service-name }}
@@ -105,7 +149,11 @@ jobs:
   session-service:
     name: Session Service CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.session-service == 'true' || github.ref == 'refs/heads/main' }}
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.session_service == true ||
+      needs.detect-changes.outputs.session-service == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release')
     uses: ./.github/workflows/session-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.session-service-name }}
@@ -114,16 +162,24 @@ jobs:
   frontend:
     name: Frontend CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.frontend == true ||
+      needs.detect-changes.outputs.frontend == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release')
     uses: ./.github/workflows/frontend.yml
     with:
-      service-name: ${{ needs.set-globals.outputs.frontend-service-name || github.ref == 'refs/heads/main' }}
+      service-name: ${{ needs.set-globals.outputs.frontend-service-name }}
     secrets: inherit
 
   shared-migrations:
     name: Shared Migrations CI/CD
     needs: [ set-globals, detect-changes ]
-    if: ${{ needs.detect-changes.outputs.shared-migrations == 'true' || github.ref == 'refs/heads/main' }}
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.shared_migrations == true ||
+      needs.detect-changes.outputs.shared-migrations == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release')
     uses: ./.github/workflows/shared-migrations.yml
     with:
       service-name: ${{ needs.set-globals.outputs.migrator-service-name }}
@@ -201,15 +257,15 @@ jobs:
         TEST_DB_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.TEST_POSTGRES_DB }}
         AUTH_JWT_SECRET_KEY=${{ secrets.AUTH_JWT_SECRET_KEY }}
         GO_JWT_SECRET_KEY=${{ secrets.GO_JWT_SECRET_KEY }}
+        GO_ENV=production
         S3_REGION=${{ secrets.S3_REGION }}
         S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}
         S3_BUCKET=${{ secrets.S3_BUCKET }}
         S3_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
         S3_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
         MAX_IMAGE_SIZE=5242880
-        NODE_ENV=development
+        NODE_ENV=production
         CHOKIDAR_USEPOLLING=true
-        GO_ENV=production
         EOF
 
     - name: Upload configs to VM

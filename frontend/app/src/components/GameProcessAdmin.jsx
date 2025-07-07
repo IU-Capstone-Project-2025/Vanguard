@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import './styles/GameProcess.css';
+import { API_ENDPOINTS } from '../constants/api';
 
 const GameProcessAdmin = () => {
     const [quiz, setQuiz] = useState(null);
@@ -9,7 +10,7 @@ const GameProcessAdmin = () => {
         // Здесь ты делаешь fetch из бекенда
         const fetchData = async () => {
             let id = sessionStorage.getItem('selectedQuizId'); // Получаем ID квиза из sessionStorage
-            const response = await fetch(`/api/quiz/${id}`); // Заменить {id} на реальный ID квиза
+            const response = await fetch(`${API_ENDPOINTS.QUIZ}/${id}`); // Заменить {id} на реальный ID квиза
             const data = await response.json();
             setQuiz(data);
         };
@@ -21,7 +22,7 @@ const GameProcessAdmin = () => {
     }
     const toNextQuestion = async (sessionCode) => {
 
-        const response = await fetch(`/api/session/session/${sessionCode}/nextQuestion`, {
+        const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
