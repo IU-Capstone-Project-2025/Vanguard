@@ -1,6 +1,5 @@
-import { BASE_URL } from '../src/constants/api';
-
 const { defineConfig } = require('cypress')
+const { BASE_URL } = require('../src/constants/api');
 
 module.exports = defineConfig({
   e2e: {
