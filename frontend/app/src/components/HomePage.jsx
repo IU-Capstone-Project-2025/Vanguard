@@ -28,13 +28,13 @@ const HomePage = () => {
                                 className="play-button"
                                 onClick={handlePlayClick}
                             >
-                            <span>Play</span>
+                            <span>Play Game</span>
                         </button>
                         <button id='create'
                                 className="create-button"
                                 onClick={handleCreateClick}
                             >
-                            <span>Create</span>
+                            <span>Create Game</span>
                         </button>
                     </div>
                 </div>
