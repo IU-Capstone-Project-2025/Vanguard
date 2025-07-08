@@ -70,7 +70,8 @@ func CreateSessionEndedQueue(ch *amqp.Channel) (amqp.Queue, error) {
 }
 
 // ConsumeSessionStart method listens to "session start" events delivered to the corresponding queue.
-func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tracker *ws.QuizTracker) {
+func (r *RealTimeRabbit) ConsumeSessionStart(
+	registry *ws.ConnectionRegistry, tracker *ws.QuizTracker, ready chan struct{}) {
 	msgs, err := r.channel.Consume(
 		r.SessionStartedQ.Name, // the name of the already created queue
 		"",
@@ -82,6 +83,7 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tr
 	)
 	if err != nil {
 		fmt.Println(err)
+		close(ready)
 	}
 
 	wg := sync.WaitGroup{}
@@ -89,6 +91,8 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tr
 
 	// listen to messages in parallel goroutine
 	fmt.Println("Listen for new messages in session.start queue")
+	// ✅ Signal that the queue consumer is ready
+	close(ready)
 	go func() {
 		defer wg.Done()
 		for d := range msgs {
@@ -103,6 +107,7 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tr
 			registered := registry.RegisterSession(msg.SessionId) // register new session
 			if registered {
 				tracker.NewSession(msg.SessionId, msg.Quiz)
+
 				go r.ConsumeQuestionStart(registry, tracker, msg.SessionId)
 			}
 
@@ -113,7 +118,7 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tr
 }
 
 // ConsumeSessionEnd method listens to "session end" events delivered to the corresponding queue.
-func (r *RealTimeRabbit) ConsumeSessionEnd(registry *ws.ConnectionRegistry, tracker *ws.QuizTracker) {
+func (r *RealTimeRabbit) ConsumeSessionEnd(registry *ws.ConnectionRegistry, tracker *ws.QuizTracker, ready chan struct{}) {
 	msgs, err := r.channel.Consume(
 		r.SessionEndedQ.Name, // the name of the already created queue
 		"",
@@ -125,6 +130,7 @@ func (r *RealTimeRabbit) ConsumeSessionEnd(registry *ws.ConnectionRegistry, trac
 	)
 	if err != nil {
 		fmt.Println(err)
+		close(ready)
 	}
 
 	wg := sync.WaitGroup{}
@@ -132,6 +138,8 @@ func (r *RealTimeRabbit) ConsumeSessionEnd(registry *ws.ConnectionRegistry, trac
 
 	// listen to messages in parallel goroutine
 	fmt.Println("Listen for new messages in session.end queue")
+	// ✅ Signal that the queue consumer is ready
+	close(ready)
 	go func() {
 		defer wg.Done()
 		for d := range msgs {

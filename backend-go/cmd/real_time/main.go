@@ -67,7 +67,13 @@ func main() {
 	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
 	fmt.Println("Service is up!")
 
-	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
-	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
+	sessionStartReady := make(chan struct{})
+	sessionEndReady := make(chan struct{})
+
+	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker, sessionStartReady)
+	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker, sessionEndReady)
+
+	<-sessionStartReady
+	<-sessionEndReady
 	select {}
 }

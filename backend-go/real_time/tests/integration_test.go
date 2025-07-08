@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
@@ -100,12 +101,13 @@ func TestWithTestContainers(t *testing.T) {
 	// 3. Start RealTime service in a goroutine or exec.Command, configuring it to connect to amqpURL and Redis.
 	//    For brevity, assume RealTime service can be started in-process or as a subprocess, reading env vars:
 	// Start your RealTime main in a goroutine if possible, or exec binary.
-	cancel := startRealTimeServer(t, amqpURL)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	cancel := startRealTimeServer(t, wg, amqpURL)
 	defer cancel()
 
 	sessionIds := []string{"В4ФЛ3Р", "CO6AK4"}
 
-	wg := sync.WaitGroup{}
 	for _, s := range sessionIds {
 		wg.Add(1)
 		go func(sessionId string) {
@@ -348,7 +350,7 @@ func getEnvFilePath() string {
 	return filepath.Join(root, ".env")
 }
 
-func startRealTimeServer(t *testing.T, amqpUrl string) (ctxCancel context.CancelFunc) {
+func startRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl string) (ctxCancel context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := config.LoadConfig()
@@ -372,7 +374,7 @@ func startRealTimeServer(t *testing.T, amqpUrl string) (ctxCancel context.Cancel
 	srv := &http.Server{Addr: cfg.Host + ":" + cfg.Port, Handler: mux}
 	go func() {
 		t.Log("HTTP server starting")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			t.Fatalf("http listen: %v", err)
 		}
 	}()
@@ -382,14 +384,22 @@ func startRealTimeServer(t *testing.T, amqpUrl string) (ctxCancel context.Cancel
 		t.Fatal(err)
 	}
 
-	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
-	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
+	sessionStartReady := make(chan struct{})
+	sessionEndReady := make(chan struct{})
 
-	go func() {
+	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker, sessionStartReady)
+	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker, sessionEndReady)
+
+	go func(t *testing.T, wg *sync.WaitGroup) {
+		defer wg.Done()
+
 		<-ctx.Done()
 		t.Log("Shutting down HTTP server...")
 		_ = srv.Shutdown(context.Background())
-	}()
+	}(t, wg)
+
+	<-sessionStartReady
+	<-sessionEndReady
 
 	t.Log("Real-time server fully up")
 	return cancel

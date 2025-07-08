@@ -44,7 +44,8 @@ func CreateQuestionStartQueue(ch *amqp.Channel, sessionId string) (amqp.Queue, e
 }
 
 // ConsumeQuestionStart method listens to "next question start" events delivered to the corresponding queue.
-func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, tracker *ws.QuizTracker, s string) {
+func (r *RealTimeRabbit) ConsumeQuestionStart(
+	registry *ws.ConnectionRegistry, tracker *ws.QuizTracker, s string) {
 	q, _ := CreateQuestionStartQueue(r.channel, s)
 
 	consumerTag := fmt.Sprintf("question_start_%s", s)
