@@ -4,6 +4,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
+import { API_ENDPOINTS } from '../constants/api';
 
 const SessionWebSocketContext = createContext(null);
 
@@ -22,7 +23,7 @@ export const SessionWebSocketProvider = ({ children }) => {
     }
 
     const ws = new WebSocket(
-      `/api/session/ws?token=${token}`
+      `${API_ENDPOINTS.SESSION_WS}?token=${token}`
     );
 
     ws.onopen = () => console.log('✅ Session WebSocket connected');

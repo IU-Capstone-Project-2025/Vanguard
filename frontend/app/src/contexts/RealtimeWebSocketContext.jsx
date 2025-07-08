@@ -4,6 +4,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
+import { API_ENDPOINTS } from '../constants/api';
 
 const RealtimeWebSocketContext = createContext(null);
 
@@ -22,7 +23,7 @@ export const RealtimeWebSocketProvider = ({ children }) => {
     }
 
     const ws = new WebSocket(
-      `/api/realtime/ws?token=${token}`
+      `${API_ENDPOINTS.REALTIME_WS}?token=${token}`
     );
 
     ws.onopen = () => console.log('✅ Realtime WebSocket connected');

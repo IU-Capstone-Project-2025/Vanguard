@@ -16,6 +16,8 @@ jobs:
     env:
       IMAGE_SHA: ${{ vars.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:${{ github.sha }}
       IMAGE_LATEST: ${{ vars.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:latest
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: true
 
     steps:
     - name: Checkout code

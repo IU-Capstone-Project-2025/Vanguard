@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useSessionSocket } from '../contexts/SessionWebSocketContext';
 import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
 import './styles/WaitGameStartAdmin.css';
+import { API_ENDPOINTS } from '../constants/api';
+
 
 const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
@@ -64,7 +66,7 @@ const WaitGameStartAdmin = () => {
       return;
     }
     try {
-      const response = await fetch(`/api/session/session/${sessionCode}/nextQuestion`, {
+      const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
         method: 'POST',
       });
       if (response.status !== 200) {

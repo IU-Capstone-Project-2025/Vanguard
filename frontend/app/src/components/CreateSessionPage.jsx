@@ -1,6 +1,7 @@
 import React, { useEffect, useState ,useRef} from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie"
+import { API_ENDPOINTS } from '../constants/api';
 
 import './styles/styles.css';
 
@@ -16,7 +17,7 @@ const CreateSessionPage = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const response = await fetch("/api/quiz/");
+        const response = await fetch(`${API_ENDPOINTS.QUIZ}/`);
         if (!response.ok) {
           throw new Error(`Network error: ${response.status}`);
         }
@@ -41,7 +42,7 @@ const CreateSessionPage = () => {
   // 🎯 POST-запрос к /api/session/sessions
   const createSession = async (quizId, userId) => {
     console.log("Creating session with quizId:", quizId, "and userId:", userId, "userName:", Cookies.get("user_nickname"));
-    const response = await fetch("/api/session/sessions", {
+    const response = await fetch(`${API_ENDPOINTS.SESSION}/sessions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -61,7 +62,7 @@ const CreateSessionPage = () => {
 
   // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
   const connectToWebSocket = (token) => {
-      realTimeWsRef.current = new WebSocket(`/api/session/ws?token=${token}`);
+      realTimeWsRef.current = new WebSocket(`${API_ENDPOINTS.SESSION_WS}?token=${token}`)
       realTimeWsRef.current.onopen = () => {
           console.log("✅ WebSocket connected with Session Service");
       };
