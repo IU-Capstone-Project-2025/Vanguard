@@ -11,17 +11,18 @@ const WaitGameStartAdmin = () => {
   const { wsRefSession, connectSession } = useSessionSocket();
   const { wsRefRealtime, connectRealtime } = useRealtimeSocket();
   const [sessionCode, setSessionCode] = useState(sessionStorage.getItem('sessionCode') || null);
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState(new Map());
   const [hasClickedNext, setHasClickedNext] = useState(false)
 
   const extractPlayersFromMessage = (data) => {
-    if (!Array.isArray(data)) return;
     setPlayers((prevPlayers) => {
-      const newPlayers = data.map((name, index) => ({
-        id: prevPlayers.length + index + 1,
-        name,
-      }));
-      return [...prevPlayers, ...newPlayers];
+      const newPlayers = new Map(prevPlayers)
+      for (const [userId,name] of Object.entries(data)) {
+        if (!newPlayers.has(userId)) {
+          newPlayers.set(userId, name);
+        }
+      }
+      return newPlayers;
     });
   };
 
@@ -32,9 +33,7 @@ const WaitGameStartAdmin = () => {
     connectSession(token, (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (Array.isArray(data)) {
-          setPlayers(data.map((name, i) => ({ id: i + 1, name })));
-        }
+        extractPlayersFromMessage(data);
       } catch (e) {
         console.error('⚠️ Invalid session WS message:', event.data);
       }
@@ -103,13 +102,13 @@ const WaitGameStartAdmin = () => {
           <button onClick={handleTerminate}>▶️ Terminate</button>
         </div>
         <div className="players-grid">
-          {players.map((player) => (
-            <div key={player.id} className="player-box">
-              <span>{player.name}</span>
+          {(Array.from(players.entries())).map(([id,name]) => (
+            <div key={id} className="player-box">
+              <span>{name}</span>
               <button
                 className="kick-button"
-                onClick={() => handleKick(player.id)}
-                title={`Kick ${player.name}`}
+                onClick={() => handleKick(id)}
+                title={`Kick ${name}`}
               >
                 ❌
               </button>
