@@ -97,8 +97,8 @@ const WaitGameStartAdmin = () => {
           <button onClick={handleTerminate}>❌ Terminate</button>
         </div>
         <div className="players-grid">
-          {(Array.from(players.entries())).map(([id,name]) => (
-            <div key={id} className="player-box">
+          {(Array.from(players.entries())).map(([id, name]) => (
+            <div key={id + name} className="player-box">
               <span>{name}</span>
               {name != "Admin" &&
               <button
