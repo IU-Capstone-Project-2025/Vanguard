@@ -11,7 +11,8 @@ const GameProcessAdmin = () => {
   const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') != undefined ?
   JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
   const [questionIndex, setQuestionIndex] = useState(0);
-  const questionsAmount = useState(currentQuestion.quiestionsAmount - 1);
+  const questionsAmount = currentQuestion.questionsAmount - 1;
+  console.log(`received questions amount [${questionsAmount}] and current index [${questionIndex}]`)
   const navigate = useNavigate();
   const [questionOptions, setQuestionOptions] = useState(
       {"options": [
@@ -148,11 +149,11 @@ const toNextQuestion = async (sessionCode) => {
       </div>
 
       <div className="navigation-buttons">
-        {/* {questionIndex < questionsAmount && ( */}
+        {questionIndex < questionsAmount && (
           <button onClick={handleNextQuestion} className="nav-button">
             Next
           </button>
-        {/* )} */}
+        )} 
         <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
           Finish
         </button>
