@@ -44,7 +44,7 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	defer server.Stop()
 	// 🛠️ Создаем сессию
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)

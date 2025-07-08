@@ -73,34 +73,50 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(registry *ws.ConnectionRegistry, t
 
 	// listen to messages in parallel goroutine
 	go func(s string) {
+		var sessionId string
+
 		defer wg.Done()
 		for d := range msgs { // ignore the contents in the queue, since only event itself matters
-			sessionId := strings.Split(d.RoutingKey, ".")[1]
+			sessionId = strings.Split(d.RoutingKey, ".")[1]
 			fmt.Printf("------ in consumer for %s found sessionId %s\n", s, sessionId)
 
 			tracker.IncQuestionIdx(sessionId)
 
 			qid, question := tracker.GetCurrentQuestion(sessionId)
+			questionsAmount := tracker.GetQuizLen(sessionId)
+
+			if qid == questionsAmount { // zero-based index equal to amount, means index out of range -> game already ended
+				gameEndAck := ws.ServerMessage{
+					Type: ws.MessageTypeEnd,
+				}
+				registry.BroadcastToSession(sessionId, gameEndAck.Bytes(), false)
+				continue
+			}
 
 			fmt.Println("next question triggered: ", qid, "in session ", sessionId)
 
 			questionPayloadMsg := ws.ServerMessage{
 				Type:            ws.MessageTypeQuestion,
 				QuestionIdx:     qid + 1,
-				QuestionsAmount: tracker.GetQuizLen(sessionId),
+				QuestionsAmount: questionsAmount,
 				Text:            question.Text,
 				Options:         question.Options,
 			}
 
 			registry.SendToAdmin(sessionId, questionPayloadMsg.Bytes())
 
-			if qid == 0 {
-				gameStartAck := ws.ServerMessage{
-					Type:          ws.MessageTypeAck,
-					IsGameStarted: true,
-				}
-				registry.BroadcastToSession(sessionId, gameStartAck.Bytes(), false)
+			nextQuestionAck := ws.ServerMessage{
+				Type: ws.MessageTypeNextQuestion,
 			}
+			registry.BroadcastToSession(sessionId, nextQuestionAck.Bytes(), false)
+
+			// if qid == 0 {
+			// 	gameStartAck := ws.ServerMessage{
+			// 		Type:          ws.MessageTypeAck,
+			// 		IsGameStarted: true,
+			// 	}
+			// 	registry.BroadcastToSession(sessionId, gameStartAck.Bytes(), false)
+			// }
 		}
 	}(s)
 

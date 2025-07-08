@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import { API_ENDPOINTS } from '../constants/api';
 
 const ProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
@@ -8,7 +9,7 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     const checkToken = async () => {
       try {
-        const response = await fetch("/api/auth/refresh", {
+        const response = await fetch(`${API_ENDPOINTS.AUTH}/refresh`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

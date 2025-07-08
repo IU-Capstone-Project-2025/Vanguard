@@ -1,93 +1,106 @@
-import React, {useEffect, useRef, useState} from "react";
-import { useNavigate } from "react-router-dom";
-import "./styles/WaitGameStartAdmin.css";
+import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSessionSocket } from '../contexts/SessionWebSocketContext';
+import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
+import './styles/WaitGameStartAdmin.css';
+import { API_ENDPOINTS } from '../constants/api';
+
 
 const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
-  const sessionServiceWsRef = useRef(null);
-
+  const { wsRefSession, connectSession } = useSessionSocket();
+  const { wsRefRealtime, connectRealtime } = useRealtimeSocket();
+  const [sessionCode, setSessionCode] = useState(sessionStorage.getItem('sessionCode') || null);
   const [players, setPlayers] = useState([]);
+  const [hasClickedNext, setHasClickedNext] = useState(false)
 
-  // 🌐 Устанавливаем WebSocket-соединение с Session Service
-  const connectToWebSocket = (token) => {
-    let serverWsEndpoint = "ws://localhost:8081/ws";
-    sessionServiceWsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
-    sessionServiceWsRef.current.onopen = () => {
-      console.log("✅ WebSocket connected with Session Service");
-    };
-
-    sessionServiceWsRef.current.onerror = (err) => {
-      console.error("❌ WebSocket with Session Service error:", err);
-
-    };
-
-    // получение сообщения от session service
-
-    sessionServiceWsRef.current.onmessage = (message) => {
-      try {
-        const incomingNames = JSON.parse(message.data); // пример: ["Alice"] или ["Alice", "Bob"]
-
-        if (!Array.isArray(incomingNames)) return;
-
-        setPlayers((prevPlayers) => {
-
-          // Фильтруем новых
-          const newPlayers = incomingNames
-              .map((name, index) => ({
-                id: prevPlayers.length + index + 1,
-                name: name
-              }));
-
-          return [...prevPlayers, ...newPlayers];
-        });
-
-        console.log("📨 Received JSON message:",incomingNames);
-      } catch (e){
-        console.error("⚠️ Failed to parse incoming WebSocket message:", message.data);
-      }
-    }
+  const extractPlayersFromMessage = (data) => {
+    if (!Array.isArray(data)) return;
+    setPlayers((prevPlayers) => {
+      const newPlayers = data.map((name, index) => ({
+        id: prevPlayers.length + index + 1,
+        name,
+      }));
+      return [...prevPlayers, ...newPlayers];
+    });
   };
 
   useEffect(() => {
-    connectToWebSocket(sessionStorage.getItem("jwt"))
-  },[])
+    const token = sessionStorage.getItem('jwt');
+    if (!token) return;
+
+    connectSession(token, (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (Array.isArray(data)) {
+          setPlayers(data.map((name, i) => ({ id: i + 1, name })));
+        }
+      } catch (e) {
+        console.error('⚠️ Invalid session WS message:', event.data);
+      }
+      console.log('Received session message:', event.data);
+    });
+
+    connectRealtime(token, (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'question') {
+          console.log('Got question:', data);
+          sessionStorage.setItem('currentQuestion', JSON.stringify(data));
+        }
+      } catch (e) {
+        console.error('⚠️ Failed to parse realtime WS message:', event.data);
+      }
+    });
+  }, [connectSession, connectRealtime]);
 
   const handleKick = (idToRemove) => {
-    setPlayers(prev => prev.filter(player => player.id !== idToRemove));
+    setPlayers((prev) => prev.filter((player) => player.id !== idToRemove));
     // TODO: отправить на backend сигнал о кике игрока по id
   };
 
   const toNextQuestion = async (sessionCode) => {
-
-    const response = await fetch(`/api/session/session/${sessionCode}/nextQuestion`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ "code": sessionCode}),
-    });
-
-    if (!response.ok) throw new Error("Failed to get to the next question session");
-
+    console.log("give the next question api call in wait-admin");
+    if (!sessionCode) {
+      console.error('Session code is not available');
+      return;
+    }
+    try {
+      const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
+        method: 'POST',
+      });
+      if (response.status !== 200) {
+        throw new Error('Failed to start next question');
+      }
+      console.log('Next question started', response);
+    } catch (error) {
+      console.error('Error starting next question:', error);
+    }
   };
 
-  const handleStart = async () => {
+  const handleStart = async (e) => {
+    e.preventDefault()
+    setHasClickedNext(true)
     const sessionCode = sessionStorage.getItem('sessionCode');
-    await toNextQuestion(sessionCode)
+    await toNextQuestion(sessionCode);
+
+    // const quizData = await listenQuizQuestion(sessionCode, wsRefRealtime);
+    // sessionStorage.setItem('currentQuestion', JSON.stringify(quizData));
+
     navigate(`/game-controller/${sessionCode}`);
   };
 
   const handleTerminate = () => {
-    navigate("/");
+    navigate('/');
   };
 
   return (
     <div className="wait-admin-container">
       <div className="wait-admin-panel">
-        <h1>Now let's wait your friends</h1>
+        <h1>Now let's wait your friends <br/> Code: #{sessionCode}</h1>
         <div className="admin-button-group">
-          <button onClick={handleStart}>▶ Start</button>
-          <button onClick={handleTerminate}>▶ Terminate</button>
+          <button onClick={(e)=>{handleStart(e);}} disabled={hasClickedNext}>▶️ Start</button>
+          <button onClick={handleTerminate}>▶️ Terminate</button>
         </div>
         <div className="players-grid">
           {players.map((player) => (

@@ -11,10 +11,12 @@ import (
 type MessageType string
 
 const (
-	MessageTypeAnswer      = MessageType("result")
-	MessageTypeQuestion    = MessageType("question")
-	MessageTypeLeaderboard = MessageType("leaderboard")
-	MessageTypeAck         = MessageType("game_start")
+	MessageTypeAnswer       = MessageType("result")
+	MessageTypeQuestion     = MessageType("question")
+	MessageTypeLeaderboard  = MessageType("leaderboard")
+	MessageTypeAck          = MessageType("game_start")
+	MessageTypeNextQuestion = MessageType("next_question") // sent to admin when next question is triggered
+	MessageTypeEnd          = MessageType("end")           // sent to admin when game ends
 )
 
 // ClientMessage describes what we get from the user

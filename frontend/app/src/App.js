@@ -1,6 +1,7 @@
 import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import './App.css';
-import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
+
 import HomePage from './components/HomePage';
 import CreateSessionPage from './components/CreateSessionPage';
 import AskToJoinSessionPage from './components/AskToJoinSessionPage';
@@ -11,68 +12,68 @@ import EnterNicknamePage from './components/EnterNicknamePage';
 import GameController from './components/GameController';
 import GameProcessAdmin from './components/GameProcessAdmin';
 import AuthPage from './components/AuthPage';
-
 import NotFoundPage from './components/NotFoundPage';
 import RegisterPage from './components/RegisterPage';
-import ProtectedRoute from './components/ProtectedRoute';
+// import ProtectedRoute from './components/ProtectedRoute';
+
+import { SessionWebSocketProvider } from './contexts/SessionWebSocketContext';
+import { RealtimeWebSocketProvider } from './contexts/RealtimeWebSocketContext';
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Страницы без WebSocket */}
+        <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<AuthPage/>} />
-        {/* Catch-all route for 404 Not Found */}
-        <Route path="*" element={<NotFoundPage />} /> 
-        <Route path='/' element={<HomePage/>}/>
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/create" element={<CreateSessionPage />} />
+        <Route path="/enter-nickname" element={<EnterNicknamePage />} />
+        <Route path="/join" element={<JoinGamePage />} />
+        <Route path="/ask-to-join/:sessionCode" element={<AskToJoinSessionPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+
+        {/* Страницы с WebSocket */}
         
-        <Route path='/create' element={
-            <ProtectedRoute>
-              <CreateSessionPage/>
-            </ProtectedRoute>
-          } 
-        />
-        <Route path='/enter-nickname' element={
-            <ProtectedRoute>
-              <EnterNicknamePage/>
-            </ProtectedRoute>
+        <Route
+          path="/game-process/:sessionCode"
+          element={
+            <RealtimeWebSocketProvider>
+              {/* <SessionWebSocketProvider> */}
+                <GameController />
+              {/* </SessionWebSocketProvider> */}
+            </RealtimeWebSocketProvider>
+          }
+           />
+        <Route
+          path="/wait/:sessionCode" 
+          element={
+            <RealtimeWebSocketProvider>
+              <SessionWebSocketProvider>
+                <WaitGameStartPlayer />
+              </SessionWebSocketProvider>
+            </RealtimeWebSocketProvider>
           }
         />
-        <Route path='/join' element={
-            <ProtectedRoute>
-              <JoinGamePage/>
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/ask-to-join/:sessionCode" element={
-            <ProtectedRoute>
-              <AskToJoinSessionPage/>
-            </ProtectedRoute>
+        <Route
+          path="/sessionAdmin/:sessionCode"
+          element={
+            <SessionWebSocketProvider>
+              <RealtimeWebSocketProvider>
+                <WaitGameStartAdmin />
+              </RealtimeWebSocketProvider>
+            </SessionWebSocketProvider>
           }
-        /> 
-        <Route path="/sessionAdmin/:sessionCode" element={
-            <ProtectedRoute> 
-              <WaitGameStartAdmin/>
-            </ProtectedRoute>
-          } 
         />
-        <Route path="/wait/:sessionCode" element={
-            <ProtectedRoute>
-              <WaitGameStartPlayer/>
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/game-process/:sessionCode" element={
-            <ProtectedRoute>
-              <GameController/>
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/game-controller/:sessionCode" element={
-            <ProtectedRoute>
-              <GameProcessAdmin/>
-            </ProtectedRoute>
-          } 
+        <Route
+          path="/game-controller/:sessionCode"
+          element={
+            <SessionWebSocketProvider>
+              <RealtimeWebSocketProvider>
+                <GameProcessAdmin />
+              </RealtimeWebSocketProvider>
+            </SessionWebSocketProvider>
+          }
         />
       </Routes>
     </Router>

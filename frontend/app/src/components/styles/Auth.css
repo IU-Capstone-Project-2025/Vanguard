@@ -56,7 +56,8 @@
 
 .submit-button,
 .signup-button {
-    width: 250px;
+    width: 100%;
+    /* width: 250px; */
     padding: 12px;
     margin-top: 10px;
     border: none;

@@ -136,6 +136,7 @@ func (r *ConnectionRegistry) sendMessage(payload []byte, receivers ...*Connectio
 		ctx.mu.Lock()
 		err := ctx.Conn.WriteMessage(websocket.TextMessage, payload)
 		ctx.mu.Unlock()
+
 		if err != nil {
 			log.Printf("Failed to send message to connection: %v", err)
 			r.UnregisterConnection(ctx.SessionId, ctx.UserId)

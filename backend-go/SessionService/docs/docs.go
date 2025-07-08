@@ -15,6 +15,38 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/healthz": {
+            "post": {
+                "description": "Checks if RabbitMQ and Redis services are operational.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "Successfully moved to the next question"
+                    },
+                    "405": {
+                        "description": "Method not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error (e.g. Redis or RabbitMQ down)",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/join": {
             "post": {
                 "description": "Validates a session code and returns a user token for the specified user if the code is valid.",
@@ -67,6 +99,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/session/{id}/end": {
+            "post": {
+                "description": "Delete session from redis, send message to rabbit that session deleted",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "delete session, send message to rabbit",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully moved to the next question"
+                    },
+                    "405": {
+                        "description": "Method not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/session/{id}/nextQuestion": {
             "post": {
                 "description": "Advances to the next question in the session identified by the provided code.",
@@ -90,7 +163,7 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Successfully moved to the next question"
                     },
                     "405": {
@@ -121,6 +194,52 @@ const docTemplate = `{
                     "sessions"
                 ],
                 "summary": "Create a new session and get an admin token",
+                "parameters": [
+                    {
+                        "description": " Create Session req",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.CreateSessionReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin token in JSON format",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.SessionCreateResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method not allowed, only GET is allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessionsMock": {
+            "post": {
+                "description": "Creates a new session and returns an admin token for the specified user by userId.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Create a new session and get an admin token. Mock endpoint, no req to another service",
                 "parameters": [
                     {
                         "description": " Create Session req",
@@ -194,6 +313,52 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/validate": {
+            "post": {
+                "description": "Validates a session code and returns a user token for the specified user if the code is valid.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Validate session code",
+                "parameters": [
+                    {
+                        "description": " Create Session req",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ValidateSessionCodeReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "description": "Invalid code",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Only GET method is allowed",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/xxx_SessionService_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -243,6 +408,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "userName": {
+                    "type": "string"
+                }
+            }
+        },
+        "xxx_SessionService_models.ValidateSessionCodeReq": {
+            "type": "object",
+            "properties": {
+                "code": {
                     "type": "string"
                 }
             }

@@ -143,16 +143,22 @@ func (r *RealTimeRabbit) ConsumeSessionEnd(registry *ws.ConnectionRegistry, trac
 			}
 
 			// TODO: implement real leaderboard
-			leaderBoard := ws.ServerMessage{
-				Type:    ws.MessageTypeLeaderboard,
-				Payload: tracker.GetAnswers(sessionId),
-			}
+			// leaderBoard := ws.ServerMessage{
+			// 	Type:    ws.MessageTypeLeaderboard,
+			// 	Payload: tracker.GetAnswers(sessionId),
+			// }
 
 			err = r.CleanupQuestionConsumer(sessionId)
 			if err != nil {
 				fmt.Println(err)
 			}
-			registry.BroadcastToSession(sessionId, leaderBoard.Bytes(), true)
+
+			gameEndAck := ws.ServerMessage{
+				Type: ws.MessageTypeEnd,
+			}
+			registry.BroadcastToSession(sessionId, gameEndAck.Bytes(), false)
+
+			//registry.BroadcastToSession(sessionId, leaderBoard.Bytes(), true)
 
 			registry.UnregisterSession(sessionId) // unregister new session
 		}

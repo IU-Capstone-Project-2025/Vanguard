@@ -15,6 +15,7 @@ type Broker interface {
 	PublishQuestionStart(ctx context.Context, SessionCode string, payload interface{}) error
 	PublishSessionEnd(ctx context.Context, SessionCode string, payload interface{}) error
 	PublishSessionStart(ctx context.Context, payload interface{}) error
+	CheckRabbitAlive() error
 }
 
 func NewRabbit(rmq_host string) (*Rabbit, error) {

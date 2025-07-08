@@ -40,7 +40,7 @@ func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 	// 1. Start RabbitMQ container
 	rabbitReq := testcontainers.ContainerRequest{
 		Image:        "rabbitmq:3-management",
-		ExposedPorts: []string{"5672:5672/tcp", "15672:15672/tcp"},
+		ExposedPorts: []string{"5672/tcp"},
 		Env: map[string]string{
 			"RABBITMQ_LOAD_DEFINITIONS": "true",
 			"RABBITMQ_DEFINITIONS_FILE": "/etc/rabbitmq/definitions.json",
@@ -86,7 +86,7 @@ func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 func startRedis(ctx context.Context, t *testing.T) (testcontainers.Container, string) {
 	req := testcontainers.ContainerRequest{
 		Image:        "redis:7-alpine", // or "redis:latest"
-		ExposedPorts: []string{"6379:6379/tcp"},
+		ExposedPorts: []string{"6379/tcp"},
 		WaitingFor:   wait.ForListeningPort("6379/tcp").WithStartupTimeout(30 * time.Second),
 	}
 	redisC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -149,7 +149,7 @@ func Test_HttpServerCreate(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(1 * time.Second) // дать серверу запуститься
+	time.Sleep(2 * time.Second) // дать серверу запуститься
 	defer server.Stop()
 	// 🔨 Делаем запрос на создание сессии
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)

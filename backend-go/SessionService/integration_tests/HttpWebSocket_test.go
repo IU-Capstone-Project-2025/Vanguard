@@ -39,7 +39,7 @@ func Test_HttpWebSocket(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	defer server.Stop()
 
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
@@ -139,8 +139,6 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatal("user1 dial error:", err)
 			return
 		}
-		defer conn.Close()
-
 		for i := 0; i < 2; i++ {
 			_, msg, err := conn.ReadMessage()
 			if err != nil {
@@ -165,8 +163,6 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatal("user2 dial error:", err)
 			return
 		}
-		defer conn.Close()
-
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			t.Fatalf("user2 read error: %v", err)
@@ -200,9 +196,10 @@ func Test_HttpWebSocket(t *testing.T) {
 	}
 
 	// --- Проверка содержимого
-	expected1a := `["user1"]`
-	expected1b := `["user2"]`
-	expected2 := `["user2","user1"]`
+	expected1a := `{"test1":"user1"}`
+	expected1b := `{"test2":"user2"}`
+	expected2 := `{"test1":"user1","test2":"user2"}`
+	expected3 := `{"test2":"user2","test1":"user1"}`
 
 	if msg1a != expected1a {
 		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
@@ -210,8 +207,7 @@ func Test_HttpWebSocket(t *testing.T) {
 	if msg1b != expected1b {
 		t.Fatalf("user1 second message mismatch. Got: %s, Want: %s", msg1b, expected1b)
 	}
-	if msg2 != expected2 {
+	if msg2 != expected2 && msg2 != expected3 {
 		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
 	}
-
 }

@@ -103,7 +103,7 @@ func (q *QuizTracker) NewSession(sessionId string, quizData shared.Quiz) {
 
 	if _, exists := q.tracker[sessionId]; !exists {
 		q.tracker[sessionId] = models.OngoingQuiz{
-			CurrQuestionIdx: -1,
+			CurrQuestionIdx: -1, // before starting the first question (0-th index), the index is -1
 			QuizData:        quizData,
 		}
 		q.answers[sessionId] = make(map[string][]bool)

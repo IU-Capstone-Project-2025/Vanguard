@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie"; // добавляем библиотеку для работы с cookies
 import "./styles/RegisterPage.css";
+import { API_ENDPOINTS } from '../constants/api';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState("");
@@ -9,6 +11,7 @@ const RegisterPage = () => {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate(); // используем хук useNavigate для перенаправления
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +24,7 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(`${API_ENDPOINTS.AUTH}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,6 +45,7 @@ const RegisterPage = () => {
         Cookies.set("user_nickname", data.username);
 
         setSuccess("Registration successful! You can now log in.");
+        navigate("/login"); // перенаправляем на страницу логина
       } else {
         const data = await response.json();
         setError(data.detail?.[0]?.msg || "Registration failed");

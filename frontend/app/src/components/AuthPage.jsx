@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie"; // импортируем js-cookie
+import { API_ENDPOINTS } from '../constants/api';
 
 import './styles/Auth.css';
 
@@ -15,7 +16,7 @@ const AuthPage = () => {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`${API_ENDPOINTS.AUTH}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -60,7 +61,7 @@ const AuthPage = () => {
           <h1>Login</h1>
           <input
             type="text"
-            placeholder="Nickname or Email"
+            placeholder="Email"
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className="login-passwd-input"

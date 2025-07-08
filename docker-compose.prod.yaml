@@ -1,0 +1,48 @@
+services:
+  rabbitmq:
+    volumes:
+      - /tmp/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - /tmp/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+  migrator:
+    image: ${MIGRATOR_IMAGE}
+
+  auth:
+    image: ${AUTH_IMAGE}
+
+  quiz:
+    image: ${QUIZ_IMAGE}
+
+  real-time:
+    image: ${REALTIME_IMAGE}
+
+  session:
+    image: ${SESSION_IMAGE}
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /tmp/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - /app/node_modules
+      - /opt/certbot/www:/var/www/certbot:rw
+      - /opt/certbot/conf:/etc/letsencrypt:rw
+    command: >
+      sh -c "
+      while :; do
+        sleep 6h
+        nginx -s reload
+      done &
+      nginx -g 'daemon off;'
+      "
+
+  certbot:
+    image: certbot/certbot:v4.1.1
+    container_name: certbot
+    volumes:
+      - /opt/certbot/www:/var/www/certbot:rw
+      - /opt/certbot/conf:/etc/letsencrypt:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"

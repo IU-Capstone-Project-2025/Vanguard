@@ -26,7 +26,7 @@ func Test_PublishSessionEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open Rabbit: %s", err)
 	}
-	done := make(chan shared.Session)
+	done := make(chan string)
 	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
 		t.Fatalf("Failed to connect to RabbitMQ: %s", err)
@@ -80,7 +80,7 @@ func Test_PublishSessionEnd(t *testing.T) {
 		nil,    // args
 	)
 	go func() {
-		var s shared.Session
+		var s string
 		for m := range msgs {
 			err := json.Unmarshal(m.Body, &s)
 			if err != nil {
@@ -90,7 +90,7 @@ func Test_PublishSessionEnd(t *testing.T) {
 			return
 		}
 	}()
-	err = rabbit.PublishSessionEnd(context.Background(), shared.Session{
+	err = rabbit.PublishSessionEnd(context.Background(), "123", shared.Session{
 		ID:               "End",
 		Code:             "123",
 		State:            "123",
@@ -99,10 +99,9 @@ func Test_PublishSessionEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to publish session start: %s", err)
 	}
-	var s shared.Session
 	select {
-	case s = <-done:
-		fmt.Println("done", s.ID)
+	case s := <-done:
+		t.Log("done", s)
 	case <-time.After(10 * time.Second):
 		fmt.Println("Failed to get session")
 		t.FailNow()

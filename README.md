@@ -21,7 +21,7 @@ cd Vanguard
 
 ### 2. Build and start the services
 ```sh
-docker compose --env-file .env.example up -d --build
+docker compose --env-file .env.dev.example up -d --build
 ```
 
 or just make .env and launch as following
