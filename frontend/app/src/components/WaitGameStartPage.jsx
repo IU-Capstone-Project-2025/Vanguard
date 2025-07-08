@@ -7,8 +7,8 @@ import "./styles/WaitGameStartPlayer.css";
 const WaitGameStartPlayer = () => {
   const navigate = useNavigate();
   const { sessionCode } = useParams();
-  const { wsRefSession, connectSession } = useSessionSocket();
-  const { wsRefRealtime, connectRealtime} = useRealtimeSocket();
+  const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
+  const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
 
   const [players, setPlayers] = useState(new Map());
 
@@ -36,6 +36,13 @@ const WaitGameStartPlayer = () => {
       wsRefRealtime.current.onmessage = handleMessageRealtime;
     }
 
+    wsRefRealtime.current.onclose = () => {
+      endSession();
+    }
+    wsRefSession.current.onclose = () => {
+      endSession();
+    }
+
     return () => {
       if (wsRefSession.current) {
         wsRefSession.current.onmessage = null;
@@ -45,6 +52,15 @@ const WaitGameStartPlayer = () => {
       }
     };
   }, [connectSession, navigate, sessionCode, wsRefSession, wsRefRealtime, connectRealtime]);
+
+  const endSession = () => {
+    console.log(`Ending session... ${sessionCode}`);
+    sessionStorage.removeItem('sessionCode');
+    closeWsRefRealtime();
+    closeWsRefSession();
+    navigate('/');
+  }
+
 
   const handleStartGame = async () => {
     if (!sessionCode) {

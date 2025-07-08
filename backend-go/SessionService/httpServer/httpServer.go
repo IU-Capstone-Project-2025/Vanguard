@@ -106,10 +106,10 @@ func (hs *HttpServer) registerHandlers() *mux.Router {
 	router.HandleFunc("/sessionsMock", hs.CreateSessionHandlerMock).Methods("POST", "OPTIONS")
 	router.HandleFunc("/session/{id}/end", hs.SessionEndHandler).Methods("POST", "OPTIONS")
 	router.HandleFunc("/healthz", hs.HealthHandler).Methods("POST", "OPTIONS")
-
+	
 	registry := Handlers.NewConnectionRegistry(hs.logger)
+	router.Handle("/delete-user", Handlers.DeleteUserHandler(registry)).Methods("POST", "OPTIONS")
 	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
-	router.Handle("/delete-user", Handlers.DeleteUserHandler(registry))
 
 	hs.logger.Info("Routes registered", "host", hs.Host, "port", hs.Port)
 	return router

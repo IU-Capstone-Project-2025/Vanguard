@@ -7,8 +7,8 @@ import { API_ENDPOINTS } from '../constants/api';
 
 const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
-  const { wsRefSession, connectSession } = useSessionSocket();
-  const { connectRealtime } = useRealtimeSocket();
+  const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
+  const { connectRealtime, wsRefRealtime, closeWsRefRealtime } = useRealtimeSocket();
   const [sessionCode, setSessionCode] = useState(sessionStorage.getItem('sessionCode') || null);
   const [players, setPlayers] = useState(new Map());
   const [hasClickedNext, setHasClickedNext] = useState(false)
@@ -50,11 +50,68 @@ const WaitGameStartAdmin = () => {
         console.error('⚠️ Failed to parse realtime WS message:', event.data);
       }
     });
+
+    wsRefRealtime.current.onclose = () => {
+      closeConnection();
+    }
+    wsRefSession.current.onclose = () => {
+      closeConnection();
+    }
   }, [connectSession, connectRealtime]);
 
-  const handleKick = (idToRemove) => {
-    setPlayers((prev) => prev.filter((player) => player.id !== idToRemove));
-    // 👆 Только локально — если ты хочешь кикать игрока глобально, надо отправлять событие на сервер
+  const closeConnection = () => {
+    closeWsRefRealtime();
+    closeWsRefSession();
+    navigate('/');
+  }
+
+  const finishSession = async (code) => {
+    try {
+      const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${code}/end`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to end session with code: ${code}`);
+      }
+      console.log(`end session with code: [${code}] response:`, response);
+      // Очистка sessionStorage
+      sessionStorage.removeItem('sessionCode');
+      sessionStorage.removeItem('quizData');
+      sessionStorage.removeItem('currentQuestion');
+      // Закрытие WebSocket соединений
+      closeConnection();
+    } catch (error) {
+      console.error('Error end the session:', error);
+    }
+    
+  }
+
+  const handleKick = async (idToRemove) => {
+    console.log(`Kick user with id [${idToRemove}]`)
+    try {
+      const queryParams = new URLSearchParams(
+        {
+          code: sessionCode,
+          userId: idToRemove
+        }
+      );
+      const response = await fetch(`${API_ENDPOINTS.SESSION}/delete-user?${queryParams}`,
+        {
+          method: 'POST',
+          'Content-Type': 'application/json'
+        }
+      )
+      if (response.status !== 200) {
+        throw new Error(`Failed to kick player with id: ${idToRemove}`);
+      }
+      console.log('Kicked player. response: ', response)
+    }  
+    catch (e) {
+      console.error("Error with kicking: ", e)
+    }
   };
 
   const toNextQuestion = async (sessionCode) => {
@@ -85,7 +142,7 @@ const WaitGameStartAdmin = () => {
   };
 
   const handleTerminate = () => {
-    navigate('/');
+    finishSession(sessionCode);
   };
 
   return (

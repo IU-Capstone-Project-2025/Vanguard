@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext";
 import "./styles/GameProcess.css";
 import { useNavigate } from "react-router-dom";
+import { useSessionSocket } from "../contexts/SessionWebSocketContext";
 
 const GameController = () => {
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
+  const {wsRefSession, closeWsRefSession} = useSessionSocket();
   const [question, setQuestion] = useState(
     {"options": [
       "⬣",
@@ -43,6 +45,9 @@ const GameController = () => {
       wsRefRealtime.current.onclose = () => {
         endSession();
       }
+      wsRefSession.current.onclose = () => {
+        endSession();
+      }
     }
 
     return () => {
@@ -54,6 +59,7 @@ const GameController = () => {
     console.log(`Ending session... ${sessionCode}`);
     sessionStorage.removeItem('sessionCode');
     closeWsRefRealtime();
+    closeWsRefSession();
     navigate('/');
   }
 
