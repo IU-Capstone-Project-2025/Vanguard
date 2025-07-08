@@ -61,7 +61,7 @@ func (m *ServerMessage) Bytes() []byte {
 // handleRead continuously reads messages from the WebSocket connection.
 // It gets incoming messages and delegates processing to HandleUserMessage.
 // If an error occurs (e.g., due to a disconnect), it ensures the connection is closed gracefully.
-func handleRead(ctx ConnectionContext, deps HandlerDeps) {
+func handleRead(ctx *ConnectionContext, deps HandlerDeps) {
 	defer func() {
 		// On exit, clean up
 		deps.Registry.UnregisterConnection(ctx.SessionId, ctx.UserId)
@@ -96,7 +96,7 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 }
 
 // processAnswer processes an incoming UserMessage from a WebSocket client, then (optionally) sends immediate answer
-func processAnswer(ctx ConnectionContext, deps HandlerDeps, msg *ClientMessage) {
+func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage) {
 	session := ctx.SessionId
 	qid, _ := deps.Tracker.GetCurrentQuestion(ctx.SessionId)
 	chosen := msg.Option

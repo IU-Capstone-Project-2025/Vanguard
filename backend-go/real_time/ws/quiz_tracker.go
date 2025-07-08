@@ -6,12 +6,12 @@ import (
 	"xxx/shared"
 )
 
-// QuizTracker tracks the current quiz for each session in the map: sessionId -> models.QuizGame.
+// QuizTracker tracks the current quiz for each session in the map: sessionId -> models.OngoingQuiz.
 // The tracker is thread-safe
 type QuizTracker struct {
 	mu      sync.RWMutex
-	answers map[string]map[string][]bool // sessionId -> userId -> correctness
-	tracker map[string]models.QuizGame   // stores the whole quiz data for each session.
+	answers map[string]map[string][]bool  // sessionId -> userId -> [1st quest. correctness, 2nd, etc.]
+	tracker map[string]models.OngoingQuiz // stores the whole quiz data for each session.
 	// Includes the index of current question and all questions with answer options.
 }
 
@@ -19,7 +19,7 @@ func NewQuizTracker() *QuizTracker {
 	qt := &QuizTracker{
 		mu:      sync.RWMutex{},
 		answers: make(map[string]map[string][]bool),
-		tracker: make(map[string]models.QuizGame),
+		tracker: make(map[string]models.OngoingQuiz),
 	}
 
 	// restore map from Redis if the service was down
@@ -102,7 +102,7 @@ func (q *QuizTracker) NewSession(sessionId string, quizData shared.Quiz) {
 	defer q.mu.Unlock()
 
 	if _, exists := q.tracker[sessionId]; !exists {
-		q.tracker[sessionId] = models.QuizGame{
+		q.tracker[sessionId] = models.OngoingQuiz{
 			CurrQuestionIdx: -1,
 			QuizData:        quizData,
 		}

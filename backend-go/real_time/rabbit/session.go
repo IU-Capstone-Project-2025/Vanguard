@@ -100,10 +100,12 @@ func (r *RealTimeRabbit) ConsumeSessionStart(registry *ws.ConnectionRegistry, tr
 			}
 
 			fmt.Println("Rabbit msg from Real Time", msg)
-			registry.RegisterSession(msg.SessionId) // register new session
-			tracker.NewSession(msg.SessionId, msg.Quiz)
+			registered := registry.RegisterSession(msg.SessionId) // register new session
+			if registered {
+				tracker.NewSession(msg.SessionId, msg.Quiz)
+				go r.ConsumeQuestionStart(registry, tracker, msg.SessionId)
+			}
 
-			go r.ConsumeQuestionStart(registry, tracker)
 		}
 	}()
 
@@ -146,6 +148,10 @@ func (r *RealTimeRabbit) ConsumeSessionEnd(registry *ws.ConnectionRegistry, trac
 				Payload: tracker.GetAnswers(sessionId),
 			}
 
+			err = r.CleanupQuestionConsumer(sessionId)
+			if err != nil {
+				fmt.Println(err)
+			}
 			registry.BroadcastToSession(sessionId, leaderBoard.Bytes(), true)
 
 			registry.UnregisterSession(sessionId) // unregister new session
