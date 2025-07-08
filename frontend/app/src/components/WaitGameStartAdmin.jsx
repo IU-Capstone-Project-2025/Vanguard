@@ -10,14 +10,19 @@ const WaitGameStartAdmin = () => {
   const { wsRefSession, connectSession } = useSessionSocket();
   const { connectRealtime } = useRealtimeSocket();
   const [sessionCode, setSessionCode] = useState(sessionStorage.getItem('sessionCode') || null);
-  const [players, setPlayers] = useState([]);
-  const [hasClickedNext, setHasClickedNext] = useState(false);
+  const [players, setPlayers] = useState(new Map());
+  const [hasClickedNext, setHasClickedNext] = useState(false)
 
   const extractPlayersFromMessage = (data) => {
-    if (typeof data !== 'object' || data === null) return;
-
-    const newPlayers = Object.entries(data).map(([id, name]) => ({ id, name }));
-    setPlayers(newPlayers); // Заменяем весь список — как snapshot текущих подключенных игроков
+    setPlayers((prevPlayers) => {
+      const newPlayers = new Map(prevPlayers)
+      for (const [userId,name] of Object.entries(data)) {
+        if (!newPlayers.has(userId)) {
+          newPlayers.set(userId, name);
+        }
+      }
+      return newPlayers;
+    });
   };
 
   useEffect(() => {
@@ -92,10 +97,9 @@ const WaitGameStartAdmin = () => {
           <button onClick={handleTerminate}>❌ Terminate</button>
         </div>
         <div className="players-grid">
-          {players.map(({ id, name }) => (
+          {(Array.from(players.entries())).map(([id,name]) => (
             <div key={id} className="player-box">
               <span>{name}</span>
-              { name != "Admin" &&
               <button
                 className="kick-button"
                 onClick={() => handleKick(id)}
