@@ -36,7 +36,6 @@ func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 	require.NoError(t, err)
 	confAbs, err := filepath.Abs(filepath.Join("..", "..", "..", "rabbit", "rabbitmq.conf"))
 	require.NoError(t, err)
-
 	// 1. Start RabbitMQ container
 	rabbitReq := testcontainers.ContainerRequest{
 		Image:        "rabbitmq:3-management",
@@ -154,7 +153,6 @@ func Test_HttpServerCreate(t *testing.T) {
 	// 🔨 Делаем запрос на создание сессии
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
-		UserId:   "1",
 		UserName: "user1",
 		QuizId:   "d2372184-dedf-42db-bcbd-d6bb15b0712b",
 	}

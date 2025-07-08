@@ -17,7 +17,7 @@ import (
 	"xxx/SessionService/models"
 )
 
-func Test_HttpWebSocket(t *testing.T) {
+func Test_HttpTestWebSocket(t *testing.T) {
 	cwd, _ := os.Getwd()
 	fmt.Println("Working dir:", cwd)
 
@@ -44,8 +44,8 @@ func Test_HttpWebSocket(t *testing.T) {
 
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
-		UserId: "1",
-		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
+		UserName: "admin",
+		QuizId:   "d2372184-dedf-42db-bcbd-d6bb15b0712b",
 	}
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
@@ -74,7 +74,6 @@ func Test_HttpWebSocket(t *testing.T) {
 	}
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req2 := models.ValidateCodeReq{
-		UserId:   "test1",
 		UserName: "user1",
 		Code:     token.SessionId,
 	}
@@ -100,7 +99,6 @@ func Test_HttpWebSocket(t *testing.T) {
 
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req3 := models.ValidateCodeReq{
-		UserId:   "test2",
 		UserName: "user2",
 		Code:     token.SessionId,
 	}
@@ -123,6 +121,31 @@ func Test_HttpWebSocket(t *testing.T) {
 	if err != nil {
 		t.Fatal("error unmarshalling response body:", err)
 	}
+
+	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
+	req4 := models.ValidateCodeReq{
+		UserName: "user3",
+		Code:     token.SessionId,
+	}
+	jsonBytes, err = json.Marshal(req4)
+	if err != nil {
+		t.Fatal("error marshaling json:", err)
+	}
+
+	resp, err = http.Post(SessionServiceUrl, "application/json", bytes.NewReader(jsonBytes))
+	if err != nil {
+		t.Fatal("error making request:", err)
+	}
+	defer resp.Body.Close()
+	body4, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("error reading response body:", err)
+	}
+	var user3 models.SessionCreateResponse
+	err = json.Unmarshal(body4, &user3)
+	if err != nil {
+		t.Fatal("error unmarshalling response body:", err)
+	}
 	user1Chan := make(chan string, 2)
 	user2Chan := make(chan string, 1)
 
@@ -139,6 +162,8 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatal("user1 dial error:", err)
 			return
 		}
+		defer conn.Close()
+
 		for i := 0; i < 2; i++ {
 			_, msg, err := conn.ReadMessage()
 			if err != nil {
@@ -163,6 +188,8 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatal("user2 dial error:", err)
 			return
 		}
+		defer conn.Close()
+
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			t.Fatalf("user2 read error: %v", err)
@@ -194,20 +221,43 @@ func Test_HttpWebSocket(t *testing.T) {
 			t.Fatal("Timeout waiting for WebSocket messages")
 		}
 	}
-
-	// --- Проверка содержимого
-	expected1a := `{"test1":"user1"}`
-	expected1b := `{"test2":"user2"}`
-	expected2 := `{"test1":"user1","test2":"user2"}`
-	expected3 := `{"test2":"user2","test1":"user1"}`
-
-	if msg1a != expected1a {
-		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
+	expextedMap1a := map[string]string{
+		"uuid1": "user1",
 	}
-	if msg1b != expected1b {
-		t.Fatalf("user1 second message mismatch. Got: %s, Want: %s", msg1b, expected1b)
+	expextedMap1b := map[string]string{
+		"uuid2": "user2",
 	}
-	if msg2 != expected2 && msg2 != expected3 {
-		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
+	expextedMap2 := map[string]string{
+		"uuid1": "user1",
+		"uuid2": "user2",
+	}
+
+	getMap1a := map[string]string{}
+	getMap1b := map[string]string{}
+	getMap2 := map[string]string{}
+
+	err = json.Unmarshal([]byte(msg1a), &getMap1a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = json.Unmarshal([]byte(msg1b), &getMap1b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = json.Unmarshal([]byte(msg2), &getMap2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !valuesEqual(getMap1a, expextedMap1a) {
+		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", expextedMap1a, getMap1a)
+	}
+	if !valuesEqual(getMap1b, expextedMap1b) {
+		t.Fatalf("user1 second message mismatch. Got: %s, Want: %s", expextedMap1b, getMap1b)
+	}
+	if !valuesEqual(getMap2, expextedMap2) {
+		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", expextedMap2, getMap2)
 	}
 }

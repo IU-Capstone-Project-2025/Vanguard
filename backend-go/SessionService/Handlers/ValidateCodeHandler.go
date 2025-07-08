@@ -41,7 +41,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		return
 	}
 	h.logger.Debug("ValidateCodeHandler Request Body", "Body", req)
-	userToken := h.Manager.GenerateUserToken(req.Code, req.UserId, req.UserName, shared.RoleParticipant)
+	userToken := h.Manager.GenerateUserToken(req.Code, req.UserName, shared.RoleParticipant)
 	s := jwt.NewWithClaims(jwt.SigningMethodHS256, userToken)
 	token, err := s.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 	if err != nil {
@@ -57,6 +57,7 @@ func (h *SessionManagerHandler) ValidateCodeHandler(w http.ResponseWriter, r *ht
 		Jwt:              token,
 		ServerWsEndpoint: shared.GetWsEndpoint(),
 		SessionId:        userToken.SessionId,
+		TempUserId:       userToken.UserId,
 	}
 
 	if h.Manager.ValidateCode(req.Code) {

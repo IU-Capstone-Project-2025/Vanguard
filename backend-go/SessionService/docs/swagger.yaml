@@ -4,8 +4,6 @@ definitions:
     properties:
       quizId:
         type: string
-      userId:
-        type: string
       userName:
         type: string
     type: object
@@ -22,12 +20,12 @@ definitions:
         type: string
       sessionId:
         type: string
+      tempUserId:
+        type: string
     type: object
   xxx_SessionService_models.ValidateCodeReq:
     properties:
       code:
-        type: string
-      userId:
         type: string
       userName:
         type: string
