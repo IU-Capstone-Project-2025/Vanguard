@@ -42,6 +42,10 @@ on:
         description: 'Run Shared Migrations job'
         required: false
         type: boolean
+      deploy:
+        description: 'Run Deploy job'
+        required: false
+        type: boolean
 
 jobs:
   set-globals:
@@ -118,6 +122,7 @@ jobs:
     uses: ./.github/workflows/auth-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.auth-service-name }}
+      push-to-docker: ${{ inputs.auth_service }}
     secrets: inherit
 
   quiz-service:
@@ -131,6 +136,7 @@ jobs:
     uses: ./.github/workflows/quiz-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.quiz-service-name }}
+      push-to-docker: ${{ inputs.quiz_service }}
     secrets: inherit
 
   real-time-service:
@@ -144,6 +150,7 @@ jobs:
     uses: ./.github/workflows/real-time-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.realtime-service-name }}
+      push-to-docker: ${{ inputs.real_time_service }}
     secrets: inherit
 
   session-service:
@@ -157,6 +164,7 @@ jobs:
     uses: ./.github/workflows/session-service.yml
     with:
       service-name: ${{ needs.set-globals.outputs.session-service-name }}
+      push-to-docker: ${{ inputs.session_service }}
     secrets: inherit
 
   frontend:
@@ -170,6 +178,7 @@ jobs:
     uses: ./.github/workflows/frontend.yml
     with:
       service-name: ${{ needs.set-globals.outputs.frontend-service-name }}
+      push-to-docker: ${{ inputs.frontend }}
     secrets: inherit
 
   shared-migrations:
@@ -183,12 +192,15 @@ jobs:
     uses: ./.github/workflows/shared-migrations.yml
     with:
       service-name: ${{ needs.set-globals.outputs.migrator-service-name }}
+      push-to-docker: ${{ inputs.shared_migrations }}
     secrets: inherit
 
   deploy:
     name: Deploy to Production
     needs: [ set-globals, auth-service, quiz-service, real-time-service, session-service, frontend, shared-migrations ]
-    if: github.ref == 'refs/heads/main'
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_dispatch' || inputs.deploy == true)
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
@@ -268,9 +280,16 @@ jobs:
         CHOKIDAR_USEPOLLING=true
         EOF
 
+    - name: Install envsubst
+      run: sudo apt-get install -y gettext-base
+
     - name: Upload configs to VM
+      env:
+        RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
+        RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
       run: |
-        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf ./rabbit/definitions.json $SSH_USER@$SSH_HOST:/tmp/
+        envsubst < ./rabbit/definitions.template.json > /tmp/definitions.json
+        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf /tmp/definitions.json $SSH_USER@$SSH_HOST:/tmp/
 
     - name: Deploy with Docker Compose
       run: |

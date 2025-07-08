@@ -3,6 +3,9 @@ services:
     volumes:
       - /tmp/definitions.json:/etc/rabbitmq/definitions.json:ro
       - /tmp/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    environment:
+      RABBITMQ_LOAD_DEFINITIONS: "true"
+      RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
 
   migrator:
     image: ${MIGRATOR_IMAGE}
