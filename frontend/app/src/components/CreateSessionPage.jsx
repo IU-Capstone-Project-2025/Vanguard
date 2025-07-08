@@ -40,16 +40,15 @@ const CreateSessionPage = () => {
   };
 
   // 🎯 POST-запрос к /api/session/sessions
-  const createSession = async (quizId, userId) => {
-    console.log("Creating session with quizId:", quizId, "and userId:", userId, "userName:", Cookies.get("user_nickname"));
+  const createSession = async (quizId) => {
+    console.log("Creating session with quizId:", quizId, "userName:", Cookies.get("user_nickname"));
     const response = await fetch(`${API_ENDPOINTS.SESSION}/sessions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        "userId": userId,
-        "userName": Cookies.get("user_nickname"),
+        "userName": "Admin",
         "quizId": quizId,
       }),
     });
@@ -76,7 +75,7 @@ const CreateSessionPage = () => {
 
   const handlePlay = async () => {
     if (selectedQuiz) {
-      const sessionData = await createSession(selectedQuiz.id, "AdminId");
+      const sessionData = await createSession(selectedQuiz.id);
       setSessionCode(sessionData.sessionId);
       // await connectToWebSocket(sessionData.jwt);
 

@@ -13,6 +13,14 @@ const GameProcessAdmin = () => {
   const [questionIndex, setQuestionIndex] = useState(0);
   const questionsAmount = useState(currentQuestion.quiestionsAmount - 1);
   const navigate = useNavigate();
+  const [questionOptions, setQuestionOptions] = useState(
+      {"options": [
+        "⬣",
+        "⬥",
+        "✠",
+        "❇"
+      ]} // Default empty question to avoid errors
+    )
 
   useEffect(() => {
     const token = sessionStorage.getItem('jwt');
@@ -63,6 +71,10 @@ const toNextQuestion = async (sessionCode) => {
         const data = JSON.parse(event.data);
         if (data.type === 'question') {
           console.log('Received question:', data);
+          let modifiedQuestion = {
+
+          }
+          
           setCurrentQuestion(data);
           sessionStorage.setItem('currentQuestion', JSON.stringify(data));
           return data
@@ -130,7 +142,7 @@ const toNextQuestion = async (sessionCode) => {
         {currentQuestion &&
           currentQuestion.options.map((option, idx) => (
             <button key={idx} className="option-button">
-              {option.text}
+              {questionOptions.options[idx]} {option.text} 
             </button>
           ))}
       </div>
