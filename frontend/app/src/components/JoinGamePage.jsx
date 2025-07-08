@@ -41,7 +41,7 @@ const JoinGamePage = () => {
     const handlePlay = async () => {
         if (code) {
             console.log("code updated:", code);
-            const sessionData = await joinSession(code, sessionStorage.get("nickname"))
+            const sessionData = await joinSession(code, sessionStorage.getItem("nickname"))
             if (!sessionData || !sessionData.sessionId) {
                 console.error("❌ Failed to join session or session ID is missing");
                 alert("Failed to join session. Please check the code and try again.");
