@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"sync"
 	"xxx/shared"
 )
 
@@ -25,6 +26,7 @@ type ConnectionContext struct {
 	UserId    string          // unique ID of the connected user
 	SessionId string          // session ID of the session user joined in
 	Role      shared.UserRole // the role of the user within the session
+	mu        sync.Mutex
 }
 
 // NewWebSocketHandler returns a http.HandlerFunc that uses the given registry.
@@ -64,17 +66,20 @@ func NewWebSocketHandler(deps HandlerDeps) http.HandlerFunc {
 			fmt.Println("ws upgrade error:", err)
 			return
 		}
+		fmt.Println("Try to register connection in handler.go")
 
 		// Ensure session exists in registry
 		deps.Registry.RegisterSession(token.SessionId)
 
 		// Register this connection
-		ctx := ConnectionContext{
+		ctx := &ConnectionContext{
 			Conn:      conn,
 			UserId:    token.UserId,
 			SessionId: token.SessionId,
 			Role:      token.UserType,
+			mu:        sync.Mutex{},
 		}
+		fmt.Println("Try to register user in handler.go")
 		if err := deps.Registry.RegisterConnection(ctx); err != nil {
 			log.Printf("Failed to register connection: %v", err)
 			conn.Close()

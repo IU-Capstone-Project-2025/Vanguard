@@ -16,7 +16,7 @@ const (
 	MessageTypeLeaderboard  = MessageType("leaderboard")
 	MessageTypeAck          = MessageType("game_start")
 	MessageTypeNextQuestion = MessageType("next_question") // sent to admin when next question is triggered
-	MessageTypeEnd		    = MessageType("end") // sent to admin when game ends
+	MessageTypeEnd          = MessageType("end")           // sent to admin when game ends
 )
 
 // ClientMessage describes what we get from the user
@@ -63,10 +63,11 @@ func (m *ServerMessage) Bytes() []byte {
 // handleRead continuously reads messages from the WebSocket connection.
 // It gets incoming messages and delegates processing to HandleUserMessage.
 // If an error occurs (e.g., due to a disconnect), it ensures the connection is closed gracefully.
-func handleRead(ctx ConnectionContext, deps HandlerDeps) {
+func handleRead(ctx *ConnectionContext, deps HandlerDeps) {
 	defer func() {
 		// On exit, clean up
 		deps.Registry.UnregisterConnection(ctx.SessionId, ctx.UserId)
+		fmt.Println("CLOSING GA")
 		ctx.Conn.Close()
 	}()
 
@@ -74,16 +75,14 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 
 	for {
 		_, raw, err := ctx.Conn.ReadMessage()
-		fmt.Printf("ws connection received message: '%s'\n", string(raw))
 		if err != nil {
-		if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-			fmt.Println(fmt.Errorf("ws error reading message: %w", err).Error())
-		} else {
-			log.Printf("websocket closed: %v\n", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				fmt.Println(fmt.Errorf("ws error reading message: %w", err).Error())
+			} else {
+				log.Printf("websocket closed: %v\n", err)
+			}
+			return
 		}
-		return
-    }
-
 
 		var msg ClientMessage
 		if err := json.Unmarshal(raw, &msg); err != nil {
@@ -94,13 +93,12 @@ func handleRead(ctx ConnectionContext, deps HandlerDeps) {
 		switch ctx.Role {
 		case shared.RoleParticipant:
 			go processAnswer(ctx, deps, &msg)
-
 		}
 	}
 }
 
 // processAnswer processes an incoming UserMessage from a WebSocket client, then (optionally) sends immediate answer
-func processAnswer(ctx ConnectionContext, deps HandlerDeps, msg *ClientMessage) {
+func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage) {
 	session := ctx.SessionId
 	qid, _ := deps.Tracker.GetCurrentQuestion(ctx.SessionId)
 	chosen := msg.Option

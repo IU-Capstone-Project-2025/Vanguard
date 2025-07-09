@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
@@ -15,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 	"xxx/real_time/app"
@@ -99,141 +101,150 @@ func TestWithTestContainers(t *testing.T) {
 	// 3. Start RealTime service in a goroutine or exec.Command, configuring it to connect to amqpURL and Redis.
 	//    For brevity, assume RealTime service can be started in-process or as a subprocess, reading env vars:
 	// Start your RealTime main in a goroutine if possible, or exec binary.
-	cancel := startRealTimeServer(t, amqpURL)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	cancel := startRealTimeServer(t, wg, amqpURL)
 	defer cancel()
 
-	adminId := "admin"
-	users := []string{"navalniy"}
-	sessionId := "В4ФЛ3Р"
-	quiz := shared.Quiz{Questions: []shared.Question{
-		{
-			Type: "single_choice",
-			Text: "What is the output of print(2 ** 3)?",
-			Options: []shared.Option{
-				{Text: "6", IsCorrect: false},
-				{Text: "8", IsCorrect: true},
-				{Text: "9", IsCorrect: false},
-				{Text: "5", IsCorrect: false},
-			},
-		},
-		{
-			Type: "single_choice",
-			Text: "Which keyword is used to create a function in Python?",
-			Options: []shared.Option{
-				{Text: "func", IsCorrect: false},
-				{Text: "function", IsCorrect: false},
-				{Text: "def", IsCorrect: true},
-				{Text: "define", IsCorrect: false},
-			},
-		},
-		{
-			Type: "single_choice",
-			Text: "What data type is the result of: 3 / 2 in Python 3?",
-			Options: []shared.Option{
-				{Text: "int", IsCorrect: false},
-				{Text: "float", IsCorrect: true},
-				{Text: "str", IsCorrect: false},
-				{Text: "decimal", IsCorrect: false},
-			},
-		},
-	}}
+	sessionIds := []string{"В4ФЛ3Р", "CO6AK4"}
 
-	usersAnswers := [][]int{
-		{2, 2, 3},
+	for _, s := range sessionIds {
+		wg.Add(1)
+		go func(sessionId string) {
+			defer wg.Done()
+			adminId := "admin"
+			users := []string{"ginger"}
+			quiz := shared.Quiz{Questions: []shared.Question{
+				{
+					Type: "single_choice",
+					Text: "What is the output of print(2 ** 3)?",
+					Options: []shared.Option{
+						{Text: "6", IsCorrect: false},
+						{Text: "8", IsCorrect: true},
+						{Text: "9", IsCorrect: false},
+						{Text: "5", IsCorrect: false},
+					},
+				},
+				{
+					Type: "single_choice",
+					Text: "Which keyword is used to create a function in Python?",
+					Options: []shared.Option{
+						{Text: "func", IsCorrect: false},
+						{Text: "function", IsCorrect: false},
+						{Text: "def", IsCorrect: true},
+						{Text: "define", IsCorrect: false},
+					},
+				},
+				{
+					Type: "single_choice",
+					Text: "What data type is the result of: 3 / 2 in Python 3?",
+					Options: []shared.Option{
+						{Text: "int", IsCorrect: false},
+						{Text: "float", IsCorrect: true},
+						{Text: "str", IsCorrect: false},
+						{Text: "decimal", IsCorrect: false},
+					},
+				},
+			}}
+
+			usersAnswers := [][]int{
+				{2, 2, 3},
+			}
+			adminToken := generateJWT(t, sessionId, adminId, shared.RoleAdmin)
+
+			var adminConn *websocket.Conn
+			var usersConn []*websocket.Conn
+
+			// 5. Publish session.start
+			publishSessionStart(t, amqpURL, sessionId, quiz)
+
+			// ========================================================================
+			// START OF THE DUMMY FIX
+			// ========================================================================
+			//
+			// Give the server a moment to consume the 'session.start' message and
+			// create the dynamic consumer for 'question.<session_id>.start'.
+			// This value may need to be increased if the CI runner is slow.
+			t.Log("Waiting for 5 seconds for the server to set up session consumers...")
+			time.Sleep(5 * time.Second)
+			//
+			// ========================================================================
+			// END OF THE DUMMY FIX
+			// ========================================================================
+
+			// 6. Admin WS connection
+			adminConn = connectWs(t, adminToken)
+
+			// 7. Read welcome
+			readWs(t, adminConn)
+
+			// join users
+			for _, userId := range users {
+				userToken := generateJWT(t, sessionId, userId, shared.RoleParticipant)
+				conn := connectWs(t, userToken)
+				usersConn = append(usersConn, conn)
+
+				readWs(t, conn)
+			}
+
+			// 8. Start question flow
+			for i, q := range quiz.Questions {
+				t.Log("trigger question ", i, q)
+
+				publishQuestionStart(t, amqpURL, sessionId)
+
+				questionPayload := readWs(t, adminConn)
+				t.Log("checking question payload:")
+				require.Equal(t, q.Text, questionPayload.Text)
+				require.Equal(t, ws.MessageTypeQuestion, questionPayload.Type)
+				require.Equal(t, i+1, questionPayload.QuestionIdx)
+				require.Equal(t, q.Options, questionPayload.Options)
+
+				for _, user := range usersConn {
+					readWs(t, user)
+				}
+
+				for j, user := range usersConn {
+					option := usersAnswers[j][i]
+					t.Logf("user %s send answer: %d", users[j], option)
+					msg := ws.ClientMessage{Option: option}
+					user.WriteMessage(websocket.TextMessage, msg.Bytes())
+
+					resp := readWs(t, user)
+					require.Equal(t, ws.MessageTypeAnswer, resp.Type)
+					require.Equal(t, i+1, resp.QuestionIdx)
+					require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
+				}
+			}
+
+			// trigger session end
+			publishSessionEnd(t, amqpURL, sessionId)
+			t.Log("---- Admin received leaderboard:")
+			// readWs(t, adminConn)
+
+			t.Log("---- Users received leaderboards:")
+			for _, user := range usersConn {
+				readWs(t, user)
+				// t.Log(lb.Payload)
+				// ans, ok := lb.Payload.(map[string]interface{})
+				// require.Equal(t, true, ok)
+
+				// userChosen, ok := ans[users[i]].([]interface{})
+				// require.Equal(t, true, ok)
+
+				// for j, isCorrectInter := range userChosen {
+				// 	chosenIdx := usersAnswers[i][j]
+
+				// 	isCorrect, ok := isCorrectInter.(bool)
+				// 	require.Equal(t, true, ok)
+
+				// 	require.Equal(t, quiz.Questions[j].Options[chosenIdx].IsCorrect, isCorrect)
+				// }
+			}
+		}(s)
 	}
 
-	adminToken := generateJWT(t, sessionId, adminId, shared.RoleAdmin)
-
-	var adminConn *websocket.Conn
-	var usersConn []*websocket.Conn
-
-	// 5. Publish session.start
-	publishSessionStart(t, amqpURL, sessionId, quiz)
-
-	// ========================================================================
-	// START OF THE DUMMY FIX
-	// ========================================================================
-	//
-	// Give the server a moment to consume the 'session.start' message and
-	// create the dynamic consumer for 'question.<session_id>.start'.
-	// This value may need to be increased if the CI runner is slow.
-	t.Log("Waiting for 5 seconds for the server to set up session consumers...")
-	time.Sleep(5 * time.Second)
-	//
-	// ========================================================================
-	// END OF THE DUMMY FIX
-	// ========================================================================
-
-	// 6. Admin WS connection
-	adminConn = connectWs(t, adminToken)
-
-	// 7. Read welcome
-	readWs(t, adminConn)
-
-	// join users
-	for _, userId := range users {
-		userToken := generateJWT(t, sessionId, userId, shared.RoleParticipant)
-		conn := connectWs(t, userToken)
-		usersConn = append(usersConn, conn)
-
-		readWs(t, conn)
-	}
-
-	// 8. Start question flow
-	for i, q := range quiz.Questions {
-		t.Log("trigger question ", i, q)
-		publishQuestionStart(t, amqpURL, sessionId)
-
-		questionPayload := readWs(t, adminConn)
-		t.Log("checking question payload:")
-		require.Equal(t, q.Text, questionPayload.Text)
-		require.Equal(t, ws.MessageTypeQuestion, questionPayload.Type)
-		require.Equal(t, i+1, questionPayload.QuestionIdx)
-		require.Equal(t, q.Options, questionPayload.Options)
-
-		// if i == 0 {
-		for _, user := range usersConn {
-			readWs(t, user)
-		}
-		// }
-
-		for j, user := range usersConn {
-			option := usersAnswers[j][i]
-			t.Logf("user %s send answer: %d", users[j], option)
-			msg := ws.ClientMessage{Option: option}
-			user.WriteMessage(websocket.TextMessage, msg.Bytes())
-
-			resp := readWs(t, user)
-			require.Equal(t, ws.MessageTypeAnswer, resp.Type)
-			require.Equal(t, i+1, resp.QuestionIdx)
-			require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
-		}
-	}
-
-	// trigger session end
-	publishSessionEnd(t, amqpURL, sessionId)
-	t.Log("---- Admin received leaderboard:")
-	// readWs(t, adminConn)
-
-	t.Log("---- Users received leaderboards:")
-	for _, user := range usersConn {
-		readWs(t, user)
-		// t.Log(lb.Payload)
-		// ans, ok := lb.Payload.(map[string]interface{})
-		// require.Equal(t, true, ok)
-
-		// userChosen, ok := ans[users[i]].([]interface{})
-		// require.Equal(t, true, ok)
-
-		// for j, isCorrectInter := range userChosen {
-		// 	chosenIdx := usersAnswers[i][j]
-
-		// 	isCorrect, ok := isCorrectInter.(bool)
-		// 	require.Equal(t, true, ok)
-
-		// 	require.Equal(t, quiz.Questions[j].Options[chosenIdx].IsCorrect, isCorrect)
-		// }
-	}
+	wg.Wait()
 }
 
 func readWs(t *testing.T, conn *websocket.Conn) ws.ServerMessage {
@@ -339,7 +350,7 @@ func getEnvFilePath() string {
 	return filepath.Join(root, ".env")
 }
 
-func startRealTimeServer(t *testing.T, amqpUrl string) (ctxCancel context.CancelFunc) {
+func startRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl string) (ctxCancel context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := config.LoadConfig()
@@ -363,8 +374,8 @@ func startRealTimeServer(t *testing.T, amqpUrl string) (ctxCancel context.Cancel
 	srv := &http.Server{Addr: cfg.Host + ":" + cfg.Port, Handler: mux}
 	go func() {
 		t.Log("HTTP server starting")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		t.Fatalf("http listen: %v", err)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			t.Fatalf("http listen: %v", err)
 		}
 	}()
 
@@ -373,14 +384,22 @@ func startRealTimeServer(t *testing.T, amqpUrl string) (ctxCancel context.Cancel
 		t.Fatal(err)
 	}
 
-	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker)
-	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker)
+	sessionStartReady := make(chan struct{})
+	sessionEndReady := make(chan struct{})
 
-	go func() {
+	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker, sessionStartReady)
+	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker, sessionEndReady)
+
+	go func(t *testing.T, wg *sync.WaitGroup) {
+		defer wg.Done()
+
 		<-ctx.Done()
 		t.Log("Shutting down HTTP server...")
 		_ = srv.Shutdown(context.Background())
-	}()
+	}(t, wg)
+
+	<-sessionStartReady
+	<-sessionEndReady
 
 	t.Log("Real-time server fully up")
 	return cancel
