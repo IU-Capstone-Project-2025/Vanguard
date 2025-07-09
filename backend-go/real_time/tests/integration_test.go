@@ -5,82 +5,23 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
 	"testing"
 	"time"
-	"xxx/real_time/app"
-	"xxx/real_time/config"
-	"xxx/real_time/rabbit"
+	"xxx/integration_tests/utils"
 	"xxx/real_time/ws"
 	"xxx/shared"
 
 	"github.com/gorilla/websocket"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
-
-func startRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, string) {
-	defenitionsAbs, err := filepath.Abs(filepath.Join("..", "..", "..", "rabbit", "definitions.json"))
-	require.NoError(t, err)
-	confAbs, err := filepath.Abs(filepath.Join("..", "..", "..", "rabbit", "rabbitmq.conf"))
-	require.NoError(t, err)
-
-	// 1. Start RabbitMQ container
-	rabbitReq := testcontainers.ContainerRequest{
-		Image:        "rabbitmq:3-management",
-		ExposedPorts: []string{"5672/tcp"},
-		Env: map[string]string{
-			"RABBITMQ_LOAD_DEFINITIONS": "true",
-			"RABBITMQ_DEFINITIONS_FILE": "/etc/rabbitmq/definitions.json",
-		},
-		Files: []testcontainers.ContainerFile{
-			{
-				HostFilePath:      defenitionsAbs, // will be discarded internally
-				ContainerFilePath: "/etc/rabbitmq/definitions.json",
-				FileMode:          644,
-			},
-
-			{
-				HostFilePath:      confAbs, // will be discarded internally
-				ContainerFilePath: "/etc/rabbitmq/rabbitmq.conf",
-				FileMode:          644,
-			},
-		},
-		WaitingFor: wait.ForLog("Server startup complete"),
-	}
-	rabbitC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: rabbitReq,
-		Started:          true,
-	})
-	if err != nil {
-		t.Fatalf("Failed to start RabbitMQ container: %v", err)
-	}
-
-	rabbitHost, err := rabbitC.Host(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rabbitPort, err := rabbitC.MappedPort(ctx, "5672")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	u := fmt.Sprintf("amqp://%s:%s@%s:%s/", config.LoadConfig().MQ.User, config.LoadConfig().MQ.Password,
-		rabbitHost, rabbitPort.Port())
-	t.Logf("Rabbit running at %s", u)
-	return rabbitC, u
-}
 
 func TestWithTestContainers(t *testing.T) {
 	ctx := context.Background()
@@ -92,7 +33,7 @@ func TestWithTestContainers(t *testing.T) {
 		}
 	}
 
-	_, amqpURL := startRabbit(ctx, t)
+	_, amqpURL := utils.StartRabbit(ctx, t)
 
 	t.Log("rabbit running on ", amqpURL)
 
@@ -101,10 +42,11 @@ func TestWithTestContainers(t *testing.T) {
 	// 3. Start RealTime service in a goroutine or exec.Command, configuring it to connect to amqpURL and Redis.
 	//    For brevity, assume RealTime service can be started in-process or as a subprocess, reading env vars:
 	// Start your RealTime main in a goroutine if possible, or exec binary.
+	wgRTS := &sync.WaitGroup{}
+	wgRTS.Add(1)
+	cancel := utils.StartRealTimeServer(t, wgRTS, amqpURL)
+
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	cancel := startRealTimeServer(t, wg, amqpURL)
-	defer cancel()
 
 	sessionIds := []string{"В4ФЛ3Р", "CO6AK4"}
 
@@ -173,18 +115,18 @@ func TestWithTestContainers(t *testing.T) {
 			// ========================================================================
 
 			// 6. Admin WS connection
-			adminConn = connectWs(t, adminToken)
+			adminConn = utils.ConnectWs(t, adminToken)
 
 			// 7. Read welcome
-			readWs(t, adminConn)
+			utils.ReadWs(t, adminConn)
 
 			// join users
 			for _, userId := range users {
 				userToken := generateJWT(t, sessionId, userId, shared.RoleParticipant)
-				conn := connectWs(t, userToken)
+				conn := utils.ConnectWs(t, userToken)
 				usersConn = append(usersConn, conn)
 
-				readWs(t, conn)
+				utils.ReadWs(t, conn)
 			}
 
 			// 8. Start question flow
@@ -193,7 +135,7 @@ func TestWithTestContainers(t *testing.T) {
 
 				publishQuestionStart(t, amqpURL, sessionId)
 
-				questionPayload := readWs(t, adminConn)
+				questionPayload := utils.ReadWs(t, adminConn)
 				t.Log("checking question payload:")
 				require.Equal(t, q.Text, questionPayload.Text)
 				require.Equal(t, ws.MessageTypeQuestion, questionPayload.Type)
@@ -201,7 +143,7 @@ func TestWithTestContainers(t *testing.T) {
 				require.Equal(t, q.Options, questionPayload.Options)
 
 				for _, user := range usersConn {
-					readWs(t, user)
+					utils.ReadWs(t, user)
 				}
 
 				for j, user := range usersConn {
@@ -210,7 +152,7 @@ func TestWithTestContainers(t *testing.T) {
 					msg := ws.ClientMessage{Option: option}
 					user.WriteMessage(websocket.TextMessage, msg.Bytes())
 
-					resp := readWs(t, user)
+					resp := utils.ReadWs(t, user)
 					require.Equal(t, ws.MessageTypeAnswer, resp.Type)
 					require.Equal(t, i+1, resp.QuestionIdx)
 					require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
@@ -219,12 +161,12 @@ func TestWithTestContainers(t *testing.T) {
 
 			// trigger session end
 			publishSessionEnd(t, amqpURL, sessionId)
-			t.Log("---- Admin received leaderboard:")
+			t.Log("---- Admin received end message:")
 			// readWs(t, adminConn)
 
-			t.Log("---- Users received leaderboards:")
+			t.Log("---- Users received end message:")
 			for _, user := range usersConn {
-				readWs(t, user)
+				utils.ReadWs(t, user)
 				// t.Log(lb.Payload)
 				// ans, ok := lb.Payload.(map[string]interface{})
 				// require.Equal(t, true, ok)
@@ -241,31 +183,20 @@ func TestWithTestContainers(t *testing.T) {
 				// 	require.Equal(t, quiz.Questions[j].Options[chosenIdx].IsCorrect, isCorrect)
 				// }
 			}
+
+			t.Log("Close connections:")
+			// Ensure all connections will be closed at end
+			utils.CloseWs(adminConn)
+			t.Log("Closed admin")
+			for _, c := range usersConn {
+				utils.CloseWs(c)
+			}
 		}(s)
 	}
 
 	wg.Wait()
-}
-
-func readWs(t *testing.T, conn *websocket.Conn) ws.ServerMessage {
-	_, msg, err := conn.ReadMessage()
-	require.NoError(t, err)
-
-	var serverMsg ws.ServerMessage
-	err = json.Unmarshal(msg, &serverMsg)
-
-	t.Logf("Received: %s", msg)
-	return serverMsg
-}
-
-func connectWs(t *testing.T, token string) *websocket.Conn {
-	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/ws", RawQuery: "token=" + token}
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		t.Fatalf("WebSocket dial failed: %v", err)
-	}
-
-	return conn
+	cancel()
+	wgRTS.Wait()
 }
 
 func publishSessionStart(t *testing.T, amqpURL, sessionId string, quiz shared.Quiz) {
@@ -348,59 +279,4 @@ func getEnvFilePath() string {
 		log.Fatal("failed to find project root dir")
 	}
 	return filepath.Join(root, ".env")
-}
-
-func startRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl string) (ctxCancel context.CancelFunc) {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	cfg := config.LoadConfig()
-	manager := app.NewManager()
-
-	// Connect to the rabbit MQ
-	t.Log("Connecting to broker")
-	err := manager.ConnectRabbitMQ(amqpUrl)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("Connected to broker")
-
-	handlerDeps := ws.HandlerDeps{
-		Tracker:  manager.QuizTracker,
-		Registry: manager.ConnectionRegistry,
-	}
-	mux := http.NewServeMux()
-	mux.Handle("/ws", ws.NewWebSocketHandler(handlerDeps))
-
-	srv := &http.Server{Addr: cfg.Host + ":" + cfg.Port, Handler: mux}
-	go func() {
-		t.Log("HTTP server starting")
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			t.Fatalf("http listen: %v", err)
-		}
-	}()
-
-	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	sessionStartReady := make(chan struct{})
-	sessionEndReady := make(chan struct{})
-
-	go broker.ConsumeSessionStart(manager.ConnectionRegistry, manager.QuizTracker, sessionStartReady)
-	go broker.ConsumeSessionEnd(manager.ConnectionRegistry, manager.QuizTracker, sessionEndReady)
-
-	go func(t *testing.T, wg *sync.WaitGroup) {
-		defer wg.Done()
-
-		<-ctx.Done()
-		t.Log("Shutting down HTTP server...")
-		_ = srv.Shutdown(context.Background())
-	}(t, wg)
-
-	<-sessionStartReady
-	<-sessionEndReady
-
-	t.Log("Real-time server fully up")
-	return cancel
 }
