@@ -39,9 +39,9 @@ function App() {
           path="/game-process/:sessionCode"
           element={
             <RealtimeWebSocketProvider>
-              {/* <SessionWebSocketProvider> */}
+              <SessionWebSocketProvider>
                 <GameController />
-              {/* </SessionWebSocketProvider> */}
+              </SessionWebSocketProvider>
             </RealtimeWebSocketProvider>
           }
            />

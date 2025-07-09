@@ -11,8 +11,8 @@ const JoinGamePage = () => {
     const realTimeWsRef = useRef(null);
 
     // 🎯 POST-запрос к /api/session/join
-    const joinSession = async (sessionCode, userId) => {
-        console.log("Joining session with code:", sessionCode, "and userId:", userId);
+    const joinSession = async (sessionCode, userName) => {
+        console.log("Joining session with code:", sessionCode, "and username:", userName);
 
         // Проверка на наличие кода с символом '#'
         const response = await fetch(`${API_ENDPOINTS.SESSION}/join`, {
@@ -20,7 +20,10 @@ const JoinGamePage = () => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({"code": sessionCode, "userId": userId, "userName":Cookies.get("user_nickname")}),
+            body: JSON.stringify({
+                "code": sessionCode,
+                "userName": userName
+            }),
         });
         if (response.code === 400) {
             console.error("❌ Error joining session:", response.statusText);
@@ -38,7 +41,7 @@ const JoinGamePage = () => {
     const handlePlay = async () => {
         if (code) {
             console.log("code updated:", code);
-            const sessionData = await joinSession(code, "PlayerId")
+            const sessionData = await joinSession(code, sessionStorage.getItem("nickname"))
             if (!sessionData || !sessionData.sessionId) {
                 console.error("❌ Failed to join session or session ID is missing");
                 alert("Failed to join session. Please check the code and try again.");

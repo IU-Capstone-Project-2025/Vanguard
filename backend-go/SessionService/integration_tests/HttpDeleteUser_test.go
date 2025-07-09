@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
+	"sort"
 	"testing"
 	"time"
 	"xxx/SessionService/httpServer"
@@ -44,8 +46,8 @@ func Test_HttpDeleteUser(t *testing.T) {
 
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
-		UserId: "1",
-		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
+		UserName: "admin",
+		QuizId:   "d2372184-dedf-42db-bcbd-d6bb15b0712b",
 	}
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
@@ -74,7 +76,6 @@ func Test_HttpDeleteUser(t *testing.T) {
 	}
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req2 := models.ValidateCodeReq{
-		UserId:   "test1",
 		UserName: "user1",
 		Code:     token.SessionId,
 	}
@@ -100,7 +101,6 @@ func Test_HttpDeleteUser(t *testing.T) {
 
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req3 := models.ValidateCodeReq{
-		UserId:   "test2",
 		UserName: "user2",
 		Code:     token.SessionId,
 	}
@@ -126,7 +126,6 @@ func Test_HttpDeleteUser(t *testing.T) {
 
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req4 := models.ValidateCodeReq{
-		UserId:   "test3",
 		UserName: "user3",
 		Code:     token.SessionId,
 	}
@@ -225,23 +224,46 @@ func Test_HttpDeleteUser(t *testing.T) {
 			t.Fatal("Timeout waiting for WebSocket messages")
 		}
 	}
+	expextedMap1a := map[string]string{
+		"uuid1": "user1",
+	}
+	expextedMap1b := map[string]string{
+		"uuid2": "user2",
+	}
+	expextedMap2 := map[string]string{
+		"uuid1": "user1",
+		"uuid2": "user2",
+	}
 
-	// --- Проверка содержимого
-	expected1a := `{"test1":"user1"}`
-	expected1b := `{"test2":"user2"}`
-	expected2 := `{"test1":"user1","test2":"user2"}`
-	expected3 := `{"test2":"user2","test1":"user1"}`
+	getMap1a := map[string]string{}
+	getMap1b := map[string]string{}
+	getMap2 := map[string]string{}
 
-	if msg1a != expected1a {
-		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", msg1a, expected1a)
+	err = json.Unmarshal([]byte(msg1a), &getMap1a)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if msg1b != expected1b {
-		t.Fatalf("user1 second message mismatch. Got: %s, Want: %s", msg1b, expected1b)
+
+	err = json.Unmarshal([]byte(msg1b), &getMap1b)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if msg2 != expected2 && msg2 != expected3 {
-		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", msg2, expected2)
+
+	err = json.Unmarshal([]byte(msg2), &getMap2)
+	if err != nil {
+		t.Fatal(err)
 	}
-	uuuu := fmt.Sprintf("http://%s:%s/delete-user?code=%s&userId=%s", host, port, token.SessionId, "test1")
+
+	if !valuesEqual(getMap1a, expextedMap1a) {
+		t.Fatalf("user1 first message mismatch. Got: %s, Want: %s", expextedMap1a, getMap1a)
+	}
+	if !valuesEqual(getMap1b, expextedMap1b) {
+		t.Fatalf("user1 second message mismatch. Got: %s, Want: %s", expextedMap1b, getMap1b)
+	}
+	if !valuesEqual(getMap2, expextedMap2) {
+		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", expextedMap2, getMap2)
+	}
+	uuuu := fmt.Sprintf("http://%s:%s/delete-user?code=%s&userId=%s", host, port, token.SessionId, user.TempUserId)
 	resp, err = http.Get(uuuu)
 	if err != nil {
 		t.Fatalf("Request failed: %v", err)
@@ -283,9 +305,34 @@ func Test_HttpDeleteUser(t *testing.T) {
 	case <-timeout2:
 		t.Fatal("Timeout waiting for WebSocket messages")
 	}
-	expected4 := `{"test2":"user2","test3":"user3"}`
-	expected5 := `{"test3":"user3","test2":"user2"}`
-	if msg3 != expected4 && msg3 != expected5 {
-		t.Fatalf("user3 second message mismatch. Got: %s, Want: %s", msg3, expected5)
+	expextedMap3 := map[string]string{
+		"uuid1": "user2",
+		"uuid2": "user3",
 	}
+	getMap3 := map[string]string{}
+
+	err = json.Unmarshal([]byte(msg3), &getMap3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !valuesEqual(getMap3, expextedMap3) {
+		t.Fatalf("user3 second message mismatch. Got: %s, Want: %s", expextedMap3, getMap3)
+	}
+}
+
+func valuesEqual(m1, m2 map[string]string) bool {
+	vals1 := make([]string, 0, len(m1))
+	vals2 := make([]string, 0, len(m2))
+
+	for _, v := range m1 {
+		vals1 = append(vals1, v)
+	}
+	for _, v := range m2 {
+		vals2 = append(vals2, v)
+	}
+
+	sort.Strings(vals1)
+	sort.Strings(vals2)
+
+	return reflect.DeepEqual(vals1, vals2)
 }

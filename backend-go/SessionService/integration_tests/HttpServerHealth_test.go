@@ -35,13 +35,13 @@ func Test_HttpServerHealth(t *testing.T) {
 		t.Fatalf("error creating http server: %v", err)
 	}
 	go server.Start()
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 	defer server.Stop()
 	// 🛠️ Создаем сессию
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/healthz", host, port)
 	req := models.CreateSessionReq{
-		UserId: "1",
-		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
+		UserName: "ADMIN",
+		QuizId:   "d2372184-dedf-42db-bcbd-d6bb15b0712b",
 	}
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
@@ -52,7 +52,6 @@ func Test_HttpServerHealth(t *testing.T) {
 		t.Fatal("error making request:", err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("unexpected status code: got %d", resp.StatusCode)
 	}

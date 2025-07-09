@@ -11,8 +11,17 @@ const GameProcessAdmin = () => {
   const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') != undefined ?
   JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
   const [questionIndex, setQuestionIndex] = useState(0);
-  const questionsAmount = useState(currentQuestion.quiestionsAmount - 1);
+  const questionsAmount = currentQuestion.questionsAmount - 1;
+  console.log(`received questions amount [${questionsAmount}] and current index [${questionIndex}]`)
   const navigate = useNavigate();
+  const [questionOptions, setQuestionOptions] = useState(
+      {"options": [
+        "⬣",
+        "⬥",
+        "✠",
+        "❇"
+      ]} // Default empty question to avoid errors
+    )
 
   useEffect(() => {
     const token = sessionStorage.getItem('jwt');
@@ -63,6 +72,10 @@ const toNextQuestion = async (sessionCode) => {
         const data = JSON.parse(event.data);
         if (data.type === 'question') {
           console.log('Received question:', data);
+          let modifiedQuestion = {
+
+          }
+          
           setCurrentQuestion(data);
           sessionStorage.setItem('currentQuestion', JSON.stringify(data));
           return data
@@ -130,17 +143,17 @@ const toNextQuestion = async (sessionCode) => {
         {currentQuestion &&
           currentQuestion.options.map((option, idx) => (
             <button key={idx} className="option-button">
-              {option.text}
+              {questionOptions.options[idx]} {option.text} 
             </button>
           ))}
       </div>
 
       <div className="navigation-buttons">
-        {/* {questionIndex < questionsAmount && ( */}
+        {questionIndex < questionsAmount && (
           <button onClick={handleNextQuestion} className="nav-button">
             Next
           </button>
-        {/* )} */}
+        )} 
         <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
           Finish
         </button>

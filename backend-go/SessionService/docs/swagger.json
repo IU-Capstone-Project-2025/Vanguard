@@ -362,9 +362,6 @@
                 "quizId": {
                     "type": "string"
                 },
-                "userId": {
-                    "type": "string"
-                },
                 "userName": {
                     "type": "string"
                 }
@@ -389,6 +386,9 @@
                 },
                 "sessionId": {
                     "type": "string"
+                },
+                "tempUserId": {
+                    "type": "string"
                 }
             }
         },
@@ -396,9 +396,6 @@
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "string"
-                },
-                "userId": {
                     "type": "string"
                 },
                 "userName": {

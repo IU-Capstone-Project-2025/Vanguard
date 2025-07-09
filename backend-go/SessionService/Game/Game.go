@@ -18,7 +18,7 @@ import (
 
 type Manager interface {
 	ValidateCode(code string) bool
-	GenerateUserToken(code string, UserId string, UserName string, UserType shared.UserRole) *shared.UserToken
+	GenerateUserToken(code string, UserId string, UserType shared.UserRole) *shared.UserToken
 	NewSession() (*shared.Session, error)
 	SessionStart(quizUUID string, sessionId string) error
 	NextQuestion(code string) error
@@ -92,7 +92,8 @@ func (manager *SessionManager) ValidateCode(code string) bool {
 	return flag
 }
 
-func (manager *SessionManager) GenerateUserToken(code string, UserId string, UserName string, UserType shared.UserRole) *shared.UserToken {
+func (manager *SessionManager) GenerateUserToken(code string, UserName string, UserType shared.UserRole) *shared.UserToken {
+	UserId := uuid.New().String()
 	expirationTime := time.Now().Add(10000 * time.Second)
 	return &shared.UserToken{
 		UserId:    UserId,

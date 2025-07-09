@@ -6,6 +6,10 @@ on:
       service-name:
         required: true
         type: string
+      push-to-docker:
+        description: "Also push Docker image when manually requested"
+        required: false
+        type: boolean
     outputs:
       image:
         value: ${{ jobs.test-build-push.outputs.image }}
@@ -65,7 +69,7 @@ jobs:
         docker build -t $IMAGE_SHA -t $IMAGE_LATEST .
 
     - name: Push Docker image
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' || inputs.push-to-docker == true
       run: |
         docker push $IMAGE_SHA
         docker push $IMAGE_LATEST
