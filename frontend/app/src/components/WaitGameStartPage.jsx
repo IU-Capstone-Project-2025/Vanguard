@@ -106,7 +106,7 @@ const WaitGameStartPlayer = () => {
   };
 
   const handleLeave = () => {
-    navigate("/");
+    endSession();
   };
 
   return (
