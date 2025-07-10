@@ -100,7 +100,7 @@ const WaitGameStartAdmin = () => {
       );
       const response = await fetch(`${API_ENDPOINTS.SESSION}/delete-user?${queryParams}`,
         {
-          method: 'POST',
+          method: 'GET',
           'Content-Type': 'application/json'
         }
       )
