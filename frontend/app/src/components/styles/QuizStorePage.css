@@ -5,7 +5,7 @@
 
 .quiz-store-container {
   font-family: Jua, sans-serif;
-  margin: 0 11% ;
+  margin: 0 20% ;
   /* display: flex;
   flex-direction: column;
   align-items: center; */
@@ -74,11 +74,13 @@
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
-    min-width: 27% ;      
+    min-width: 20% ;      
     border: 1px solid #ccc;
     border-radius: 12px;
-    padding: 16px;
-    box-sizing:content-box;
+    overflow: hidden;
+    /* padding: 16px; */
+    box-sizing:border-box;
+
     
     background-color: #fafafa;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
@@ -86,15 +88,24 @@
 
 .quiz-card {
     h3 {
-        padding: none;
+        padding: 8px 16px;
         text-align: left;
         margin: 0;
     };
 
-    p {
+    img {
+        width: 100%;
+        min-height: 160px;
+        /* background-clip: content-box; */
+        /* overflow-inline: clip; */
+        object-fit: cover;
+        display: block;
+    }
+
+    p { 
         color: #5a5a5a;
         font-size: 12px;
-        padding: none;
+        padding: 0 16px;
         text-align: left;
         margin: 0;
         margin-bottom: 13%;
@@ -104,6 +115,7 @@
 .quiz-buttons {
     justify-content: space-between;
     display: flex;
+    padding: 16px;
     gap: 10px;
     margin-top: 10px;
 }
