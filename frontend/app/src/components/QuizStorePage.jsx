@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // QuizStorePage.jsx
 import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie"
@@ -6,26 +7,41 @@ import { API_ENDPOINTS } from '../constants/api';
 import "./styles/QuizStorePage.css";
 import sampleImage from "./assets/sampleImage.png";
 import { useNavigate } from "react-router-dom";
+import QuizPreviewModal from "./childComponents/QuizPreviewModal";
 
-
-// Обработчик просмотра квиза
-const handleViewQuiz = (quizId) => {
-  alert(`View quiz with ID: ${quizId}`);
-};
 
 const QuizStorePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [quizzes, setQuizzes] = useState([]);
   const user_id = Cookies.get("user_id")
   const navigate = useNavigate();
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [clickCoordinates, setClickCoordinates] = useState([0, 0])
+
+  const handleViewQuiz = (e, quizId) => {
+    e.preventDefault();
+    console.log(e)
+    // setClickCoordinates([e.pageX, e.pageY])
+    // console.log([e.screenX, e.screenY])
+    const quiz = quizzes.find((q) => q.id === quizId);
+    setSelectedQuiz(quiz);
+    setIsModalOpen(true);
+    console.log(clickCoordinates)
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedQuiz(null);
+  };
 
   useEffect(() => {
     const fetchQuizzes = async () => {
-      const queryParams = new URLSearchParams(
-        {
-          user_id: user_id,
-        }
-      )
+      // const queryParams = new URLSearchParams(
+      //   {
+      //     user_id: user_id,
+      //   }
+      // )
 
       const url = `${API_ENDPOINTS.QUIZ}/ `
       // console.log(url)
@@ -48,7 +64,7 @@ const QuizStorePage = () => {
     };
     // Заглушка с локальными квизами
     fetchQuizzes();
-  }, [quizzes, setQuizzes]);
+  }, [quizzes, setQuizzes, user_id]);
 
   const createSession = async (quizId) => {
       console.log("Creating session with quizId:", quizId, "userName:", Cookies.get("user_nickname"));
@@ -69,8 +85,8 @@ const QuizStorePage = () => {
       return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt": "string", "sessionId":"string"}
     };
 
-  const handleStartQuiz = async (quiz) => {
-    const response = await createSession(quiz.id);
+  const handleStartQuiz = (quiz) => {
+    const response = createSession(quiz.id);
 
     sessionStorage.setItem('selectedQuizId', quiz.id);
     sessionStorage.setItem('sessionCode', response.sessionId);
@@ -84,9 +100,23 @@ const QuizStorePage = () => {
     quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleEditQuiz = (quiz) => {
+    alert('unable yet')
+    // navigate(`/edit-quiz/${quiz.id}`)
+  }
+
 
   return (
     <div className="quiz-store-page">
+      {isModalOpen && (
+        <QuizPreviewModal 
+          quiz={selectedQuiz} 
+          onClose={closeModal} 
+          coordinates={clickCoordinates}
+          // onStart={handleStartQuiz(selectedQuiz)}
+          // onEdit={handleEditQuiz(selectedQuiz)}
+        />
+      )}
       <div className="quiz-store-container">
         <nav className="nav-links">
           <a href="/">Home</a>
@@ -112,13 +142,13 @@ const QuizStorePage = () => {
               <div className="quiz-buttons">
                 <button
                   className="secondary-button"
-                  onClick={() => handleViewQuiz(quiz.id)}
+                  onClick={(e) => handleViewQuiz(e, quiz.id)}
                 >
                   View
                 </button>
                 <button
                   className="primary-button"
-                  onClick={() => handleStartQuiz(quiz)}
+                  onClick={(e) => handleStartQuiz(quiz)}
                 >
                   Start
                 </button>
