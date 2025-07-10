@@ -83,17 +83,17 @@ const GameController = () => {
   }
 
   return (
-    <div className="game-process-container">
+    <div className="game-process-player">
       {hasAnswered ? (
         <p className="waiting-text">Waiting for next question...</p>
       ) : (
-        <div className="options-grid">
+        <div className="options-grid-player">
           {question.options.map((option, idx) => (
             <ShapedButton 
               key={idx}
               shape={option}
               text={""} 
-              onClick={handleAnswer}
+              onClick={() => {handleAnswer(idx);}}
             />
           ))}
         </div>
