@@ -148,7 +148,7 @@ const toNextQuestion = async (sessionCode) => {
           currentQuestion.options.map((option, idx) => (
             <ShapedButton 
               key={idx}
-              shape={shape}
+              shape={questionOptions[idx]}
               text={option.text} 
               onClick={
                 () => {console.log('svg clicked')}

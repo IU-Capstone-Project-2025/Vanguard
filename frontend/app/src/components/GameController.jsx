@@ -3,6 +3,7 @@ import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext";
 import "./styles/GameProcess.css";
 import { useNavigate } from "react-router-dom";
 import { useSessionSocket } from "../contexts/SessionWebSocketContext";
+import ShapedButton from "./childComponents/ShapedButton";
 import Alien from './assets/Alien.svg'
 import Corona from './assets/Corona.svg'
 import Ghosty from './assets/Ghosty.svg'
@@ -84,17 +85,16 @@ const GameController = () => {
   return (
     <div className="game-process-container">
       {hasAnswered ? (
-        <p className="waiting-text">Ожидание следующего вопроса…</p>
+        <p className="waiting-text">Waiting for next question...</p>
       ) : (
         <div className="options-grid">
           {question.options.map((option, idx) => (
-            <button
+            <ShapedButton 
               key={idx}
-              className="option-button"
-              onClick={() => handleAnswer(idx)}
-            >
-              {option}
-            </button>
+              shape={option}
+              text={""} 
+              onClick={handleAnswer}
+            />
           ))}
         </div>
       )}
