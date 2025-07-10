@@ -49,8 +49,8 @@ func Test_HttpServerNextQuestion(t *testing.T) {
 	// 🛠️ Создаем сессию
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
-		UserId: "1",
-		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
+		UserName: "aDMIN",
+		QuizId:   "d2372184-dedf-42db-bcbd-d6bb15b0712b",
 	}
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {

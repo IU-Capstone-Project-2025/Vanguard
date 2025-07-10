@@ -41,7 +41,7 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 	}
 	h.logger.Debug("CreateSessionHandler get req", "req", req)
 	session, err := h.Manager.NewSession()
-	AdminToken := h.Manager.GenerateUserToken(session.Code, req.UserId, req.UserName, shared.RoleAdmin)
+	AdminToken := h.Manager.GenerateUserToken(session.Code, req.UserName, shared.RoleAdmin)
 	if err != nil {
 		h.logger.Error("CreateSessionHandler Error with create Session", "err", err)
 		w.Header().Set("Content-Type", "application/json")
@@ -73,8 +73,9 @@ func (h *SessionManagerHandler) CreateSessionHandler(w http.ResponseWriter, r *h
 		return
 	}
 	response := models.SessionCreateResponse{
-		Jwt:       token,
-		SessionId: AdminToken.SessionId,
+		Jwt:        token,
+		SessionId:  AdminToken.SessionId,
+		TempUserId: AdminToken.UserId,
 	}
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

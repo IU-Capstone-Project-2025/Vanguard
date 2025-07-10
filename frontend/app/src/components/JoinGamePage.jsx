@@ -3,6 +3,7 @@ import './styles/styles.css'
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
 import Cookies from "js-cookie";
+import { API_ENDPOINTS } from '../constants/api';
 
 const JoinGamePage = () => {
     const [code, setCode] = useState("");
@@ -10,16 +11,19 @@ const JoinGamePage = () => {
     const realTimeWsRef = useRef(null);
 
     // 🎯 POST-запрос к /api/session/join
-    const joinSession = async (sessionCode, userId) => {
-        console.log("Joining session with code:", sessionCode, "and userId:", userId);
+    const joinSession = async (sessionCode, userName) => {
+        console.log("Joining session with code:", sessionCode, "and username:", userName);
 
         // Проверка на наличие кода с символом '#'
-        const response = await fetch("/api/session/join", {
+        const response = await fetch(`${API_ENDPOINTS.SESSION}/join`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({"code": sessionCode, "userId": userId, "userName":Cookies.get("user_nickname")}),
+            body: JSON.stringify({
+                "code": sessionCode,
+                "userName": userName
+            }),
         });
         if (response.code === 400) {
             console.error("❌ Error joining session:", response.statusText);
@@ -34,29 +38,15 @@ const JoinGamePage = () => {
         console.log("code updated:", code);
     }, [code]);
 
-    // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
-    const connectToWebSocket = (token) => {
-        realTimeWsRef.current = new WebSocket(`/api/ws/ws?token=${token}`);
-        realTimeWsRef.current.onopen = () => {
-            console.log("✅ WebSocket connected with Real-time");
-        };
-
-        realTimeWsRef.current.onerror = (err) => {
-            console.error("❌ WebSocket with Real-time error:", err);
-
-        };
-    };
-
     const handlePlay = async () => {
         if (code) {
             console.log("code updated:", code);
-            const sessionData = await joinSession(code, "PlayerId")
+            const sessionData = await joinSession(code, sessionStorage.getItem("nickname"))
             if (!sessionData || !sessionData.sessionId) {
                 console.error("❌ Failed to join session or session ID is missing");
                 alert("Failed to join session. Please check the code and try again.");
                 return;
             }
-            connectToWebSocket(sessionData.jwt);
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
             sessionStorage.setItem('jwt', sessionData.jwt);
             navigate(`/wait/${code}`); // Navigate to the waiting page with the session code

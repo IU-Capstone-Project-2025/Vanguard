@@ -368,9 +368,6 @@ const docTemplate = `{
                 "quizId": {
                     "type": "string"
                 },
-                "userId": {
-                    "type": "string"
-                },
                 "userName": {
                     "type": "string"
                 }
@@ -395,6 +392,9 @@ const docTemplate = `{
                 },
                 "sessionId": {
                     "type": "string"
+                },
+                "tempUserId": {
+                    "type": "string"
                 }
             }
         },
@@ -402,9 +402,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "string"
-                },
-                "userId": {
                     "type": "string"
                 },
                 "userName": {

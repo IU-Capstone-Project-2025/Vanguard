@@ -1,87 +1,131 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSessionSocket } from "../contexts/SessionWebSocketContext";
+import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext"
 import "./styles/WaitGameStartPlayer.css";
 
 const WaitGameStartPlayer = () => {
-    const navigate = useNavigate();
-    const sessionCode = useParams();
-    sessionStorage.setItem("sessionCode", sessionCode);
-    
-    
-    const sessionServiceWsRef = useRef(null);
+  const navigate = useNavigate();
+  const { sessionCode } = useParams();
+  const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
+  const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
 
-    const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState(new Map());
 
-    // 🌐 Устанавливаем WebSocket-соединение с Session Service
-    const connectToWebSocket = (token) => {
-        let serverWsEndpoint = "ws://localhost:8081/ws";
-        sessionServiceWsRef.current = new WebSocket(`${serverWsEndpoint}?token=${token}`);
-        sessionServiceWsRef.current.onopen = () => {
-            console.log("✅ WebSocket connected with Session Service");
-        };
+  useEffect(() => {
+    // Сохраняем sessionCode в sessionStorage (один раз)
+    if (sessionCode) sessionStorage.setItem("sessionCode", sessionCode);
 
-        sessionServiceWsRef.current.onerror = (err) => {
-            console.error("❌ WebSocket with Session Service error:", err);
+    const token = sessionStorage.getItem("jwt");
+    const nickname = sessionStorage.getItem("nickname");
 
-        };
+    if (!nickname) {
+      navigate("/enter-nickname");
+      return;
+    }
 
-        // получение сообщения от session service
+    if (!wsRefSession.current || wsRefSession.current.readyState > 1) {
+      connectSession(token, handleMessageSession);
+    } else {
+      wsRefSession.current.onmessage = handleMessageSession;
+    }
 
-        sessionServiceWsRef.current.onmessage = (message) => {
-            try {
-                const incomingNames = JSON.parse(message.data); // пример: ["Alice"] или ["Alice", "Bob"]
+    if (!wsRefRealtime.current || wsRefRealtime.current.readyState > 1) {
+      connectRealtime(token, handleMessageRealtime);
+    } else {
+      wsRefRealtime.current.onmessage = handleMessageRealtime;
+    }
 
-                if (!Array.isArray(incomingNames)) return;
+    wsRefRealtime.current.onclose = () => {
+      endSession();
+    }
+    wsRefSession.current.onclose = () => {
+      endSession();
+    }
 
-                setPlayers((prevPlayers) => {
-
-                    // Фильтруем новых
-                    const newPlayers = incomingNames
-                        .map((name, index) => ({
-                            id: prevPlayers.length + index + 1,
-                            name: name
-                        }));
-
-                    return [...prevPlayers, ...newPlayers];
-                });
-
-                console.log("📨 Received JSON message:",incomingNames);
-            } catch (e){
-                console.error("⚠️ Failed to parse incoming WebSocket message:", message.data);
-            }
-        }
+    return () => {
+      if (wsRefSession.current) {
+        wsRefSession.current.onmessage = null;
+      }
+      if (wsRefRealtime.current) {
+        wsRefRealtime.current.onmessage = null;
+      }
     };
-    useEffect(() => {
-        if (!sessionStorage.getItem("nickname")) {
-            navigate("/enter-nickname");
-            return;
+  }, [connectSession, navigate, sessionCode, wsRefSession, wsRefRealtime, connectRealtime]);
+
+  const endSession = () => {
+    console.log(`Ending session... ${sessionCode}`);
+    sessionStorage.removeItem('sessionCode');
+    closeWsRefRealtime();
+    closeWsRefSession();
+    navigate('/');
+  }
+
+
+  const handleStartGame = async () => {
+    if (!sessionCode) {
+      console.error("Session code is not available");
+      return;
+    }
+
+    navigate(`/game-process/${sessionCode}`);
+  }
+
+  const handleMessageRealtime = (event) => {
+    try {
+      const incomingData = JSON.parse(event.data);
+      if (incomingData.type === "next_question") {
+        console.log("📨 Received start game signal:", incomingData);
+        handleStartGame();
+      } else {
+        console.warn("⚠️ Unknown message type:", incomingData.type);
+      }
+    } catch (error) {
+      console.error("Failed to parse WebSocket message:", event.data);
+    }
+  };
+
+  const handleMessageSession = (event) => {
+    try {
+      const data = JSON.parse(event.data); // ["Alice", "Bob", ...]
+
+      setPlayers((prevPlayers) => {
+        const newPlayers = new Map(prevPlayers);
+        for (const [userId,name] of Object.entries(data)) {
+          if (!newPlayers.has(userId)) {
+            newPlayers.set(userId, name);
+          }
         }
-        connectToWebSocket(sessionStorage.getItem("jwt"));
-    },[])
+        return newPlayers;
+      });
 
+      console.log("📨 Received player list:", data);
+    } catch (err) {
+      console.error("⚠️ Failed to parse WebSocket message:", event.data);
+    }
+  };
 
+  const handleLeave = () => {
+    endSession();
+  };
 
-    const handleLeave = () => {
-        navigate("/");
-    };
-
-    return (
-        <div className="wait-player-container">
-        <div className="wait-player-panel">
-            <h1>Now let's wait for your friends</h1>
-            <div className="button-group">
-            <button onClick={handleLeave}>🔙Leave</button>
-            </div>
-            <div className="players-grid">
-            {players.map((player) => (
-                <div key={player.id} className="player-box">
-                <span>{player.name}</span>
-                </div>
-            ))}
-            </div>
+  return (
+    <div className="wait-player-container">
+      <div className="wait-player-panel">
+        <h1>Now let's wait for your friends</h1>
+        <div className="button-group">
+          <button onClick={handleLeave}>🔙 Leave</button>
         </div>
+        <div className="players-grid">
+          {Array.from(players.entries()).map(([id,name]) => (
+            <div key={id} className="player-box">
+              <span>{name}</span>
+            </div>
+          ))}
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default WaitGameStartPlayer;

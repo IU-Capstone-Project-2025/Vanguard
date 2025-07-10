@@ -4,11 +4,12 @@ import {QRCodeSVG} from "qrcode.react";
 import { useParams } from "react-router-dom";
 import "./styles/AskToJoinSession.css"; // we'll style separately
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from '../constants/api';
 
 const AskToJoinSession = () => {
   // Mocked backend data
   const { sessionCode } = useParams();
-  const [joinLink, setJoinLink] = React.useState(`https://localhost:3000/wait/${sessionCode}`);
+  const [joinLink, setJoinLink] = React.useState(`${BASE_URL}/join/${sessionCode}`);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 

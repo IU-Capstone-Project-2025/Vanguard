@@ -40,8 +40,8 @@ func Test_HttpServerValidate(t *testing.T) {
 
 	SessionServiceUrl := fmt.Sprintf("http://%s:%s/sessionsMock", host, port)
 	req := models.CreateSessionReq{
-		UserId: "1",
-		QuizId: "d2372184-dedf-42db-bcbd-d6bb15b0712b",
+		UserName: "admin",
+		QuizId:   "d2372184-dedf-42db-bcbd-d6bb15b0712b",
 	}
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
@@ -80,8 +80,8 @@ func Test_HttpServerValidate(t *testing.T) {
 	}
 	SessionServiceUrl = fmt.Sprintf("http://%s:%s/join", host, port)
 	req2 := models.ValidateCodeReq{
-		UserId: "1",
-		Code:   token.SessionId,
+		UserName: "admin",
+		Code:     token.SessionId,
 	}
 	jsonBytes, err = json.Marshal(req2)
 	if err != nil {

@@ -74,20 +74,43 @@ func (hs *HttpServer) Stop() {
 	}
 }
 
+// corsMiddleware is a middleware function that sets appropriate headers to http.ResponseWriter object
+// to allow origins for CORS policy
+func corsMiddleware(next http.Handler) http.Handler {
+  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*") // Allow all origins
+    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+    next.ServeHTTP(w, r)
+  })
+}
+
 func (hs *HttpServer) registerHandlers() *mux.Router {
 	router := mux.NewRouter()
+	router.Use(corsMiddleware)
+
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
-	router.HandleFunc("/sessions", hs.CreateSessionHandler).Methods("POST")
-	router.HandleFunc("/join", hs.ValidateCodeHandler).Methods("POST")
-	router.HandleFunc("/session/{id}/nextQuestion", hs.NextQuestionHandler).Methods("POST")
-	router.HandleFunc("/start", hs.StartSessionHandler).Methods("POST")
-	router.HandleFunc("/validate", hs.ValidateSessionCodeHandler).Methods("POST")
-	router.HandleFunc("/sessionsMock", hs.CreateSessionHandlerMock).Methods("POST")
-	router.HandleFunc("/session/{id}/end", hs.SessionEndHandler).Methods("POST")
-	router.HandleFunc("/healthz", hs.HealthHandler).Methods("POST")
+
+	router.HandleFunc("/sessions", hs.CreateSessionHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/join", hs.ValidateCodeHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/session/{id}/nextQuestion", hs.NextQuestionHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/start", hs.StartSessionHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/validate", hs.ValidateSessionCodeHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/sessionsMock", hs.CreateSessionHandlerMock).Methods("POST", "OPTIONS")
+	router.HandleFunc("/session/{id}/end", hs.SessionEndHandler).Methods("POST", "OPTIONS")
+	router.HandleFunc("/healthz", hs.HealthHandler).Methods("POST", "OPTIONS")
+	
 	registry := Handlers.NewConnectionRegistry(hs.logger)
-	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
 	router.Handle("/delete-user", Handlers.DeleteUserHandler(registry))
+	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
+
 	hs.logger.Info("Routes registered", "host", hs.Host, "port", hs.Port)
 	return router
 }
