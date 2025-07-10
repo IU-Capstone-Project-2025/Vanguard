@@ -3,16 +3,20 @@ import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext";
 import "./styles/GameProcess.css";
 import { useNavigate } from "react-router-dom";
 import { useSessionSocket } from "../contexts/SessionWebSocketContext";
+import Alien from './assets/Alien.svg'
+import Corona from './assets/Corona.svg'
+import Ghosty from './assets/Ghosty.svg'
+import Cookie6 from './assets/Cookie6.svg'
 
 const GameController = () => {
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
   const {wsRefSession, closeWsRefSession} = useSessionSocket();
   const [question, setQuestion] = useState(
     {"options": [
-      "⬣",
-      "⬥",
-      "✠",
-      "❇"
+      Alien,
+      Corona,
+      Ghosty,
+      Cookie6
     ]} // Default empty question to avoid errors
   )
   const [hasAnswered, setHasAnswered] = useState(false);
