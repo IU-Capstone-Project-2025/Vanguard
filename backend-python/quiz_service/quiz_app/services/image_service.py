@@ -8,6 +8,7 @@ from fastapi import UploadFile
 from shared.schemas.image import ImageUploadResponse
 
 from quiz_app.core.config import settings
+from quiz_app.core.metrics import QUIZ_IMAGE_UPLOADS_TOTAL, QUIZ_IMAGE_UPLOAD_SIZE_BYTES, SERVICE
 from quiz_app.exceptions import InvalidImageError, ImageNotFoundError, FileTooLargeError, ImageS3Error
 
 logger = logging.getLogger("app")
@@ -47,10 +48,14 @@ class S3ImageService:
             FileTooLargeError: 413 - For files > 5MB
             ImageS3Error: 500 - For other upload failures
         """
+        logger.debug(f"Received image upload request: filename={file.filename}, content_type={file.content_type}")
+
         if not file.content_type.startswith("image/"):
+            QUIZ_IMAGE_UPLOADS_TOTAL.labels(service=SERVICE, status="invalid_type").inc()
             raise InvalidImageError("Only image files are allowed")
 
         if file.size > self.max_size:
+            QUIZ_IMAGE_UPLOADS_TOTAL.labels(service=SERVICE, status="too_large").inc()
             raise FileTooLargeError(f"File size exceeds {self.max_size} bytes limit")
 
         file_ext = file.filename.split(".")[-1]
@@ -64,13 +69,18 @@ class S3ImageService:
                 ExtraArgs={"ACL": "public-read", "ContentType": file.content_type}
             )
         except (ClientError, BotoCoreError) as e:
+            QUIZ_IMAGE_UPLOADS_TOTAL.labels(service=SERVICE, status="s3_error").inc()
             logger.error(f"S3 upload error: {str(e)}")
             raise ImageS3Error(f"S3 upload failed: {str(e)}")
         except Exception as e:
+            QUIZ_IMAGE_UPLOADS_TOTAL.labels(service=SERVICE, status="unexpected_error").inc()
             logger.error(f"Unexpected upload error: {str(e)}")
             raise ImageS3Error(f"Upload failed: {str(e)}")
 
-        logger.info(f"Uploaded {file.filename} to {key}")
+        QUIZ_IMAGE_UPLOADS_TOTAL.labels(service=SERVICE, status="success").inc()
+        QUIZ_IMAGE_UPLOAD_SIZE_BYTES.labels(service=SERVICE, status="success").observe(file.size)
+        logger.info(f"Uploaded image {file.filename} as {key} ({file.size} bytes)")
+
         url = self.get_file_url(key)
         return ImageUploadResponse(url=url)
 
@@ -85,10 +95,11 @@ class S3ImageService:
             ImageNotFoundError: 404 - When file doesn't exist
             ImageS3Error: 500 - For other deletion failures
         """
+        logger.debug(f"Attempting to delete image: {img_url}")
         try:
             key = self.get_key_from_url(img_url)
             self.client.delete_object(Bucket=self.bucket, Key=key)
-            logger.info(f"Deleted {key} for bucket {self.bucket}")
+            logger.info(f"Deleted image {key} from bucket {self.bucket}")
         except self.client.exceptions.NoSuchKey:
             raise ImageNotFoundError("The specified image does not exist")
         except (ClientError, BotoCoreError) as e:
@@ -105,5 +116,6 @@ class S3ImageService:
     def get_key_from_url(self, url: str) -> str:
         """Extracts S3 key from public URL"""
         if not url.startswith(self.bucket_url):
+            logger.error(f"Invalid image URL: {url}")
             raise ValueError("Invalid URL - does not belong to this bucket")
         return url.replace(f"{self.bucket_url}/", "")

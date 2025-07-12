@@ -29,6 +29,7 @@ packaging==24.2
 passlib==1.7.4
 pillow==11.2.1
 pluggy==1.5.0
+prometheus_client==0.22.1
 pydantic==2.10.5
 pydantic-settings==2.7.1
 pydantic_core==2.27.2

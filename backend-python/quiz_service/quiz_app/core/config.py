@@ -1,12 +1,14 @@
-import os
+from enum import Enum
 
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
-ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
 
-if ENVIRONMENT != "prod" and ENVIRONMENT != "test":
-    from dotenv import load_dotenv
-    load_dotenv()
+class Environment(str, Enum):
+    PROD = "production"
+    DEV = "development"
+    TEST = "test"
+    STAGING = "staging"
 
 
 class Settings(BaseSettings):
@@ -19,7 +21,14 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "Quiz Service API"
     APP_VERSION: str = "1.0.0"
+
+    ENVIRONMENT: Environment = Environment.PROD
     DEBUG: bool = False
 
 
-settings = Settings()
+try:
+    settings = Settings()
+except ValidationError:
+    from dotenv import load_dotenv
+    load_dotenv()
+    settings = Settings()

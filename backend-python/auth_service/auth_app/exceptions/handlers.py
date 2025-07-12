@@ -13,15 +13,15 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(AuthServiceError)
     async def auth_service_exception_handler(_: Request, exc: AuthServiceError):
         detail = getattr(exc, "detail", str(exc))
-        logger.warning(f"InvalidImageError: {detail}")
+        logger.warning(f"AuthServiceError: {detail}")
         return JSONResponse(
             status_code=getattr(exc, "status_code", status.HTTP_500_INTERNAL_SERVER_ERROR),
             content={"detail": detail}
         )
 
     @app.exception_handler(Exception)
-    async def generic_exception_handler(_: Request, _exc: Exception):
-        logger.exception("Unhandled exception occurred")
+    async def generic_exception_handler(_: Request, exc: Exception):
+        logger.exception(f"Unhandled exception occurred: {str(exc)}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "An unexpected error occurred"},

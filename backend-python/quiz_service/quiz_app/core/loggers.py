@@ -52,5 +52,5 @@ def get_log_config(debug: bool = False):
     return log_config
 
 
-def setup_logging(debug: bool = False):
+def setup_loggers(debug: bool = False):
     dictConfig(get_log_config(debug))

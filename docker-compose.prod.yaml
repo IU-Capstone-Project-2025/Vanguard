@@ -9,12 +9,20 @@ services:
 
   migrator:
     image: ${MIGRATOR_IMAGE}
+    environment:
+      ENVIRONMENT: "production"
 
   auth:
     image: ${AUTH_IMAGE}
+    environment:
+      ENVIRONMENT: "production"
+      DEBUG: "false"
 
   quiz:
     image: ${QUIZ_IMAGE}
+    environment:
+      ENVIRONMENT: "production"
+      DEBUG: "false"
 
   real-time:
     image: ${REALTIME_IMAGE}

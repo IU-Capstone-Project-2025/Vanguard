@@ -8,6 +8,10 @@ from shared.schemas.tag import TagBase
 from shared.utils.unitofwork import UnitOfWork
 
 from quiz_app.exceptions import QuizNotFoundError, ForbiddenError, InvalidQuizQueryParametersError
+from quiz_app.core.metrics import (
+    QUIZ_CREATIONS_TOTAL, QUIZ_FETCHES_TOTAL, QUIZ_UPDATES_TOTAL,
+    QUIZ_DELETES_TOTAL, QUIZ_LISTING_REQUESTS_TOTAL, SERVICE
+)
 
 logger = logging.getLogger("app")
 
@@ -17,6 +21,7 @@ class QuizService:
         self.uow = uow
 
     async def create_quiz(self, user_id: UUID, quiz_in: QuizCreate) -> QuizResponse:
+        logger.debug(f"Creating quiz for user {user_id} with visibility={quiz_in.is_public}")
         async with self.uow.transaction() as session:
             quiz_repo = QuizRepository(session)
             tag_repo = TagRepository(session)
@@ -37,28 +42,43 @@ class QuizService:
             await session.flush()
             await session.refresh(quiz_db)
 
+            visibility = "public" if quiz_db.is_public else "private"
+            QUIZ_CREATIONS_TOTAL.labels(service=SERVICE, status="success", visibility=visibility).inc()
             logger.info(f"Created quiz {quiz_db.id} by user {user_id}")
             return QuizResponse.model_validate(quiz_db)
 
     async def get_quiz_by_id(self, quiz_id: UUID, user_id: UUID | None) -> QuizResponse:
+        logger.debug(f"Fetching quiz {quiz_id} (requested by {user_id})")
         async with self.uow.readonly() as session:
             repo = QuizRepository(session)
             quiz = await repo.get(_id=quiz_id)
+
+            public_only = "true" if user_id is None else "false"
+
             if not quiz:
+                QUIZ_FETCHES_TOTAL.labels(service=SERVICE, status="not_found", public_only=public_only).inc()
                 raise QuizNotFoundError(quiz_id)
+
             if quiz.owner_id != user_id and not quiz.is_public:
+                QUIZ_FETCHES_TOTAL.labels(service=SERVICE, status="forbidden", public_only=public_only).inc()
                 raise ForbiddenError("You do not own this quiz.")
+
+            QUIZ_FETCHES_TOTAL.labels(service=SERVICE, status="success", public_only=public_only).inc()
+            logger.info(f"Quiz {quiz_id} retrieved successfully by {user_id}")
             return QuizResponse.model_validate(quiz)
 
     async def update_quiz(self, quiz_id: UUID, user_id: UUID, data: QuizUpdate) -> QuizResponse:
+        logger.debug(f"Updating quiz {quiz_id} by user {user_id}")
         async with self.uow.transaction() as session:
             quiz_repo = QuizRepository(session)
             tag_repo = TagRepository(session)
 
             quiz = await quiz_repo.get(_id=quiz_id)
             if not quiz:
+                QUIZ_UPDATES_TOTAL.labels(service=SERVICE, status="not_found").inc()
                 raise QuizNotFoundError(quiz_id)
             if quiz.owner_id != user_id:
+                QUIZ_UPDATES_TOTAL.labels(service=SERVICE, status="forbidden").inc()
                 raise ForbiddenError("You do not own this quiz.")
 
             # Update scalar fields
@@ -75,18 +95,25 @@ class QuizService:
             await session.flush()
             await session.refresh(quiz)
 
-            logger.info(f"Updated quiz {quiz_id} by user {user_id}")
+            QUIZ_UPDATES_TOTAL.labels(service=SERVICE, status="success").inc()
+            logger.info(f"Quiz {quiz_id} updated successfully by user {user_id}")
             return QuizResponse.model_validate(quiz)
 
     async def delete_quiz(self, quiz_id: UUID, user_id: UUID) -> None:
+        logger.debug(f"Deleting quiz {quiz_id} by user {user_id}")
         async with self.uow.transaction() as session:
             repo = QuizRepository(session)
             quiz = await repo.get(_id=quiz_id)
             if not quiz:
+                QUIZ_DELETES_TOTAL.labels(service=SERVICE, status="not_found").inc()
                 raise QuizNotFoundError(quiz_id)
             if quiz.owner_id != user_id:
+                QUIZ_DELETES_TOTAL.labels(service=SERVICE, status="forbidden").inc()
                 raise ForbiddenError("You do not own this quiz.")
+
             await repo.delete(quiz)
+            QUIZ_DELETES_TOTAL.labels(service=SERVICE, status="success").inc()
+            logger.info(f"Quiz {quiz_id} deleted by user {user_id}")
 
     async def list_quizzes(
             self,
@@ -100,7 +127,15 @@ class QuizService:
             page: int = 1,
             size: int = 20
     ) -> list[QuizResponse]:
-        filter_mode = self.resolve_filter_mode(requester_id, public, mine, user_id)
+        logger.debug(f"Listing quizzes for requester={requester_id}, public={public}, mine={mine}, user_id={user_id}, search={search}, tags={tags}")
+
+        filter_type = "unknown"
+        try:
+            filter_mode = self.resolve_filter_mode(requester_id, public, mine, user_id)
+            filter_type = filter_mode.value
+        except InvalidQuizQueryParametersError:
+            QUIZ_LISTING_REQUESTS_TOTAL.labels(service=SERVICE, status="invalid", filter_type=filter_type).inc()
+            raise
 
         if tags:
             tags = list({TagBase.model_validate({"name": raw}).name for raw in tags if raw})
@@ -116,7 +151,10 @@ class QuizService:
                 page=page,
                 size=size
             )
-            return [QuizResponse.model_validate(q) for q in quizzes]
+
+        QUIZ_LISTING_REQUESTS_TOTAL.labels(service=SERVICE, status="success", filter_type=filter_type).inc()
+        logger.info(f"Returned {len(quizzes)} quizzes for requester={requester_id}")
+        return [QuizResponse.model_validate(q) for q in quizzes]
 
     @staticmethod
     def resolve_filter_mode(

@@ -67,8 +67,8 @@ def register_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(Exception)
-    async def generic_exception_handler(_: Request, _exc: Exception):
-        logger.exception("Unhandled exception occurred")
+    async def generic_exception_handler(_: Request, exc: Exception):
+        logger.exception(f"Unhandled exception occurred: {str(exc)}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "An unexpected error occurred"},
