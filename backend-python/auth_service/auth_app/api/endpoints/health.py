@@ -6,11 +6,13 @@ from auth_app.core.config import settings
 
 router = APIRouter(tags=["auth-service"])
 
+
 @router.get(
     "/health",
     summary="Health Check",
     response_description="Service status, version, and timestamp",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False
 )
 async def health_check():
     return {

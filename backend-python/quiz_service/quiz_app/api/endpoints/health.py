@@ -11,7 +11,8 @@ router = APIRouter(tags=["quiz-service"])
     "/health",
     status_code=status.HTTP_200_OK,
     summary="Quiz Service Health Check",
-    response_description="Service status and dependencies"
+    response_description="Service status and dependencies",
+    include_in_schema=False
 )
 async def health_check():
     return {

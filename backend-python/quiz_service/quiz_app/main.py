@@ -13,7 +13,7 @@ from quiz_app.init_sample_data import init_sample_data
 from quiz_app.api.endpoints import health_router, quiz_router, image_router
 from quiz_app.core.config import settings, Environment
 from quiz_app.core.loggers import setup_loggers
-from auth_app.core.middleware import MetricsMiddleware, LoggingMiddleware
+from quiz_app.core.middleware import MetricsMiddleware, LoggingMiddleware
 from quiz_app.exceptions.handlers import register_exception_handlers
 
 setup_loggers(debug=settings.DEBUG)

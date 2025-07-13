@@ -7,5 +7,5 @@ const (
 	SessionEndRoutingKey   = "session.end"   // routing key for "session_end" event
 	// QuestionStartRoutingKey is a routing key for "question_start" event.
 	QuestionStartRoutingKey = "question.*.start" // * stands for session code
-	QuizManager             = "http://quiz:8000/"
+	QuizManager             = "http://quiz:8000/api/"
 )
