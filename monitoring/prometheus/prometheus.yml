@@ -1,0 +1,43 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager:9093
+
+rule_files:
+- "rules/*.yml"
+
+scrape_configs:
+- job_name: 'node-exporter'
+  scrape_interval: 10s
+  static_configs:
+  - targets: [ 'node-exporter:9100' ]
+
+- job_name: 'cadvisor'
+  scrape_interval: 10s
+  static_configs:
+  - targets: [ 'cadvisor:8080' ]
+
+- job_name: 'auth-service'
+  static_configs:
+  - targets: [ 'auth:8000' ]
+  metrics_path: '/metrics'
+
+- job_name: 'quiz-service'
+  static_configs:
+  - targets: [ 'quiz:8000' ]
+  metrics_path: '/metrics'
+
+# - job_name: 'realtime-service'
+#   static_configs:
+#   - targets: [ 'real-time:8080' ]
+#   metrics_path: '/metrics'
+
+# - job_name: 'session-service'
+#   static_configs:
+#   - targets: [ 'session:8081' ]
+#   metrics_path: '/metrics'

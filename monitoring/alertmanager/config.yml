@@ -1,0 +1,24 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 1h
+  receiver: "telegram"
+  routes:
+  - receiver: "telegram"
+    group_wait: 10s
+    match_re:
+      severity: critical|warning
+    continue: true
+
+receivers:
+- name: "telegram"
+  telegram_configs:
+  - send_resolved: true
+    bot_token: 7659472996:AAFvXeLIijPOWN_6Oa5VHCfYKEsiXESwn6k
+    api_url: https://api.telegram.org
+    chat_id: 6640514132
+    # parse_mode:
+    # message:

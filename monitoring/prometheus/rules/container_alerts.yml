@@ -1,0 +1,29 @@
+groups:
+- name: container_alerts
+  rules:
+  - alert: ContainerRestarting
+    expr: delta(container_start_time_seconds{name!=""}[15m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container restarting ({{ $labels.name }})"
+      description: "Container {{ $labels.name }} has restarted in the last 15 minutes"
+
+  - alert: ContainerHighMemoryUsage
+    expr: (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""} * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container high memory usage ({{ $labels.name }})"
+      description: "Container {{ $labels.name }} memory usage is {{ $value }}%"
+
+  - alert: ContainerCPUThrottling
+    expr: rate(container_cpu_cfs_throttled_periods_total{name!=""}[5m]) / rate(container_cpu_cfs_periods_total{name!=""}[5m]) > 0.25
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container CPU throttling ({{ $labels.name }})"
+      description: "Container {{ $labels.name }} is being throttled {{ $value | humanizePercentage }}"
