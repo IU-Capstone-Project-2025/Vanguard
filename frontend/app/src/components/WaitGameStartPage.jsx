@@ -56,6 +56,7 @@ const WaitGameStartPlayer = () => {
   const endSession = () => {
     console.log(`Ending session... ${sessionCode}`);
     sessionStorage.removeItem('sessionCode');
+    sessionStorage.removeItem('nickname')
     closeWsRefRealtime();
     closeWsRefSession();
     navigate('/');
