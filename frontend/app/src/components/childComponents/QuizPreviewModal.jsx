@@ -108,8 +108,8 @@ const QuizPreviewModal = ({ quiz, onClose, coordinates, onStart, onEdit }) => {
           ))}
 
           <div className="modal-footer">
-            <button className="secondary-button" disabled >Edit quiz</button>
-            <button className="primary-button" disabled >Start Quiz</button>
+            <button className="secondary-button" onClick={onEdit} >Edit quiz</button>
+            <button className="primary-button" onClick={onStart}>Start Quiz</button>
           </div>
         </motion.div>
       </motion.div>

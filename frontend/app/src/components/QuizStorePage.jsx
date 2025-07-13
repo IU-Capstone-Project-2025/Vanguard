@@ -85,8 +85,8 @@ const QuizStorePage = () => {
       return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt": "string", "sessionId":"string"}
     };
 
-  const handleStartQuiz = (quiz) => {
-    const response = createSession(quiz.id);
+  const handleStartQuiz = async (quiz) => {
+    const response = await createSession(quiz.id);
 
     sessionStorage.setItem('selectedQuizId', quiz.id);
     sessionStorage.setItem('sessionCode', response.sessionId);
@@ -113,8 +113,8 @@ const QuizStorePage = () => {
           quiz={selectedQuiz} 
           onClose={closeModal} 
           coordinates={clickCoordinates}
-          // onStart={handleStartQuiz(selectedQuiz)}
-          // onEdit={handleEditQuiz(selectedQuiz)}
+          onStart={() => handleStartQuiz(selectedQuiz)}
+          onEdit={() => handleEditQuiz(selectedQuiz)}
         />
       )}
       <div className="quiz-store-container">
