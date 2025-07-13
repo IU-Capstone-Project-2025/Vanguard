@@ -18,12 +18,18 @@
   border-radius: 15px;
   width: 60%;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow-y: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .modal-navbar {
   text-align: right;
+}
+
+.questions-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  border-radius: 15px;
 }
 
 .modal-navbar button {
@@ -40,7 +46,7 @@
 }
 
 .modal-title {
-    margin-left: 1vw;
+  margin-left: 1vw;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -112,7 +118,7 @@
     border: none;
     border-radius: 10px;
     font-size: 24px;
-    width: 49%;
+    width: 48%;
     /* height: 49%; */
 }
 
