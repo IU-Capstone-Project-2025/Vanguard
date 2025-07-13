@@ -135,11 +135,11 @@ const toNextQuestion = async (sessionCode) => {
   /* -------- UI -------- */
   return (
     <div className="game-process">
-      <h1>Live Quiz</h1>
+      <div className='question-title'>
+        <h1>Live Quiz</h1>
 
-      <p>Question {questionIndex + 1}</p>
-
-      <div className="question-block">
+        <p>Question {questionIndex + 1}</p>
+      
         <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
       </div>
 
@@ -158,9 +158,9 @@ const toNextQuestion = async (sessionCode) => {
         }
       </div>
 
-      <div className="navigation-buttons">
+      <div className="button-group">
         {questionIndex < questionsAmount && (
-          <button onClick={handleNextQuestion} className="nav-button">
+          <button onClick={handleNextQuestion} className="button">
             Next
           </button>
         )} 

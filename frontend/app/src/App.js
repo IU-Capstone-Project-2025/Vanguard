@@ -14,6 +14,8 @@ import GameProcessAdmin from './components/GameProcessAdmin';
 import AuthPage from './components/AuthPage';
 import NotFoundPage from './components/NotFoundPage';
 import RegisterPage from './components/RegisterPage';
+import QuizStorePage from './components/QuizStorePage';
+
 // import ProtectedRoute from './components/ProtectedRoute';
 
 import { SessionWebSocketProvider } from './contexts/SessionWebSocketContext';
@@ -32,6 +34,16 @@ function App() {
         <Route path="/join" element={<JoinGamePage />} />
         <Route path="/ask-to-join/:sessionCode" element={<AskToJoinSessionPage />} />
         <Route path="*" element={<NotFoundPage />} />
+
+        {/* Protected страницы */}
+        <Route
+          path="/store"
+          element={
+            // <ProtectedRoute>
+              <QuizStorePage/>
+            // </ProtectedRoute>
+          }
+        />
 
         {/* Страницы с WebSocket */}
         
