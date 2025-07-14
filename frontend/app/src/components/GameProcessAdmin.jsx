@@ -135,7 +135,7 @@ const toNextQuestion = async (sessionCode) => {
   /* -------- UI -------- */
   return (
     <div className="game-process">
-      <div className='question-title'>
+      <div className='controller-question-title'>
         <h1>Live Quiz</h1>
 
         <p>Question {questionIndex + 1}</p>

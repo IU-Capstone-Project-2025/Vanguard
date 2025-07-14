@@ -49,6 +49,13 @@
 .question-title {
   width: 20%;
 } */
+.controller-question-title {
+  color: var(--bage);
+  text-align: center;
+  h2 {
+    font-size: 40px;
+  }
+}
 
 .button-group {
     margin: 1vw 1vw;

@@ -1,0 +1,44 @@
+.constructor-page {
+    background-color: #ECECEC;
+    /* border-radius: 20px; */
+    padding: 0 40px;
+    min-height: 100vh;
+    flex-direction: column;
+    display: flex;
+    text-align: center;
+}
+
+.constructor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.constructor-content {
+    border-radius: 25px;
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 70%;
+    padding: 36px;
+    align-self: center;
+}
+
+.constructor-header h1 {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.constructor-header span {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.add-question {
+  font-size: 28px;
+  text-align: center;
+  cursor: pointer;
+  padding: 10px;
+}
