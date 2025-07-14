@@ -28,19 +28,22 @@ const QuestionCard = ({ question, index, onChange }) => {
       is_correct: idx === i,
     }));
     onChange({ ...question, options: updatedOptions });
+    setShowMenuIndex(null)
   };
 
   const handleMarkIncorrect = (i) => {
     const updatedOptions = question.options.map((opt, idx) => ({
       ...opt,
-      is_correct: idx !== i,
+      is_correct: false,
     }));
     onChange({ ...question, options: updatedOptions });
+    setShowMenuIndex(null)
   }
 
   const handleDeleteOption = (i) => {
     const updatedOptions = question.options.filter((_, idx) => idx !== i);
     onChange({ ...question, options: updatedOptions });
+    setShowMenuIndex(null)
   };
 
   const handleContextMenu = (e, i) => {
@@ -132,7 +135,6 @@ const QuestionCard = ({ question, index, onChange }) => {
               {showMenuIndex === i && (
                 <div className="context-menu">
                   <div onClick={() => handleMarkCorrect(i)}>Mark as correct</div>
-                  
                   <div onClick={() => handleDeleteOption(i)}>Delete</div>
                 </div>
               )}
