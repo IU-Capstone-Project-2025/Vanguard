@@ -131,6 +131,7 @@
   cursor: pointer;
   backdrop-filter: blur(100px);
   opacity: 0.8;
+  /* text-align: center; */
 }
 
 .question-image {
@@ -140,9 +141,10 @@
 }
 
 .upload-button {
-  position: relative;
+  position: absolute;
   z-index: 1000;
-  bottom: 90px;
+  text-align: center;
+  bottom: 87px;
   right: 45px;
   background: transparent;
   border: 1px solid var(--bage);

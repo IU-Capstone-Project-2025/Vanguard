@@ -30,6 +30,14 @@ const QuestionCard = ({ question, index, onChange }) => {
     onChange({ ...question, options: updatedOptions });
   };
 
+  const handleMarkIncorrect = (i) => {
+    const updatedOptions = question.options.map((opt, idx) => ({
+      ...opt,
+      is_correct: idx !== i,
+    }));
+    onChange({ ...question, options: updatedOptions });
+  }
+
   const handleDeleteOption = (i) => {
     const updatedOptions = question.options.filter((_, idx) => idx !== i);
     onChange({ ...question, options: updatedOptions });
@@ -75,6 +83,7 @@ const QuestionCard = ({ question, index, onChange }) => {
         className="image-upload-container"
         onMouseEnter={() => setShowMenuIndex("image")}
         // onMouseLeave={() => setShowMenuIndex(null)}
+        onClick={handleButtonClick}
       >
         <img
           src={question.image_url || sampleImage}
@@ -83,7 +92,7 @@ const QuestionCard = ({ question, index, onChange }) => {
         />
         {showMenuIndex === "image" && (
           <div className="upload-wrapper">
-            <button onClick={handleButtonClick}>Upload Image</button>
+            <button className="upload-button">Upload Image</button>
             <input
               ref={fileInputRef}
               id={`fileInput-${index}`}
@@ -123,6 +132,7 @@ const QuestionCard = ({ question, index, onChange }) => {
               {showMenuIndex === i && (
                 <div className="context-menu">
                   <div onClick={() => handleMarkCorrect(i)}>Mark as correct</div>
+                  
                   <div onClick={() => handleDeleteOption(i)}>Delete</div>
                 </div>
               )}
