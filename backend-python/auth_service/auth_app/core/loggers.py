@@ -5,15 +5,23 @@ from shared.utils.logging_formatter import JsonFormatter
 
 def get_log_config(debug: bool = False):
     if debug:  # development
-        LOG_LEVEL_APP = "DEBUG"
-        LOG_LEVEL_SQLALCHEMY = "DEBUG"
-        LOG_LEVEL_HANDLER = "DEBUG"
-        LOG_LEVEL_ROOT = "DEBUG"
+        config = {
+            "app": "DEBUG",
+            "sqlalchemy_engine": "WARNING",
+            "sqlalchemy_pool": "WARNING",
+            "sqlalchemy_orm": "WARNING",
+            "root": "WARNING",
+            "handler": "DEBUG"
+        }
     else:  # production
-        LOG_LEVEL_APP = "INFO"
-        LOG_LEVEL_SQLALCHEMY = "WARNING"
-        LOG_LEVEL_HANDLER = "INFO"
-        LOG_LEVEL_ROOT = "WARNING"
+        config = {
+            "app": "INFO",
+            "sqlalchemy_engine": "WARNING",
+            "sqlalchemy_pool": "ERROR",
+            "sqlalchemy_orm": "ERROR",
+            "root": "WARNING",
+            "handler": "INFO"
+        }
 
     log_config = {
         "version": 1,
@@ -26,7 +34,7 @@ def get_log_config(debug: bool = False):
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
-                "level": LOG_LEVEL_HANDLER,
+                "level": config.get("handler"),
                 "formatter": "json",
                 "stream": "ext://sys.stdout",
             }
@@ -34,18 +42,28 @@ def get_log_config(debug: bool = False):
         "loggers": {
             "app": {
                 "handlers": ["console"],
-                "level": LOG_LEVEL_APP,
+                "level": config.get("app"),
                 "propagate": False
             },
             "sqlalchemy.engine": {
                 "handlers": ["console"],
-                "level": LOG_LEVEL_SQLALCHEMY,
+                "level": config.get("sqlalchemy_engine"),
+                "propagate": False
+            },
+            "sqlalchemy.pool": {
+                "handlers": ["console"],
+                "level": config.get("sqlalchemy_pool"),
+                "propagate": False
+            },
+            "sqlalchemy.orm": {
+                "handlers": ["console"],
+                "level": config.get("sqlalchemy_orm"),
                 "propagate": False
             }
         },
         "root": {
             "handlers": ["console"],
-            "level": LOG_LEVEL_ROOT
+            "level": config.get("root")
         }
     }
 

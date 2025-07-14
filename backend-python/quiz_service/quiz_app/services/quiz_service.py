@@ -7,7 +7,7 @@ from shared.schemas.quiz import QuizCreate, QuizUpdate, QuizResponse, QuizFilter
 from shared.schemas.tag import TagBase
 from shared.utils.unitofwork import UnitOfWork
 
-from quiz_app.exceptions import QuizNotFoundError, ForbiddenError, InvalidQuizQueryParametersError
+from quiz_app.exceptions import QuizNotFoundError, QuizForbiddenError, InvalidQuizQueryParametersError
 from quiz_app.core.metrics import (
     QUIZ_CREATIONS_TOTAL, QUIZ_FETCHES_TOTAL, QUIZ_UPDATES_TOTAL,
     QUIZ_DELETES_TOTAL, QUIZ_LISTING_REQUESTS_TOTAL, SERVICE
@@ -61,7 +61,7 @@ class QuizService:
 
             if quiz.owner_id != user_id and not quiz.is_public:
                 QUIZ_FETCHES_TOTAL.labels(service=SERVICE, status="forbidden", public_only=public_only).inc()
-                raise ForbiddenError("You do not own this quiz.")
+                raise QuizForbiddenError("You do not own this quiz.")
 
             QUIZ_FETCHES_TOTAL.labels(service=SERVICE, status="success", public_only=public_only).inc()
             logger.info(f"Quiz {quiz_id} retrieved successfully by {user_id}")
@@ -79,7 +79,7 @@ class QuizService:
                 raise QuizNotFoundError(quiz_id)
             if quiz.owner_id != user_id:
                 QUIZ_UPDATES_TOTAL.labels(service=SERVICE, status="forbidden").inc()
-                raise ForbiddenError("You do not own this quiz.")
+                raise QuizForbiddenError("You do not own this quiz.")
 
             # Update scalar fields
             update_data = data.model_dump(exclude_none=True, exclude={'tags'})
@@ -109,7 +109,7 @@ class QuizService:
                 raise QuizNotFoundError(quiz_id)
             if quiz.owner_id != user_id:
                 QUIZ_DELETES_TOTAL.labels(service=SERVICE, status="forbidden").inc()
-                raise ForbiddenError("You do not own this quiz.")
+                raise QuizForbiddenError("You do not own this quiz.")
 
             await repo.delete(quiz)
             QUIZ_DELETES_TOTAL.labels(service=SERVICE, status="success").inc()
