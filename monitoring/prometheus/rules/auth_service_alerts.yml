@@ -1,0 +1,60 @@
+groups:
+- name: auth_service_alerts
+  rules:
+  - alert: HighAuthErrorRate
+    expr: |
+      sum(rate(http_requests_total{service="auth", status=~"5.."}[5m]))
+      / 
+      sum(rate(http_requests_total{service="auth"}[5m])) 
+      > 0.05
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High error rate in Auth Service ({{ $value }}%)"
+      description: "HTTP error rate above 5% for 5 minutes"
+
+  - alert: AuthHighLatency
+    expr: |
+      histogram_quantile(0.99, 
+        sum by(le) (rate(http_request_duration_seconds{service="auth"}[5m]))
+      ) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High latency in Auth Service"
+      description: "99th percentile latency above 1s (current: {{ $value }}s)"
+
+  - alert: AuthRegistrationFailures
+    expr: |
+      increase(auth_user_registrations_total{service="auth", status="fail"}[10m]) > 10
+    labels:
+      severity: warning
+    annotations:
+      summary: "User registration failures"
+      description: "More than 10 failed registrations in last 10 minutes"
+
+  - alert: AuthLoginAnomaly
+    expr: |
+      rate(auth_user_logins_total{service="auth", status="fail"}[10m])
+      >
+      2 * rate(auth_user_logins_total{service="auth", status="fail"}[40m] offset 10m)
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Suspicious login activity"
+      description: "Login failures significantly increased"
+
+  - alert: AuthSessionDrop
+    expr: |
+      auth_active_sessions{service="auth"}
+      <
+      0.7 * (auth_active_sessions{service="auth"} offset 15m)
+    for: 10m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Active sessions dropped significantly"
+      description: "Active sessions dropped >30% compared to 15 minutes ago"

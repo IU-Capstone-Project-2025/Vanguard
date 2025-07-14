@@ -1,0 +1,47 @@
+{
+  "title": "Auth Service Dashboard",
+  "panels": [
+    {
+      "title": "HTTP Requests",
+      "type": "graph",
+      "targets": [{
+        "expr": "sum by(status) (rate(http_requests_total{service=\"auth\"}[5m]))",
+        "legendFormat": "{{status}}"
+      }],
+      "gridPos": {"x":0, "y":0, "w":12, "h":6}
+    },
+    {
+      "title": "Request Latency (99th %ile)",
+      "type": "graph",
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum by(le) (rate(http_request_duration_seconds{service=\"auth\"}[5m])))"
+      }],
+      "gridPos": {"x":12, "y":0, "w":12, "h":6}
+    },
+    {
+      "title": "User Operations",
+      "type": "graph",
+      "targets": [
+        {"expr": "rate(auth_user_registrations_total{service=\"auth\", status=\"success\"}[5m])", "legendFormat": "Registrations"},
+        {"expr": "rate(auth_user_logins_total{service=\"auth\", status=\"success\"}[5m])", "legendFormat": "Logins"},
+        {"expr": "rate(auth_token_refreshes_total{service=\"auth\"}[5m])", "legendFormat": "Token Refreshes"}
+      ],
+      "gridPos": {"x":0, "y":6, "w":8, "h":6}
+    },
+    {
+      "title": "Active Sessions",
+      "type": "stat",
+      "targets": [{"expr": "auth_active_sessions{service=\"auth\"}"}],
+      "gridPos": {"x":8, "y":6, "w":4, "h":3}
+    },
+    {
+      "title": "Operations Failure Rate",
+      "type": "gauge",
+      "targets": [
+        {"expr": "sum(rate(auth_user_registrations_total{service=\"auth\", status=\"fail\"}[5m])) / sum(rate(auth_user_registrations_total{service=\"auth\"}[5m])) * 100", "legendFormat": "Registration"},
+        {"expr": "sum(rate(auth_user_logins_total{service=\"auth\", status=\"fail\"}[5m])) / sum(rate(auth_user_logins_total{service=\"auth\"}[5m])) * 100", "legendFormat": "Login"}
+      ],
+      "gridPos": {"x":12, "y":6, "w":12, "h":6}
+    }
+  ]
+}

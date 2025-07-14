@@ -1,24 +1,56 @@
 global:
-  resolve_timeout: 5m
+  resolve_timeout: 5m # Delay before marking as resolved.
 
 route:
-  group_wait: 10s
-  group_interval: 30s
-  repeat_interval: 1h
-  receiver: "telegram"
+  receiver: 'telegram'
+  group_by: [ alertname, severity ]
+  group_wait: 30s # Delay before first notification.
+  group_interval: 5m # Delay between updates.
+  repeat_interval: 2h # Delay between re-sending unresolved alerts.
   routes:
-  - receiver: "telegram"
-    group_wait: 10s
-    match_re:
-      severity: critical|warning
-    continue: true
+  - match:
+      severity: 'critical'
+    receiver: 'telegram-critical'
+    repeat_interval: 30m
+  - match:
+      severity: 'warning'
+    receiver: 'telegram-warning'
 
 receivers:
-- name: "telegram"
+- name: 'telegram'
   telegram_configs:
-  - send_resolved: true
-    bot_token: 7659472996:AAFvXeLIijPOWN_6Oa5VHCfYKEsiXESwn6k
-    api_url: https://api.telegram.org
+  - bot_token: 7659472996:AAFvXeLIijPOWN_6Oa5VHCfYKEsiXESwn6k
     chat_id: 6640514132
-    # parse_mode:
-    # message:
+    api_url: 'https://api.telegram.org'
+    parse_mode: 'HTML'
+    message: |
+      <b>🚨 Default Alert 🚨</b>
+      <pre>{{ range .Alerts }}
+      • {{ .Annotations.summary }}
+      {{ end }}</pre>
+
+- name: 'telegram-critical'
+  telegram_configs:
+  - bot_token: 7659472996:AAFvXeLIijPOWN_6Oa5VHCfYKEsiXESwn6k
+    chat_id: 6640514132
+    api_url: 'https://api.telegram.org'
+    parse_mode: 'HTML'
+    message: |
+      <b>🔥 CRITICAL ALERT 🔥</b>
+      <pre>{{ range .Alerts }}
+      • {{ .Annotations.summary }}
+      {{ .Annotations.description }}
+      {{ end }}</pre>
+
+- name: 'telegram-warning'
+  telegram_configs:
+  - bot_token: 7659472996:AAFvXeLIijPOWN_6Oa5VHCfYKEsiXESwn6k
+    chat_id: 6640514132
+    api_url: 'https://api.telegram.org'
+    parse_mode: 'HTML'
+    message: |
+      <b>⚠️ WARNING ALERT ⚠️</b>
+      <pre>{{ range .Alerts }}
+      • {{ .Annotations.summary }}
+      {{ .Annotations.description }}
+      {{ end }}</pre>
