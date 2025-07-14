@@ -62,7 +62,7 @@ const QuizPreviewModal = ({ quiz, onClose, coordinates, onStart, onEdit }) => {
             {quiz.questions.map((q, index) => (
               <div key={index} className="question-preview">
                   <img
-                      src={q.imageURL || sampleImage}
+                      src={q.image_url || sampleImage}
                       alt="Question"
                   />
                   <div className="question-details">
