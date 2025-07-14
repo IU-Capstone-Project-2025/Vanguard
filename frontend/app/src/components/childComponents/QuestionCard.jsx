@@ -1,11 +1,17 @@
 // components/childComponents/QuestionCard.jsx
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import "./QuestionCard.css";
 import sampleImage from "../assets/sampleImage.png";
+import { API_ENDPOINTS } from "../../constants/api";
 
 const QuestionCard = ({ question, index, onChange }) => {
   const [showMenuIndex, setShowMenuIndex] = useState(null);
+  const fileInputRef = useRef(null);
 
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+  
   const handleTextChange = (e) => {
     onChange({ ...question, text: e.target.value });
   };
@@ -34,9 +40,65 @@ const QuestionCard = ({ question, index, onChange }) => {
     setShowMenuIndex(i === showMenuIndex ? null : i);
   };
 
+  const handleUploadImage = async (e) => {
+    console.log("Uploading image...");
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file); // название поля должно быть "image"
+
+    try {
+      const res = await fetch(`${API_ENDPOINTS.QUIZ}/images/upload/`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Upload failed (${res.status}): ${errorText}`);
+      }
+
+      const data = await res.json();
+      const imageUrl = data.url;
+      console.log(imageUrl)
+
+      onChange({ ...question, image_url: imageUrl });
+    } catch (err) {
+      alert("Image upload failed: " + err.message);
+    }
+  };
+
   return (
     <div className="question-card">
-      <img src={sampleImage} alt="Question" className="question-image" />
+      <div
+        className="image-upload-container"
+        onMouseEnter={() => setShowMenuIndex("image")}
+        // onMouseLeave={() => setShowMenuIndex(null)}
+      >
+        <img
+          src={question.image_url || sampleImage}
+          alt="Question"
+          className="question-image"
+        />
+        {showMenuIndex === "image" && (
+          <div className="upload-wrapper">
+            <button onClick={handleButtonClick}>Upload Image</button>
+            <input
+              ref={fileInputRef}
+              id={`fileInput-${index}`}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                console.log("Image selected:", e.target.files[0]);
+                handleUploadImage(e);
+              }}
+            />
+          </div>
+        )}
+
+      </div>
       <div className="question-content">
         <input
           type="text"

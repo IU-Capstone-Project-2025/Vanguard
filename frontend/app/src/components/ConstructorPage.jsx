@@ -1,9 +1,9 @@
-// components/ConstructorPage.jsx
+// ConstructorPage.jsx
 import React, { useState } from "react";
 import QuestionCard from "./childComponents/QuestionCard";
 import "./styles/ConstructorPage.css";
 import { useNavigate } from "react-router-dom";
-import { API_ENDPOINTS } from "../constants/api";
+import { API_ENDPOINTS } from "../constants/api.js";
 
 const ConstructorPage = () => {
   const navigate = useNavigate();
@@ -38,11 +38,14 @@ const ConstructorPage = () => {
   };
 
   const handleSubmit = () => {
-    console.log("Submitting quiz:", quiz);
-    console.log(API_ENDPOINTS.QUIZ);
-    fetch(API_ENDPOINTS.quizzes, {
+    console.log(API_ENDPOINTS.QUIZ)
+    console.log(quiz)
+    fetch(API_ENDPOINTS.QUIZ, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionStorage.getItem("access_token")}`
+       },
       body: JSON.stringify(quiz),
     })
       .then((res) => {
@@ -51,7 +54,7 @@ const ConstructorPage = () => {
       })
       .then((data) => {
         alert("Quiz submitted successfully!");
-        navigate("/");
+        navigate("/store");
       })
       .catch((err) => alert("Error: " + err.message));
   };
