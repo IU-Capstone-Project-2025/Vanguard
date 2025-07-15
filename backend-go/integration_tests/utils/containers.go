@@ -9,11 +9,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"time"
 	"xxx/real_time/config"
 )
 
-func StartRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, string) {
+func StartRabbit(ctx context.Context, t *testing.T) (addr string, terminate func()) {
 	_, currentFile, _, ok := runtime.Caller(0)
 	require.True(t, ok, "Failed to get current file path")
 
@@ -67,35 +66,38 @@ func StartRabbit(ctx context.Context, t *testing.T) (testcontainers.Container, s
 		t.Fatal(err)
 	}
 
-	u := fmt.Sprintf("amqp://%s:%s@%s:%s/", config.LoadConfig().MQ.User, config.LoadConfig().MQ.Password,
+	addr = fmt.Sprintf("amqp://%s:%s@%s:%s/", config.LoadConfig().MQ.User, config.LoadConfig().MQ.Password,
 		rabbitHost, rabbitPort.Port())
-	t.Logf("Rabbit running at %s", u)
-	return rabbitC, u
+	t.Logf("Rabbit running at %s", addr)
+	terminate = func() {
+		err := rabbitC.Terminate(ctx)
+		require.NoError(t, err)
+	}
+
+	return addr, terminate
 }
 
-func StartRedis(ctx context.Context, t *testing.T) (testcontainers.Container, string) {
+func StartRedis(ctx context.Context, t *testing.T) (addr string, terminate func()) {
 	req := testcontainers.ContainerRequest{
-		Image:        "redis:7-alpine", // or "redis:latest"
+		Image:        "redis:latest",
 		ExposedPorts: []string{"6379/tcp"},
-		WaitingFor:   wait.ForListeningPort("6379/tcp").WithStartupTimeout(30 * time.Second),
+		WaitingFor:   wait.ForListeningPort("6379/tcp"),
 	}
 	redisC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
 	})
-	if err != nil {
-		t.Fatalf("failed to start Redis container: %v", err)
-	}
+	require.NoError(t, err)
 
 	host, err := redisC.Host(ctx)
-	if err != nil {
-		t.Fatalf("failed to get Redis container host: %v", err)
+	require.NoError(t, err)
+	port, err := redisC.MappedPort(ctx, "6379")
+	require.NoError(t, err)
+
+	addr = fmt.Sprintf("redis://%s:%s", host, port.Port())
+	terminate = func() {
+		err := redisC.Terminate(ctx)
+		require.NoError(t, err)
 	}
-	mappedPort, err := redisC.MappedPort(ctx, "6379")
-	if err != nil {
-		t.Fatalf("failed to get Redis mapped port: %v", err)
-	}
-	addr := fmt.Sprintf("%s:%s", host, mappedPort.Port())
-	t.Logf("Started Redis container at %s", addr)
-	return redisC, addr
+	return addr, terminate
 }

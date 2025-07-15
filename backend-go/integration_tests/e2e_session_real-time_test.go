@@ -49,13 +49,15 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	loadEnv(t)
 	ctx := context.Background()
 
-	_, amqpUrl := utils.StartRabbit(ctx, t)
-	_, redisUrl := utils.StartRedis(ctx, t)
+	amqpUrl, closeRabbit := utils.StartRabbit(ctx, t)
+	defer closeRabbit()
+	redisUrl, closeRedis := utils.StartRedis(ctx, t)
+	defer closeRedis()
 
 	t.Log("------------ wait for real time service -----------------")
 	wgRTS := &sync.WaitGroup{}
 	wgRTS.Add(1)
-	cancel := utils.StartRealTimeServer(t, wgRTS, amqpUrl)
+	cancel := utils.StartRealTimeServer(t, wgRTS, amqpUrl, redisUrl)
 	defer cancel()
 
 	t.Log("------------ wait for session service -----------------")

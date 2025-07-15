@@ -6,10 +6,11 @@ import (
 
 // ServiceConfig is a structure containing all loaded variables from environment
 type ServiceConfig struct {
-	Host string       // server host
-	Port string       // server port
-	MQ   RabbitConfig // Message broker configs
-	JWT  JWTConfig    // Jwt configs
+	Host  string       // server host
+	Port  string       // server port
+	MQ    RabbitConfig // Message broker configs
+	Redis RedisConfig  // Redis storage configs
+	JWT   JWTConfig    // Jwt configs
 }
 
 // RabbitConfig is a structure containing environment variables for RabbitMQ setup
@@ -18,6 +19,12 @@ type RabbitConfig struct {
 	Password string
 	Host     string
 	Port     string
+}
+
+// RedisConfig is a structure containing environment variables for Redis setup
+type RedisConfig struct {
+	Host string
+	Port string
 }
 
 // JWTConfig is a structure containing environment variables related to JWT
@@ -44,6 +51,10 @@ func LoadConfig() *ServiceConfig {
 			Password: os.Getenv("RABBITMQ_PASSWORD"),
 			Host:     os.Getenv("RABBITMQ_HOST"),
 			Port:     os.Getenv("RABBITMQ_PORT"),
+		},
+		Redis: RedisConfig{
+			Host: os.Getenv("REDIS_HOST"),
+			Port: os.Getenv("REDIS_PORT"),
 		},
 		JWT: JWTConfig{SecretKey: os.Getenv("JWT_SECRET_KEY")},
 	}
