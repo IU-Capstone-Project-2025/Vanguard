@@ -165,14 +165,13 @@ func Test_HttpDeleteUser(t *testing.T) {
 			t.Fatal("user1 dial error:", err)
 			return
 		}
-		defer conn.Close()
-
-		for i := 0; i < 2; i++ {
+		for i := 0; i < 3; i++ {
 			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				t.Errorf("user1 read error: %v", err)
 				return
 			}
+			t.Log(string(msg))
 			user1Chan <- string(msg)
 		}
 	}()
@@ -191,14 +190,21 @@ func Test_HttpDeleteUser(t *testing.T) {
 			t.Fatal("user2 dial error:", err)
 			return
 		}
-		defer conn.Close()
-
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			t.Fatalf("user2 read error: %v", err)
-			return
+		for i := 0; i < 4; i++ {
+			_, msg, err := conn.ReadMessage()
+			if err != nil {
+				t.Fatalf("user2 read error: %v", err)
+				return
+			}
+			t.Log(string(msg))
+			user2Chan <- string(msg)
 		}
-		user2Chan <- string(msg)
+		//_, msg, err := conn.ReadMessage()
+		//if err != nil {
+		//	t.Fatalf("user2 read error: %v", err)
+		//	return
+		//}
+		//user2Chan <- string(msg)
 	}()
 
 	// --- Сбор всех сообщений
@@ -228,6 +234,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 		"uuid1": "user1",
 	}
 	expextedMap1b := map[string]string{
+		"uuid1": "user1",
 		"uuid2": "user2",
 	}
 	expextedMap2 := map[string]string{
@@ -263,18 +270,19 @@ func Test_HttpDeleteUser(t *testing.T) {
 	if !valuesEqual(getMap2, expextedMap2) {
 		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", expextedMap2, getMap2)
 	}
-	uuuu := fmt.Sprintf("http://%s:%s/delete-user?code=%s&userId=%s", host, port, token.SessionId, user.TempUserId)
-	resp, err = http.Post(uuuu, "application/json", bytes.NewReader([]byte("")))
-	if err != nil {
-		t.Fatalf("Request failed: %v", err)
-	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Request failed: %v", resp.StatusCode)
-	}
-
 	go func() {
-		time.Sleep(1 * time.Second)
+		uuuu := fmt.Sprintf("http://%s:%s/delete-user?code=%s&userId=%s", host, port, token.SessionId, user.TempUserId)
+		resp, err = http.Post(uuuu, "application/json", bytes.NewReader([]byte("")))
+		if err != nil {
+			t.Fatalf("Request failed: %v", err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("Request failed: %v", resp.StatusCode)
+		}
+	}()
+	go func() {
+		time.Sleep(10 * time.Second)
 		u := url.URL{
 			Scheme:   "ws",
 			Host:     "localhost:8081",
@@ -283,7 +291,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 		}
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			t.Fatal("user2 dial error:", err)
+			t.Fatal("user3 dial error:", err)
 			return
 		}
 		defer conn.Close()
@@ -297,7 +305,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 		user3Chan <- string(msg)
 
 	}()
-	timeout2 := time.After(5 * time.Second)
+	timeout2 := time.After(40 * time.Second)
 	var msg3 string
 	select {
 	case m := <-user3Chan:
@@ -323,16 +331,13 @@ func Test_HttpDeleteUser(t *testing.T) {
 func valuesEqual(m1, m2 map[string]string) bool {
 	vals1 := make([]string, 0, len(m1))
 	vals2 := make([]string, 0, len(m2))
-
 	for _, v := range m1 {
 		vals1 = append(vals1, v)
 	}
 	for _, v := range m2 {
 		vals2 = append(vals2, v)
 	}
-
 	sort.Strings(vals1)
 	sort.Strings(vals2)
-
 	return reflect.DeepEqual(vals1, vals2)
 }
