@@ -14,8 +14,8 @@ const WaitGameStartAdmin = () => {
   const [hasClickedNext, setHasClickedNext] = useState(false)
 
   const extractPlayersFromMessage = (data) => {
-    setPlayers((prevPlayers) => {
-      const newPlayers = new Map(prevPlayers)
+    setPlayers(() => {
+      const newPlayers = new Map()
       for (const [userId,name] of Object.entries(data)) {
         if (!newPlayers.has(userId)) {
           newPlayers.set(userId, name);

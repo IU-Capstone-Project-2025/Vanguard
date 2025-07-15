@@ -90,8 +90,8 @@ const WaitGameStartPlayer = () => {
     try {
       const data = JSON.parse(event.data); // ["Alice", "Bob", ...]
 
-      setPlayers((prevPlayers) => {
-        const newPlayers = new Map(prevPlayers);
+      setPlayers(() => {
+        const newPlayers = new Map();
         for (const [userId,name] of Object.entries(data)) {
           if (!newPlayers.has(userId)) {
             newPlayers.set(userId, name);
