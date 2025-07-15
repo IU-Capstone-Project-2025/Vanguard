@@ -264,7 +264,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 		t.Fatalf("user2 message mismatch. Got: %s, Want: %s", expextedMap2, getMap2)
 	}
 	uuuu := fmt.Sprintf("http://%s:%s/delete-user?code=%s&userId=%s", host, port, token.SessionId, user.TempUserId)
-	resp, err = http.Get(uuuu)
+	resp, err = http.Post(uuuu, "application/json", bytes.NewReader([]byte("")))
 	if err != nil {
 		t.Fatalf("Request failed: %v", err)
 	}
