@@ -154,7 +154,6 @@ func (r *ConnectionRegistry) RegisterConnection(sessionID, userID, userName stri
 // UnregisterConnection removes joined user connection, (e.g., on user disconnect)
 func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	e1 := false
 	e2 := false
 	if sessions, exists1 := r.connections[sessionID]; exists1 {
@@ -166,8 +165,12 @@ func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool
 		delete(rooms, userID)
 	}
 	if e1 == true && e2 == true {
+		r.logger.Info("UnregisterConnection", "session", sessionID, "user", userID)
+		r.mu.Unlock()
+		handleDelete(sessionID, userID, r)
 		return true
 	}
+	r.mu.Unlock()
 	return false
 }
 
@@ -224,7 +227,8 @@ func extractTokenData(tokenString string) (*shared.UserToken, error) {
 	return claims, nil
 }
 
-// Всем юзерам он должен отправить свое имя, а себе должен отправить и свое имя и весь список
+// новый участник = отправляем всем итоговую мапу
+// админ удаляет чела или чел выходит = отправляем всем мапу
 func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 	err := reg.RegisterConnection(ctx.SessionId, ctx.UserId, ctx.UserName, ctx.Conn)
 	if err != nil {
@@ -233,34 +237,70 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 	}
 	reg.logger.Info("ws connected to user", "userId", ctx.UserId, "userName", ctx.UserName)
 	m := reg.GetRooms(ctx.SessionId)
-	con := reg.connections[ctx.SessionId][ctx.UserId]
+	//con := reg.connections[ctx.SessionId][ctx.UserId]
 	jsonData, err := json.Marshal(m)
 	if err != nil {
 		reg.logger.Error("WsHandler handleRead error to marshal json", err)
 		return
 	}
-	if len(m) > 0 {
-		fmt.Println(m)
-		err = con.WriteMessage(websocket.TextMessage, jsonData)
+	//if len(m) > 0 {
+	//	fmt.Println(m)
+	//	err = con.WriteMessage(websocket.TextMessage, jsonData)
+	//	if err != nil {
+	//		reg.logger.Error("WsHandler handleRead error to write json", err)
+	//	}
+	//}
+	for _, conn := range reg.GetConnections(ctx.SessionId) {
+		err := conn.WriteMessage(websocket.TextMessage, jsonData)
 		if err != nil {
-			reg.logger.Error("WsHandler handleRead error to write json", err)
+			reg.logger.Error("WsHandler handleRead error to write json", "err", err,
+				"userId", ctx.UserId,
+				"userName", ctx.UserName,
+				"data", jsonData,
+			)
+			continue
 		}
 	}
-	for _, conn := range reg.GetConnections(ctx.SessionId) {
-		message := make(map[string]string)
-		message[ctx.UserId] = ctx.UserName
-		jsonData, err = json.Marshal(message)
+	//for _, conn := range reg.GetConnections(ctx.SessionId) {
+	//	message := make(map[string]string)
+	//	message[ctx.UserId] = ctx.UserName
+	//	jsonData, err = json.Marshal(message)
+	//	if err != nil {
+	//		reg.logger.Error("WsHandler handleRead error to marshal json",
+	//			"err", err)
+	//		return
+	//	}
+	//	if conn != ctx.Conn {
+	//		err = conn.WriteMessage(websocket.TextMessage, jsonData)
+	//		if err != nil {
+	//			reg.logger.Error("WsHandler handleRead error to write json", "err", err)
+	//		}
+	//		reg.logger.Info("ws sends to all", "message", message)
+	//	}
+	//}
+}
+
+func handleDelete(sessionID, userID string, reg *ConnectionRegistry) {
+	reg.logger.Info("ws admin delete user user", "userId", userID, "SessionId", sessionID)
+	fmt.Println("about to get rooms")
+	rooms := reg.GetRooms(sessionID)
+	fmt.Println("rooms gotten:", rooms)
+	m := reg.GetRooms(sessionID)
+	jsonData, err := json.Marshal(m)
+	if err != nil {
+		reg.logger.Error("WsHandler handleRead error to marshal json", err)
+		return
+	}
+	for _, conn := range reg.GetConnections(sessionID) {
+		err := conn.WriteMessage(websocket.TextMessage, jsonData)
 		if err != nil {
-			reg.logger.Error("WsHandler handleRead error to marshal json",
-				"err", err)
-			return
+			reg.logger.Error("WsHandler handleRead error to write json", "err", err,
+				"userId", userID,
+				"SessionId", sessionID,
+				"data", jsonData,
+			)
+			continue
 		}
-		if conn != ctx.Conn {
-			err = conn.WriteMessage(websocket.TextMessage, jsonData)
-			if err != nil {
-				reg.logger.Error("WsHandler handleRead error to write json", "err", err)
-			}
-			reg.logger.Info("ws sends to all", "message", message)
-		}
+		reg.logger.Info("ws send message to user", "userId", userID)
 	}
 }

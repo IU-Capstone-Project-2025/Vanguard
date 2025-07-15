@@ -166,8 +166,9 @@ func (manager *SessionManager) GetListOfUsers(quizUUID string) ([]string, error)
 func (manager *SessionManager) SessionStartMock(quizUUID string, sessionId string) error {
 	quiz := shared.Quiz{Questions: []shared.Question{
 		{
-			Type: "single_choice",
-			Text: "What is the output of print(2 ** 3)?",
+			Type:     "single_choice",
+			ImageUrl: "RRRRR",
+			Text:     "What is the output of print(2 ** 3)?",
 			Options: []shared.Option{
 				{Text: "6", IsCorrect: false},
 				{Text: "8", IsCorrect: true},

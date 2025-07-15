@@ -16,10 +16,11 @@ import NotFoundPage from './components/NotFoundPage';
 import RegisterPage from './components/RegisterPage';
 import QuizStorePage from './components/QuizStorePage';
 
-// import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import { SessionWebSocketProvider } from './contexts/SessionWebSocketContext';
 import { RealtimeWebSocketProvider } from './contexts/RealtimeWebSocketContext';
+import ConstructorPage from './components/ConstructorPage';
 
 function App() {
   return (
@@ -34,16 +35,21 @@ function App() {
         <Route path="/join" element={<JoinGamePage />} />
         <Route path="/ask-to-join/:sessionCode" element={<AskToJoinSessionPage />} />
         <Route path="*" element={<NotFoundPage />} />
-
-        {/* Protected страницы */}
         <Route
           path="/store"
           element={
-            // <ProtectedRoute>
               <QuizStorePage/>
-            // </ProtectedRoute>
           }
         />
+
+        {/* Protected страницы */}
+        <Route
+          path="/constructor/:quizID/"
+          element={
+            <ProtectedRoute>
+              <ConstructorPage />
+            </ProtectedRoute>
+          } />
 
         {/* Страницы с WebSocket */}
         
