@@ -100,4 +100,5 @@ func StartRedis(ctx context.Context, t *testing.T) (addr string, terminate func(
 		require.NoError(t, err)
 	}
 	return addr, terminate
+
 }

@@ -23,6 +23,7 @@ func StartRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl, redisUrl str
 	// Connect to the rabbit MQ
 	t.Log("Connecting to broker...")
 	broker, err := manager.ConnectRabbitMQ(amqpUrl)
+
 	if err != nil {
 		t.Fatal(err)
 	}

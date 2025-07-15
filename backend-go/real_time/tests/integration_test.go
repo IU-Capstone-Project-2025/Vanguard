@@ -162,6 +162,7 @@ func TestWithTestContainers(t *testing.T) {
 					require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
 				}
 			}
+
 			// trigger session end
 			publishSessionEnd(t, amqpURL, sessionId)
 			t.Log("---- Admin received end message:")

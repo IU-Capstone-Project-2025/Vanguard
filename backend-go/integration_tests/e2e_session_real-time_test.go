@@ -57,7 +57,9 @@ func TestSessionServiceToRealTime_E2E(t *testing.T) {
 	t.Log("------------ wait for real time service -----------------")
 	wgRTS := &sync.WaitGroup{}
 	wgRTS.Add(1)
+
 	cancel := utils.StartRealTimeServer(t, wgRTS, amqpUrl, redisUrl)
+
 	defer cancel()
 
 	t.Log("------------ wait for session service -----------------")

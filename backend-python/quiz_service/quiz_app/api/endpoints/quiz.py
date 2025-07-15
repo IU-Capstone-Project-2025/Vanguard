@@ -2,9 +2,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from shared.core.dependencies import get_current_user_id
 from shared.schemas.quiz import QuizCreate, QuizResponse, QuizUpdate
 
-from quiz_app.core.dependencies import get_quiz_service, get_current_user_id, get_potential_user_id
+from quiz_app.core.dependencies import get_quiz_service, get_potential_user_id
 from quiz_app.services.quiz_service import QuizService
 
 router = APIRouter(tags=["quiz-service"])
@@ -22,6 +23,7 @@ async def create_quiz(
         user_id: UUID = Depends(get_current_user_id),
         quiz_service: QuizService = Depends(get_quiz_service)
 ):
+    print(user_id)
     return await quiz_service.create_quiz(user_id=user_id, quiz_in=quiz)
 
 
