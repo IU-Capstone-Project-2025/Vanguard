@@ -32,12 +32,12 @@ scrape_configs:
   - targets: [ 'quiz:8000' ]
   metrics_path: '/metrics'
 
-# - job_name: 'realtime-service'
-#   static_configs:
-#   - targets: [ 'real-time:8080' ]
-#   metrics_path: '/metrics'
+- job_name: 'realtime-service'
+  static_configs:
+  - targets: [ 'real-time:8080' ]
+  metrics_path: '/metrics'
 
-# - job_name: 'session-service'
-#   static_configs:
-#   - targets: [ 'session:8081' ]
-#   metrics_path: '/metrics'
+- job_name: 'session-service'
+  static_configs:
+  - targets: [ 'session:8081' ]
+  metrics_path: '/metrics'

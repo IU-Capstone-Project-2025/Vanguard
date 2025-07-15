@@ -1,4 +1,10 @@
 services:
+  postgres:
+    ports: []
+
+  redis:
+    ports: []
+
   rabbitmq:
     volumes:
       - /tmp/definitions.json:/etc/rabbitmq/definitions.json:ro
@@ -6,29 +12,35 @@ services:
     environment:
       RABBITMQ_LOAD_DEFINITIONS: "true"
       RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
+    ports: []
 
   migrator:
     image: ${MIGRATOR_IMAGE}
     environment:
       ENVIRONMENT: "production"
+    ports: []
 
   auth:
     image: ${AUTH_IMAGE}
     environment:
       ENVIRONMENT: "production"
       DEBUG: "false"
+    ports: []
 
   quiz:
     image: ${QUIZ_IMAGE}
     environment:
       ENVIRONMENT: "production"
       DEBUG: "false"
+    ports: []
 
   real-time:
     image: ${REALTIME_IMAGE}
+    ports: []
 
   session:
     image: ${SESSION_IMAGE}
+    ports: []
 
   frontend:
     image: ${FRONTEND_IMAGE}
@@ -57,3 +69,37 @@ services:
       - /opt/certbot/www:/var/www/certbot:rw
       - /opt/certbot/conf:/etc/letsencrypt:rw
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+  prometheus:
+    volumes:
+      - /tmp/monitoring/prometheus:/etc/prometheus
+
+  grafana:
+    volumes:
+      - /tmp/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - /tmp/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      GF_SERVER_DOMAIN: grafana.tryit.selnastol.ru
+      GF_SERVER_ROOT_URL: https://grafana.tryit.selnastol.ru
+    ports: []
+
+  alertmanager:
+    volumes:
+      - /tmp/monitoring/alertmanager:/etc/alertmanager
+
+  loki:
+    volumes:
+      - /tmp/monitoring/loki:/etc/loki
+    environment:
+      S3_REGION: ${S3_REGION}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
+      S3_BUCKET_LOG: ${S3_BUCKET_LOG}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+    command:
+    - '-config.file=/etc/loki/config-s3.yml'
+    - '-config.expand-env=true'
+
+  promtail:
+    volumes:
+      - /tmp/monitoring/promtail:/etc/promtail

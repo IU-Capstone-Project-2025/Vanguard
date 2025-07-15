@@ -1,0 +1,89 @@
+groups:
+- name: session_service_alerts
+  rules:
+  # HTTP Service Alerts
+  - alert: HighSessionHTTPErrorRate
+    expr: |
+      sum(rate(http_requests_total{service="session", status=~"5.."}[5m]))
+      /
+      sum(rate(http_requests_total{service="session"}[5m])) > 0.05
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High HTTP error rate in Session Service ({{ $value }}%)"
+      description: "HTTP 5xx error rate >5% for 5 minutes"
+
+  - alert: SlowSessionHTTPRequests
+    expr: |
+      histogram_quantile(0.99, rate(http_request_duration_seconds{service="session"}[5m])) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Slow HTTP requests in Session Service"
+      description: "99th percentile latency >1s"
+
+  # WebSocket Alerts
+  - alert: HighWSFailureRate
+    expr: |
+      sum(rate(websocket_connection_attempts_total{service="session", status!="success"}[5m]))
+      /
+      sum(rate(websocket_connection_attempts_total{service="session"}[5m])) > 0.2
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High WebSocket failure rate ({{ $value }}%)"
+
+  - alert: WSConnectionImbalance
+    expr: |
+      abs(
+        websocket_active_connections{service="session", user_type="admin"}
+        - 
+        websocket_active_connections{service="session", user_type="participant"} / 10
+      ) > 5
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "WebSocket connection imbalance"
+      description: "Admin/participant ratio outside expected range"
+
+  # Session Lifecycle Alerts
+  - alert: StuckSessions
+    expr: |
+      (
+        sessions_active{service="session"}
+        -
+        sessions_started_total{service="session"}
+      ) > 0
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Potential stuck sessions"
+      description: "Active sessions not progressing"
+
+  - alert: NoSessionActivity
+    expr: |
+      rate(questions_advanced_total{service="session"}[15m]) == 0
+      and
+      sessions_active{service="session"} > 0
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "No session activity"
+      description: "No questions advanced in active sessions"
+
+  - alert: HighJoinFailureRate
+    expr: |
+      sum(rate(session_joins_total{service="session", status!="success"}[15m]))
+      /
+      sum(rate(session_joins_total{service="session"}[15m])) > 0.3
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High session join failure rate ({{ $value }}%)"
