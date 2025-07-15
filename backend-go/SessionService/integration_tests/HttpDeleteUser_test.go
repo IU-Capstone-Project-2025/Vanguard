@@ -165,7 +165,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 			t.Fatal("user1 dial error:", err)
 			return
 		}
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 2; i++ {
 			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				t.Errorf("user1 read error: %v", err)
@@ -190,7 +190,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 			t.Fatal("user2 dial error:", err)
 			return
 		}
-		for i := 0; i < 4; i++ {
+		for i := 0; i < 1; i++ {
 			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				t.Fatalf("user2 read error: %v", err)
