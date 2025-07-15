@@ -33,9 +33,13 @@ func TestWithTestContainers(t *testing.T) {
 		}
 	}
 
-	_, amqpURL := utils.StartRabbit(ctx, t)
+	amqpURL, closeRabbit := utils.StartRabbit(ctx, t)
+	defer closeRabbit()
+	redisUrl, closeRedis := utils.StartRedis(ctx, t)
+	defer closeRedis()
 
 	t.Log("rabbit running on ", amqpURL)
+	t.Log("redis running on ", redisUrl)
 
 	// 2. Start Redis container similarly if needed
 
@@ -44,7 +48,7 @@ func TestWithTestContainers(t *testing.T) {
 	// Start your RealTime main in a goroutine if possible, or exec binary.
 	wgRTS := &sync.WaitGroup{}
 	wgRTS.Add(1)
-	cancel := utils.StartRealTimeServer(t, wgRTS, amqpURL)
+	cancel := utils.StartRealTimeServer(t, wgRTS, amqpURL, redisUrl)
 
 	wg := &sync.WaitGroup{}
 

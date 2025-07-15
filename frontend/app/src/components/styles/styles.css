@@ -5,6 +5,7 @@
     --btn-hover: #4f4d4d;
     --light-gray: #C6BDB3;
     --gray: #5D5C5D;
+    background-color: var(--orange);
 }
 
 .jua-regular {
@@ -37,6 +38,7 @@
             text-align: center;
             justify-items: center;
             margin: 25% ;
+            width: 100%;
             
             h1 {
                 text-align: start;

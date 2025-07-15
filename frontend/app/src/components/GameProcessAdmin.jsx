@@ -4,6 +4,11 @@ import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
 import './styles/GameProcess.css'
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants/api';
+import ShapedButton from './childComponents/ShapedButton';
+import Alien from './assets/Alien.svg'
+import Corona from './assets/Corona.svg'
+import Ghosty from './assets/Ghosty.svg'
+import Cookie6 from './assets/Cookie6.svg'
 
 const GameProcessAdmin = () => {
   const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
@@ -14,13 +19,12 @@ const GameProcessAdmin = () => {
   const questionsAmount = currentQuestion.questionsAmount - 1;
   console.log(`received questions amount [${questionsAmount}] and current index [${questionIndex}]`)
   const navigate = useNavigate();
-  const [questionOptions, setQuestionOptions] = useState(
-      {"options": [
-        "⬣",
-        "⬥",
-        "✠",
-        "❇"
-      ]} // Default empty question to avoid errors
+  const [questionOptions, setQuestionOptions] = useState([
+        Alien,
+        Corona,
+        Ghosty,
+        Cookie6
+      ] // Default empty question to avoid errors
     )
 
   useEffect(() => {
@@ -131,26 +135,32 @@ const toNextQuestion = async (sessionCode) => {
   /* -------- UI -------- */
   return (
     <div className="game-process">
-      <h1>Live Quiz</h1>
+      <div className='controller-question-title'>
+        <h1>Live Quiz</h1>
 
-      <p>Question {questionIndex + 1}</p>
-
-      <div className="question-block">
+        <p>Question {questionIndex + 1}</p>
+      
         <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
       </div>
 
       <div className="options-grid">
         {currentQuestion &&
           currentQuestion.options.map((option, idx) => (
-            <button key={idx} className="option-button">
-              {questionOptions.options[idx]} {option.text} 
-            </button>
-          ))}
+            <ShapedButton 
+              key={idx}
+              shape={questionOptions[idx]}
+              text={option.text} 
+              onClick={
+                () => {console.log('svg clicked')}
+              }
+            />
+          ))
+        }
       </div>
 
-      <div className="navigation-buttons">
+      <div className="button-group">
         {questionIndex < questionsAmount && (
-          <button onClick={handleNextQuestion} className="nav-button">
+          <button onClick={handleNextQuestion} className="button">
             Next
           </button>
         )} 

@@ -1,7 +1,10 @@
 package ws
 
 import (
+	"fmt"
 	"sync"
+	"xxx/real_time/cache"
+	"xxx/real_time/cache/redis"
 	"xxx/real_time/models"
 	"xxx/shared"
 )
@@ -10,22 +13,28 @@ import (
 // The tracker is thread-safe
 type QuizTracker struct {
 	mu      sync.RWMutex
-	answers map[string]map[string][]bool  // sessionId -> userId -> [1st quest. correctness, 2nd, etc.]
-	tracker map[string]models.OngoingQuiz // stores the whole quiz data for each session.
+	answers map[string]map[string][]models.UserAnswer // sessionId -> userId -> [1st question correctness, 2nd, etc.]
+	tracker map[string]models.OngoingQuiz             // stores the whole quiz data for each session.
 	// Includes the index of current question and all questions with answer options.
+	cache cache.Cache // cache (e.g. Redis storage manager) to store copy of states from quiz tracker
 }
 
 func NewQuizTracker() *QuizTracker {
 	qt := &QuizTracker{
 		mu:      sync.RWMutex{},
-		answers: make(map[string]map[string][]bool),
+		answers: make(map[string]map[string][]models.UserAnswer),
 		tracker: make(map[string]models.OngoingQuiz),
+		cache:   &redis.Client{},
 	}
 
-	// restore map from Redis if the service was down
-	qt.restoreData()
-
 	return qt
+}
+
+// SetCache sets cache field assigning the given one
+func (q *QuizTracker) SetCache(cache cache.Cache) {
+	q.cache = cache
+	// restore map from Redis if the service was down
+	q.restoreData()
 }
 
 // GetCurrentQuestion method returns the current question index of the session [sessionId] and the payload of the question
@@ -50,6 +59,9 @@ func (q *QuizTracker) SetCurrQuestionIdx(sessionId string, questionIdx int) {
 	quiz.CurrQuestionIdx = questionIdx
 
 	q.tracker[sessionId] = quiz
+
+	err := q.cache.SetQuestionIndex(sessionId, questionIdx)
+	fmt.Println("Redis err: ", err)
 }
 
 // IncQuestionIdx method increments the current question index of the session [sessionId]
@@ -78,18 +90,21 @@ func (q *QuizTracker) GetCorrectOption(sessionId string, questionIdx int) (int, 
 }
 
 // RecordAnswer stores whether a user’s answer was correct.
-func (q *QuizTracker) RecordAnswer(sessionId, userId string, correct bool) {
+func (q *QuizTracker) RecordAnswer(sessionId, userId string, answer models.UserAnswer) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	if _, ok := q.answers[sessionId][userId]; !ok {
-		q.answers[sessionId][userId] = make([]bool, 0) // create array with length = the amount of questions
+		q.answers[sessionId][userId] = make([]models.UserAnswer, q.tracker[sessionId].QuizData.Len()) // create array with length = the amount of questions
 	}
-	q.answers[sessionId][userId] = append(q.answers[sessionId][userId], correct)
+
+	qid := q.tracker[sessionId].CurrQuestionIdx
+	q.answers[sessionId][userId][qid] = answer
+	q.cache.RecordAnswer(sessionId, userId, qid, answer)
 }
 
 // GetAnswers returns the correctness of all answers given by users
-func (q *QuizTracker) GetAnswers(sessionId string) map[string][]bool {
+func (q *QuizTracker) GetAnswers(sessionId string) map[string][]models.UserAnswer {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 
@@ -106,16 +121,30 @@ func (q *QuizTracker) NewSession(sessionId string, quizData shared.Quiz) {
 			CurrQuestionIdx: -1, // before starting the first question (0-th index), the index is -1
 			QuizData:        quizData,
 		}
-		q.answers[sessionId] = make(map[string][]bool)
+		q.answers[sessionId] = make(map[string][]models.UserAnswer)
+		q.cache.SetSessionQuiz(sessionId, q.tracker[sessionId])
+	}
+}
+
+// DeleteSession deletes session from tracker
+func (q *QuizTracker) DeleteSession(sessionId string) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if _, exists := q.tracker[sessionId]; exists {
+		delete(q.answers, sessionId)
+		delete(q.tracker, sessionId)
+
+		q.cache.DeleteSession(sessionId)
 	}
 }
 
 // GetLeaderboard returns a simple map of userId -> correctFlag
-func (q *QuizTracker) GetLeaderboard(sessionId string) map[string][]bool {
+func (q *QuizTracker) GetLeaderboard(sessionId string) map[string][]models.UserAnswer {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 	// copy to avoid races
-	copyMap := make(map[string][]bool, len(q.answers[sessionId]))
+	copyMap := make(map[string][]models.UserAnswer, len(q.answers[sessionId]))
 	for user, answers := range q.answers[sessionId] {
 		copyMap[user] = answers
 	}
@@ -131,5 +160,10 @@ func (q *QuizTracker) GetQuizLen(sessionId string) int {
 
 // restoreData restores map data from the Redis
 func (q *QuizTracker) restoreData() {
-	// TODO: implement data restoring
+	quizzes, err := q.cache.GetAllSessions()
+	if err != nil {
+		fmt.Println("failed to restore data from Redis: ", err)
+	}
+
+	q.tracker = quizzes
 }

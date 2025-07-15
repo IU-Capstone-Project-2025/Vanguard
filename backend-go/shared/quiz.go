@@ -6,9 +6,10 @@ type Option struct {
 }
 
 type Question struct {
-	Type    string   `json:"type"`
-	Text    string   `json:"text"`
-	Options []Option `json:"options"`
+	Type     string   `json:"type"`
+	Text     string   `json:"text"`
+	ImageUrl string   `json:"image_url,omitempty"`
+	Options  []Option `json:"options"`
 }
 
 func (q Question) IsCorrectOption() {

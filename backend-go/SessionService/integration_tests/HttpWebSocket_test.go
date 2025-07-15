@@ -225,6 +225,7 @@ func Test_HttpTestWebSocket(t *testing.T) {
 		"uuid1": "user1",
 	}
 	expextedMap1b := map[string]string{
+		"uuid1": "user1",
 		"uuid2": "user2",
 	}
 	expextedMap2 := map[string]string{

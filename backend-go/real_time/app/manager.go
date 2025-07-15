@@ -2,15 +2,19 @@ package app
 
 import (
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/redis/go-redis/v9"
+	"net/url"
+	"strconv"
+	"xxx/real_time/cache"
+	"xxx/real_time/cache/redis"
+	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
 )
 
 // Manager represents the orchestrator of the whole service and manages the critically important components,
 // as message brokers, storage, etc.
 type Manager struct {
-	Redis              *redis.Client
-	Rabbit             *amqp.Connection
+	Redis              cache.Cache
+	Rabbit             *rabbit.RealTimeRabbit
 	QuizTracker        *ws.QuizTracker // map[sessionId]questionIndex
 	ConnectionRegistry *ws.ConnectionRegistry
 }
@@ -26,19 +30,43 @@ func NewManager() *Manager {
 
 // ConnectRabbitMQ connects to the RabbitMQ using the given url
 // and assigns obtained amqp.Conn to the manager.Rabbit field
-func (m *Manager) ConnectRabbitMQ(url string) error {
+func (m *Manager) ConnectRabbitMQ(url string) (*rabbit.RealTimeRabbit, error) {
 	brokerConn, err := amqp.Dial(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	m.Rabbit = brokerConn
+	broker, err := rabbit.NewRealTimeRabbit(brokerConn)
 
-	return nil
+	m.Rabbit = broker
+
+	return broker, nil
 }
 
 // ConnectRedis connects to the Redis using the given url
 // and assigns obtained amqp.Conn to the manager.Redis field
-func (m *Manager) ConnectRedis(url string) error {
+func (m *Manager) ConnectRedis(rawUrl string) error {
+	u, err := url.Parse(rawUrl)
+	if err != nil {
+		return err
+	}
+
+	addr := u.Host               // host:port
+	pass, _ := u.User.Password() // may be empty
+	db := 0                      // default DB
+	if len(u.Path) > 1 {         // "/2" in path -> DB = 2
+		if n, err := strconv.Atoi(u.Path[1:]); err == nil {
+			db = n
+		}
+	}
+
+	client := redis.NewClient(addr, pass, db)
+	if err := client.Ping(); err != nil { // fail fast
+		return err
+	}
+
+	m.Redis = client
+	m.QuizTracker.SetCache(client)
+
 	return nil
 }

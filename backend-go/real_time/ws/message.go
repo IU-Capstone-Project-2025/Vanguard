@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"time"
+	"xxx/real_time/models"
 	"xxx/shared"
 )
 
@@ -21,7 +23,8 @@ const (
 
 // ClientMessage describes what we get from the user
 type ClientMessage struct {
-	Option int `json:"option"` // chosen answer index
+	Option    int       `json:"option"`              // chosen answer index
+	Timestamp time.Time `json:"timestamp,omitempty"` // time user have answered
 }
 
 func (m *ClientMessage) Bytes() []byte {
@@ -101,7 +104,6 @@ func handleRead(ctx *ConnectionContext, deps HandlerDeps) {
 func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage) {
 	session := ctx.SessionId
 	qid, _ := deps.Tracker.GetCurrentQuestion(ctx.SessionId)
-	chosen := msg.Option
 
 	// Look up the correct option from the QuizTracker
 	correctIdx, correctOpt := deps.Tracker.GetCorrectOption(session, qid)
@@ -110,11 +112,19 @@ func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage)
 		return
 	}
 
+	isCorrect := msg.Option == correctIdx
+	userAnswer := models.UserAnswer{
+		Answered:  true,
+		Correct:   isCorrect,
+		Timestamp: msg.Timestamp,
+	}
+
 	// Record the answer
-	deps.Tracker.RecordAnswer(session, ctx.UserId, chosen == correctIdx)
+	deps.Tracker.RecordAnswer(session, ctx.UserId, userAnswer)
+	fmt.Println("recorded answer ", userAnswer, "from ", ctx.UserId)
 
 	// Send immediate feedback
-	isCorrect := chosen == correctIdx
+
 	resp := ServerMessage{
 		Type:        MessageTypeAnswer,
 		QuestionIdx: qid + 1,
