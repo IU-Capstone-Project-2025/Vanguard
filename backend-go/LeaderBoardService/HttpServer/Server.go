@@ -1,4 +1,4 @@
-package httpServer
+package HttpServer
 
 import (
 	"context"
@@ -10,12 +10,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"xxx/SessionService/Handlers"
-	_ "xxx/SessionService/docs"
+	"xxx/LeaderBoardService/Handlers"
 )
 
 type HttpServer struct {
-	*Handlers.SessionManagerHandler
+	*Handlers.HandlerManager
 	Host     string
 	Port     string
 	logger   *slog.Logger
@@ -23,19 +22,19 @@ type HttpServer struct {
 	stopChan chan os.Signal
 }
 
-func InitHttpServer(logger *slog.Logger, Host string, Port string, rmqConn string, RedisConn string) (*HttpServer, error) {
+func InitHttpServer(logger *slog.Logger, Host string, Port string, RedisConn string) (*HttpServer, error) {
 	logger.Info("InitHttpServer")
-	managerHandler, err := Handlers.NewSessionManagerHandler(rmqConn, RedisConn, logger)
+	managerHandler, err := Handlers.NewHandlerManager(logger, RedisConn)
 	if err != nil {
 		logger.Error("InitHttpServer", "NewSessionManagerHandler", err)
 		return nil, err
 	}
 	return &HttpServer{
-		SessionManagerHandler: managerHandler,
-		Host:                  Host,
-		Port:                  Port,
-		logger:                logger,
-		stopChan:              make(chan os.Signal, 1),
+		HandlerManager: managerHandler,
+		Host:           Host,
+		Port:           Port,
+		logger:         logger,
+		stopChan:       make(chan os.Signal, 1),
 	}, nil
 }
 
@@ -95,22 +94,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 func (hs *HttpServer) registerHandlers() *mux.Router {
 	router := mux.NewRouter()
 	router.Use(corsMiddleware)
-
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
-
-	router.HandleFunc("/sessions", hs.CreateSessionHandler).Methods("POST", "OPTIONS")
-	router.HandleFunc("/join", hs.ValidateCodeHandler).Methods("POST", "OPTIONS")
-	router.HandleFunc("/session/{id}/nextQuestion", hs.NextQuestionHandler).Methods("POST", "OPTIONS")
-	router.HandleFunc("/start", hs.StartSessionHandler).Methods("POST", "OPTIONS")
-	router.HandleFunc("/validate", hs.ValidateSessionCodeHandler).Methods("POST", "OPTIONS")
-	router.HandleFunc("/sessionsMock", hs.CreateSessionHandlerMock).Methods("POST", "OPTIONS")
-	router.HandleFunc("/session/{id}/end", hs.SessionEndHandler).Methods("POST", "OPTIONS")
-	router.HandleFunc("/healthz", hs.HealthHandler).Methods("POST", "OPTIONS")
-
-	registry := Handlers.NewConnectionRegistry(hs.logger)
-	router.Handle("/delete-user", Handlers.DeleteUserHandler(registry))
-	router.Handle("/ws", Handlers.NewWebSocketHandler(registry))
-
+	router.HandleFunc("/get-results", hs.ComputeBoardHandler).Methods("POST", "OPTIONS")
 	hs.logger.Info("Routes registered", "host", hs.Host, "port", hs.Port)
 	return router
 }

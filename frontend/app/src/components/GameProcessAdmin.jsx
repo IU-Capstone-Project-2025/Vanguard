@@ -146,7 +146,6 @@ const toNextQuestion = async (sessionCode) => {
       <div className="options-grid">
         {currentQuestion &&
           currentQuestion.options.map((option, idx) => (
-
             <ShapedButton 
               key={idx}
               shape={questionOptions[idx]}

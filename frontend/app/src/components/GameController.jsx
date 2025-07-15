@@ -3,7 +3,6 @@ import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext";
 import "./styles/GameProcess.css";
 import { useNavigate } from "react-router-dom";
 import { useSessionSocket } from "../contexts/SessionWebSocketContext";
-
 import ShapedButton from "./childComponents/ShapedButton";
 import Alien from './assets/Alien.svg'
 import Corona from './assets/Corona.svg'
@@ -73,6 +72,7 @@ const GameController = () => {
       if (wsRefSession.current) wsRefSession.current.onmessage = null;
     };
   }, [connectRealtime, endSession, wsRefRealtime, wsRefSession]);
+  
   
   const handleAnswer = (index) => {
     if (!wsRefRealtime.current) return;
