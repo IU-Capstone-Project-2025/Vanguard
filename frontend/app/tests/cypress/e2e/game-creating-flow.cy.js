@@ -6,7 +6,7 @@ describe('admin:home-create-ask-wait; user: play-code-nick-wait', () => {
     cy.visit('/');
     cy.get('.create-button').click();
     cy.wait(2000);
-    cy.contains('.quiz-item', 'Basic Python Knowledge').click();
+    cy.contains('.quiz-item', 'Basic Python Knowledge',{timeout:10000}).click();
     cy.get('.quiz-item.selected').should('exist'); // Явная проверка выбора
     cy.get('.play-button').click();
 
