@@ -157,6 +157,12 @@ const QuizStorePage = () => {
           ))}
         </div>
       </div>
+      <button
+        className="floating-create-button"
+        onClick={() => navigate("/constructor/new")}
+      >
+        ⤬
+      </button>
     </div>
   );
 };

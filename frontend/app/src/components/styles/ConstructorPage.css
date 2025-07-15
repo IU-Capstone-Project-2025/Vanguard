@@ -1,0 +1,68 @@
+/* ConstructorPage.css */
+
+.constructor-page {
+  background-color: #f2f2f2;
+  min-height: 100vh;
+  font-family: 'Comic Neue', cursive;
+}
+
+.constructor-content {
+  background-color: white;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.constructor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.constructor-header input {
+  flex: 1;
+  font-size: 28px;
+  font-weight: bold;
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid #ccc;
+  margin-right: 20px;
+  padding: 10px 5px;
+  outline: none;
+}
+
+.constructor-header span {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Add Question button */
+.add-question {
+  font-size: 24px;
+  text-align: center;
+  margin: 30px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Submit button */
+.submit-button {
+  display: block;
+  margin: 0 auto 40px;
+  padding: 12px 24px;
+  background-color: #32db43;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-button:hover {
+  background-color: #2ac138;
+}

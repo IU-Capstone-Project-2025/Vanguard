@@ -13,6 +13,7 @@ const CreateSessionPage = () => {
   const [search, setSearch] = useState("");
   const [sessionCode, setSessionCode] = useState(null);
   const realTimeWsRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -33,7 +34,9 @@ const CreateSessionPage = () => {
     };
     fetchQuizzes();
   }, []);
-
+  useEffect(() => {
+    inputRef.current.focus();
+  },[])
    const handleQuizSelection = (quiz) => {
     sessionStorage.setItem('selectedQuizId', quiz.id);
     setSelectedQuiz(quiz);
@@ -116,6 +119,7 @@ const CreateSessionPage = () => {
           <div className="quiz-search-panel">
             <input
               type="text"
+              ref={inputRef}
               placeholder="Search the quiz"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
