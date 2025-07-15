@@ -2,12 +2,12 @@ package Utils
 
 import (
 	"sort"
-	"xxx/LeaderBoardService/models"
+	"xxx/shared"
 )
 
-func SortUserScoresByScoreDesc(scores []models.UserScore) []models.UserScore {
+func SortUserScoresByScoreDesc(scores []shared.UserScore) []shared.UserScore {
 	// Копируем, чтобы не менять оригинальный слайс
-	sorted := make([]models.UserScore, len(scores))
+	sorted := make([]shared.UserScore, len(scores))
 	copy(sorted, scores)
 
 	sort.Slice(sorted, func(i, j int) bool {

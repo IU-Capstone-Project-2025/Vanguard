@@ -2,13 +2,12 @@ package LeaderBoard
 
 import (
 	"xxx/LeaderBoardService/Utils"
-	"xxx/LeaderBoardService/models"
 	"xxx/shared"
 )
 
-func (l *LeaderBoard) ComputeLeaderBoard(ans shared.SessionAnswers) (models.ScoreTable, error) {
+func (l *LeaderBoard) ComputeLeaderBoard(ans shared.SessionAnswers) (shared.ScoreTable, error) {
 	SessionAnswers := ans.Answers
-	var CurrentPoints []models.UserCurrentPoint
+	var CurrentPoints []shared.UserCurrentPoint
 	BestTime := Utils.GetEarliestTimestamp(SessionAnswers)
 	//WorstTime := Utils.GetLatestTimestamp(SessionAnswers)
 	//duration := WorstTime.Sub(BestTime).Seconds()
@@ -24,22 +23,22 @@ func (l *LeaderBoard) ComputeLeaderBoard(ans shared.SessionAnswers) (models.Scor
 			if UserPoint >= MaxScore {
 				UserPoint = MaxScore
 			}
-			CurrentPoints = append(CurrentPoints, models.UserCurrentPoint{UserId: u.UserId, Score: UserPoint})
+			CurrentPoints = append(CurrentPoints, shared.UserCurrentPoint{UserId: u.UserId, Score: UserPoint})
 		} else {
 			UserPoint := 0
-			CurrentPoints = append(CurrentPoints, models.UserCurrentPoint{UserId: u.UserId, Score: UserPoint})
+			CurrentPoints = append(CurrentPoints, shared.UserCurrentPoint{UserId: u.UserId, Score: UserPoint})
 		}
 	}
 	err := l.Cache.AddScoresBatch(ans.SessionCode, CurrentPoints)
 	if err != nil {
-		return models.ScoreTable{}, err
+		return shared.ScoreTable{}, err
 	}
 	UserScores, err := l.Cache.LoadLeaderboard(ans.SessionCode)
 	SortedUserScore := Utils.SortUserScoresByScoreDesc(UserScores)
 	if err != nil {
-		return models.ScoreTable{}, err
+		return shared.ScoreTable{}, err
 	}
-	table := models.ScoreTable{
+	table := shared.ScoreTable{
 		SessionCode: ans.SessionCode,
 		Users:       SortedUserScore,
 	}

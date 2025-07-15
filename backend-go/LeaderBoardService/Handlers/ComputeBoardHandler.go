@@ -3,7 +3,6 @@ package Handlers
 import (
 	"encoding/json"
 	"net/http"
-	"xxx/LeaderBoardService/models"
 	models2 "xxx/SessionService/models"
 	"xxx/shared"
 )
@@ -39,7 +38,7 @@ func (m *HandlerManager) ComputeBoardHandler(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	resp := models.BoardResponse{
+	resp := shared.BoardResponse{
 		Table:   userScore,
 		Popular: ans,
 	}
