@@ -25,14 +25,8 @@
   font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content:flex-end;
   height: 50vw;
-}
-
-.question-image {
-  max-width: 100%;
-  border-radius: 8px;
-  margin: 1vw 0;
 }
 
 .options-grid {
@@ -43,18 +37,32 @@
   justify-content: space-between;
   /* margin: 0 25%; */
   /* margin-bottom: -10%; */
-  gap: 1vw;
+  /* gap: 1vw; */
 }
-/* 
-.question-title {
-  width: 20%;
-} */
 .controller-question-title {
+  padding-top: 20px;
   color: var(--bage);
   text-align: center;
+  height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   h2 {
-    font-size: 40px;
+    font-size: 2rem;
+    margin: 1vh 0 ;
   }
+  .question-image {
+    width: 50%;
+    /* box-sizing: border-box; */
+    height: 100%; /* или 100%, если нужно растягивать по высоте */
+    border-radius: 8px;
+    margin: 2px;
+    align-self: center;
+    object-fit: cover;
+    object-position: center;
+  }
+  
 }
 
 .button-group {
