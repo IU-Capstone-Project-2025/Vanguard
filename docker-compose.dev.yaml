@@ -1,0 +1,109 @@
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6739:6379"
+
+  rabbitmq:
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - ./rabbit/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+  migrator:
+    build:
+      context: backend-python/shared
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: "development"
+
+  auth:
+    build:
+      context: backend-python
+      dockerfile: auth_service/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: "development"
+      DEBUG: "true"
+
+  quiz:
+    build:
+      context: backend-python
+      dockerfile: quiz_service/Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      ENVIRONMENT: "development"
+      DEBUG: "true"
+
+  real-time:
+    build:
+      context: backend-go
+      dockerfile: real_time/Dockerfile
+    ports:
+      - "8080:8080"
+
+  session:
+    build:
+      context: backend-go
+      dockerfile: SessionService/Dockerfile
+    ports:
+      - "8081:8081"
+
+  leaderboard:
+    build:
+      context: backend-go
+      dockerfile: LeaderBoardService/Dockerfile
+    ports:
+      - "8082:8082"
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/app:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: "development"
+      CHOKIDAR_USEPOLLING: "ture"
+      REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
+      REACT_APP_AUTH_API: ${REACT_APP_AUTH_API}
+      REACT_APP_QUIZ_API: ${REACT_APP_QUIZ_API}
+      REACT_APP_SESSION_API: ${REACT_APP_SESSION_API}
+      REACT_APP_LEADERBOARD_API: ${REACT_APP_LEADERBOARD_API}
+      REACT_APP_SESSION_WS: ${REACT_APP_SESSION_WS}
+      REACT_APP_REALTIME_WS: ${REACT_APP_REALTIME_WS}
+
+  prometheus:
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+
+  grafana:
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3001:3000"
+
+  alertmanager:
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager
+
+  loki:
+    volumes:
+      - ./monitoring/loki:/etc/loki
+    command:
+    - '-config.file=/etc/loki/config.yml'
+
+  promtail:
+    volumes:
+      - ./monitoring/promtail:/etc/promtail

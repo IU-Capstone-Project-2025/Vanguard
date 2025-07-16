@@ -38,8 +38,6 @@ const ConstructorPage = () => {
   };
 
   const handleSubmit = () => {
-    console.log(API_ENDPOINTS.QUIZ)
-    console.log(quiz)
     fetch(`${API_ENDPOINTS.QUIZ}/`, {
       method: "POST",
       headers: {

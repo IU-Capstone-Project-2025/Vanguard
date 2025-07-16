@@ -20,9 +20,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      TZ: ${TZ}
-    ports:
-      - "5432:5432"
+      TZ: UTC
     networks:
       - main
     healthcheck:
@@ -34,8 +32,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6739:6379"
     networks:
       - main
     healthcheck:
@@ -48,15 +44,10 @@ services:
     image: rabbitmq:3-management
     hostname: rabbit
     container_name: rabbit
-    ports:
-      - "15672:15672"  # Management UI
-      - "5672:5672"    # AMQP port
     networks:
       - main
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-      - ./rabbit/definitions.json:/etc/rabbitmq/definitions.json:ro
-      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     environment:
       RABBITMQ_LOAD_DEFINITIONS: "true"
       RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
@@ -74,15 +65,11 @@ services:
       retries: 5
 
   migrator:
-    build:
-      context: backend-python/shared
-      dockerfile: Dockerfile
     environment:
       DB_URL: ${DB_URL}
       TEST_DB_URL: ${TEST_DB_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
-      ENVIRONMENT: "development"
     networks:
       - main
     depends_on:
@@ -92,11 +79,6 @@ services:
   auth:
     labels:
     - "promtail=true"
-    build:
-      context: backend-python
-      dockerfile: auth_service/Dockerfile
-    ports:
-      - "8000:8000"
     networks:
       - main
     environment:
@@ -104,19 +86,12 @@ services:
       TEST_DB_URL: ${TEST_DB_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
-      ENVIRONMENT: "development"
-      DEBUG: "true"
     depends_on:
       - migrator
 
   quiz:
     labels:
     - "promtail=true"
-    build:
-      context: backend-python
-      dockerfile: quiz_service/Dockerfile
-    ports:
-      - "8001:8000"
     networks:
       - main
     environment:
@@ -130,19 +105,12 @@ services:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       MAX_IMAGE_SIZE: ${MAX_IMAGE_SIZE}
-      ENVIRONMENT: "development"
-      DEBUG: "true"
     depends_on:
       - auth
 
   real-time:
     labels:
     - "promtail=true"
-    build:
-      context: backend-go
-      dockerfile: real_time/Dockerfile
-    ports:
-      - "8080:8080"
     networks:
       - main
     environment:
@@ -157,7 +125,7 @@ services:
       LEADERBOARD_SERVICE_HOST: "leaderboard"
       LEADERBOARD_SERVICE_PORT: "8082"
       JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
-      ENV: ${GO_ENV}
+      ENV: "production"
     depends_on:
       redis:
         condition: service_healthy
@@ -167,11 +135,6 @@ services:
   session:
     labels:
     - "promtail=true"
-    build:
-      context: backend-go
-      dockerfile: SessionService/Dockerfile
-    ports:
-      - "8081:8081"
     networks:
       - main
     environment:
@@ -186,7 +149,7 @@ services:
       SESSION_SERVICE_HOST: "0.0.0.0"
       SESSION_SERVICE_PORT: "8081"
       JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
-      ENV: ${GO_ENV}
+      ENV: "production"
     depends_on:
       redis:
         condition: service_healthy
@@ -196,11 +159,6 @@ services:
   leaderboard:
     labels:
     - "promtail=true"
-    build:
-      context: backend-go
-      dockerfile: LeaderBoardService/Dockerfile
-    ports:
-      - "8082:8082"
     networks:
       - main
     environment:
@@ -217,7 +175,7 @@ services:
       LEADERBOARD_SERVICE_HOST: "0.0.0.0"
       LEADERBOARD_SERVICE_PORT: "8082"
       JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
-      ENV: ${GO_ENV}
+      ENV: "production"
     depends_on:
       redis:
         condition: service_healthy
@@ -227,147 +185,121 @@ services:
   frontend:
     labels:
     - "promtail=true"
-    build:
-      context: frontend
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
     networks:
       - main
-    volumes:
-      - ./frontend/app:/app
-      - /app/node_modules
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING}
-      REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
-      REACT_APP_AUTH_API: ${REACT_APP_AUTH_API}
-      REACT_APP_QUIZ_API: ${REACT_APP_QUIZ_API}
-      REACT_APP_SESSION_API: ${REACT_APP_SESSION_API}
-      REACT_APP_SESSION_WS: ${REACT_APP_SESSION_WS}
-      REACT_APP_REALTIME_WS: ${REACT_APP_REALTIME_WS}
     depends_on:
       - quiz
       - real-time
       - session
       - leaderboard
 
-#  node-exporter: # host resource metrics
-#    image: prom/node-exporter:v1.9.1
-#    container_name: node-exporter
-#    volumes:
-#      - /proc:/host/proc:ro
-#      - /sys:/host/sys:ro
-#      - /:/rootfs:ro
-#    command:
-#      - '--path.procfs=/host/proc'
-#      - '--path.sysfs=/host/sys'
-#      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
-#    ports: [] # 9100
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  cadvisor: # containers resource metrics
-#    image: gcr.io/cadvisor/cadvisor:v0.49.1
-#    container_name: cadvisor
-#    volumes:
-#      - /:/rootfs:ro
-#      - /var/run:/var/run:rw
-#      - /sys:/sys:ro
-#      - /var/lib/docker/:/var/lib/docker:ro
-#      - /dev/disk/:/dev/disk:ro
-#    ports: [] # 8080
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  prometheus: # metrics
-#    image: prom/prometheus:v2.40.0
-#    container_name: prometheus
-#    volumes:
-#      - ./monitoring/prometheus:/etc/prometheus
-#      - prometheus_data:/prometheus
-#    command:
-#      - '--config.file=/etc/prometheus/prometheus.yml'
-#      - '--storage.tsdb.path=/prometheus'
-#      - '--storage.tsdb.retention.time=15d'
-#      - '--storage.tsdb.wal-compression'
-#      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-#      - '--web.console.templates=/usr/share/prometheus/consoles'
-#      - '--web.enable-lifecycle'
-#    ports: [] # 9090
-#    networks:
-#      - main
-#    restart: unless-stopped
-#    depends_on:
-#      - auth
-#      - quiz
-#      - real-time
-#      - session
-#      - node-exporter
-#      - cadvisor
-#      - alertmanager
-#
-#  grafana: # dashboards
-#    image: grafana/grafana:12.0.1
-#    container_name: grafana
-#    volumes:
-#      - grafana_data:/var/lib/grafana
-#      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-#      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-#    environment:
-#      GF_SECURITY_ADMIN_USER: admin
-#      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
-#      GF_USERS_ALLOW_SIGN_UP: false
-#    ports:
-#      - "3001:3000"
-#    networks:
-#      - main
-#    restart: unless-stopped
-#    depends_on:
-#      - prometheus
-#      - loki
-#      - promtail
-#
-#  alertmanager: # alerts
-#    image: prom/alertmanager:v0.28.1
-#    container_name: alertmanager
-#    volumes:
-#      - ./monitoring/alertmanager:/etc/alertmanager
-#    command:
-#      - '--config.file=/etc/alertmanager/config.yml'
-#      - '--storage.path=/alertmanager'
-#    ports: [] # 9093
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  loki: # logs db
-#    image: grafana/loki:3.5.0
-#    container_name: loki
-#    volumes:
-#      - ./monitoring/loki:/etc/loki
-#      - loki_data:/tmp/loki
-#    command:
-#    - '-config.file=/etc/loki/config.yml'
-#    ports: [] # 3100
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  promtail: # logs collector
-#    image: grafana/promtail:3.5.0
-#    container_name: promtail
-#    volumes:
-#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-#      - /var/run/docker.sock:/var/run/docker.sock:ro
-#      - ./monitoring/promtail:/etc/promtail
-#      - promtail_positions:/tmp
-#    command: -config.file=/etc/promtail/config.yml
-#    ports: [] # 9080
-#    networks:
-#      - main
-#    restart: unless-stopped
-#    depends_on:
-#      - loki
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
+    networks:
+      - main
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - main
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.40.0
+    container_name: prometheus
+    volumes:
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.wal-compression'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - auth
+      - quiz
+      - real-time
+      - session
+      - leaderboard
+      - node-exporter
+      - cadvisor
+      - alertmanager
+
+  grafana:
+    image: grafana/grafana:12.0.1
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: false
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - loki
+      - promtail
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - main
+    restart: unless-stopped
+
+  loki-init:
+    image: busybox
+    command: chown -R 10001:10001 /mnt
+    volumes:
+      - loki_data:/mnt
+    restart: "no"
+
+  loki:
+    image: grafana/loki:3.5.0
+    container_name: loki
+    volumes:
+      - loki_data:/tmp/loki
+    networks:
+      - main
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.5.0
+    container_name: promtail
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail_positions:/tmp
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - loki
