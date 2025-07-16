@@ -76,9 +76,6 @@ const toNextQuestion = async (sessionCode) => {
         const data = JSON.parse(event.data);
         if (data.type === 'question') {
           console.log('Received question:', data);
-          let modifiedQuestion = {
-
-          }
           
           setCurrentQuestion(data);
           sessionStorage.setItem('currentQuestion', JSON.stringify(data));
