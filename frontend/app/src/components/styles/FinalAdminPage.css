@@ -20,7 +20,7 @@
   margin-bottom: 5vh;
 }
 
-.primary-button {
+.final-primary-button {
   margin-top: 2rem;
   width: 40vw; /* Match .podium width */
   background-color: var(--dark);
@@ -32,7 +32,7 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-.primary-button:hover {
+.final-primary-button:hover {
   background-color: #1f1f1f;
 }
 

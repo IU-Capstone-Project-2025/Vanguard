@@ -63,7 +63,7 @@ const QuizStorePage = () => {
   // Заглушка с локальными квизами
   useEffect(() => {
     fetchQuizzes();
-  }, [quizzes, setQuizzes, user_id]);
+  }, [setQuizzes, user_id]);
 
   const createSession = async (quizId) => {
       console.log("Creating session with quizId:", quizId, "userName:", Cookies.get("user_nickname"));
@@ -137,7 +137,7 @@ const QuizStorePage = () => {
             <div key={quiz.id} className="quiz-card">
               <img src={quiz.imageURL ?? sampleImage} alt="Quiz Preview" />
               <h3>{quiz.title}</h3>
-              <p>{quiz.description}</p>
+              <p>{quiz.description === '' ? "No description available" : quiz.description}</p>
               <div className="quiz-buttons">
                 <button
                   className="secondary-button"

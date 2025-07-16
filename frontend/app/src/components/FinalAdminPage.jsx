@@ -61,7 +61,7 @@ const FinalAdminPage = () => {
         ))}
       </div>
       <div className='buttons-container'>
-        <button className="primary-button " onClick={() => endSession(sessionCode)}>
+        <button className="final-primary-button " onClick={() => endSession(sessionCode)}>
           Back to Home
         </button>
       </div>
