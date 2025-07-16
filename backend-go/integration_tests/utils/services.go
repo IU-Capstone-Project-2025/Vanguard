@@ -20,7 +20,7 @@ func StartRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl, redisUrl str
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := config.LoadConfig()
-	manager := app.NewManager()
+	manager := app.NewManager("localhost", "8082")
 
 	// Connect to the rabbit MQ
 	t.Log("Connecting to broker...")

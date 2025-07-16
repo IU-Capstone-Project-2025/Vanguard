@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"xxx/real_time/cache"
 	"xxx/real_time/cache/redis"
-	"xxx/real_time/config"
 	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
 )
@@ -21,9 +20,8 @@ type Manager struct {
 	ConnectionRegistry *ws.ConnectionRegistry
 }
 
-func NewManager() *Manager {
-	cfg := config.LoadConfig()
-	leaderboardUrl := fmt.Sprintf("%s:%s", cfg.LB.Host, cfg.LB.Port)
+func NewManager(lbHost, lbPort string) *Manager {
+	leaderboardUrl := fmt.Sprintf("%s:%s", lbHost, lbPort)
 
 	return &Manager{
 		Redis:              nil,
