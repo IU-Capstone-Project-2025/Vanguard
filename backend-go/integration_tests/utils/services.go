@@ -88,8 +88,10 @@ func StartSessionService(t *testing.T, amqpUrl, redisUrl string) {
 }
 
 func StartLeaderBoardService(t *testing.T, redisPort string) {
-	host := os.Getenv("LEADERBOARD_SERVICE_HOST")
-	port := os.Getenv("LEADERBOARD_SERVICE_PORT")
+	//host := os.Getenv("LEADERBOARD_SERVICE_HOST")
+	//port := os.Getenv("LEADERBOARD_SERVICE_PORT")
+	host := "localhost"
+	port := "8082"
 
 	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), redisPort)
 
