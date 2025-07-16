@@ -22,7 +22,7 @@ const ShowLeaderBoardComponent = ({ leaderboardData, onClose }) => {
             <div className="leaderboard-list">
                 {leaderboardData.users.map((user, index) => (
                 <div className="leaderboard-row" key={index}>
-                    <span className="player-name">{players[user.user_id]}</span>
+                    <span className="player-name">{players.find(player => player.id === user.user_id)?.name}</span>
                     <span className="player-score">{user.total_score}</span>
                 </div>
                 ))}
