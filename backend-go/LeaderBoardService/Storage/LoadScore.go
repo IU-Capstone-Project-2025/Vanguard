@@ -3,10 +3,10 @@ package Storage
 import (
 	"fmt"
 	"golang.org/x/net/context"
-	"xxx/LeaderBoardService/models"
+	"xxx/shared"
 )
 
-func (r *Redis) LoadLeaderboard(quizID string) ([]models.UserScore, error) {
+func (r *Redis) LoadLeaderboard(quizID string) ([]shared.UserScore, error) {
 	key := "leaderboard:" + quizID
 	ctx := context.Background()
 	zs, err := r.Client.ZRevRangeWithScores(ctx, key, 0, -1).Result()
@@ -14,10 +14,10 @@ func (r *Redis) LoadLeaderboard(quizID string) ([]models.UserScore, error) {
 		return nil, err
 	}
 
-	var scores []models.UserScore
+	var scores []shared.UserScore
 	for _, z := range zs {
 		userID := fmt.Sprintf("%v", z.Member)
-		scores = append(scores, models.UserScore{
+		scores = append(scores, shared.UserScore{
 			UserId:     userID,
 			TotalScore: int(z.Score),
 		})

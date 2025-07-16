@@ -6,11 +6,22 @@ import (
 
 // ServiceConfig is a structure containing all loaded variables from environment
 type ServiceConfig struct {
-	Host  string       // server host
-	Port  string       // server port
-	MQ    RabbitConfig // Message broker configs
-	Redis RedisConfig  // Redis storage configs
-	JWT   JWTConfig    // Jwt configs
+	Host string // server host
+	Port string // server port
+
+	LB LBService // LeaderBoard Service
+
+	MQ RabbitConfig // Message broker configs
+
+	Redis RedisConfig // Redis storage configs
+
+	JWT JWTConfig // Jwt configs
+}
+
+// LBService is a structure containing environment variables for LeaderBoard Service
+type LBService struct {
+	Host string // server host
+	Port string // server port
 }
 
 // RabbitConfig is a structure containing environment variables for RabbitMQ setup
@@ -46,6 +57,10 @@ func LoadConfig() *ServiceConfig {
 	cfg := &ServiceConfig{
 		Host: os.Getenv("REALTIME_SERVICE_HOST"),
 		Port: os.Getenv("REALTIME_SERVICE_PORT"),
+		LB: LBService{
+			Host: os.Getenv("LEADERBOARD_SERVICE_HOST"),
+			Port: os.Getenv("LEADERBOARD_SERVICE_PORT"),
+		},
 		MQ: RabbitConfig{
 			User:     os.Getenv("RABBITMQ_USER"),
 			Password: os.Getenv("RABBITMQ_PASSWORD"),

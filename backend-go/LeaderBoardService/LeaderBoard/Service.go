@@ -9,8 +9,8 @@ import (
 )
 
 type Service interface {
-	ComputeLeaderBoard(ans shared.SessionAnswers) (models2.ScoreTable, error)
-	PopularAns(ans shared.SessionAnswers) (models2.PopularAns, error)
+	ComputeLeaderBoard(ans shared.SessionAnswers) (shared.ScoreTable, error)
+	PopularAns(ans shared.SessionAnswers) (shared.PopularAns, error)
 }
 
 type LeaderBoard struct {

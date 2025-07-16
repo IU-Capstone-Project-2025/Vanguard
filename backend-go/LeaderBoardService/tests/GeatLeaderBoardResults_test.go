@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 	"xxx/LeaderBoardService/HttpServer"
-	"xxx/LeaderBoardService/models"
 	"xxx/shared"
 )
 
@@ -87,7 +86,7 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 	reqURL := fmt.Sprintf("http://%s:%s/get-results", host, port)
 	sessionData := shared.SessionAnswers{
 		SessionCode: "ABC123",
-		Answers: []shared.UserAnswer{
+		Answers: []shared.Answer{
 			{
 				UserId:    "user_001",
 				Correct:   true,
@@ -134,7 +133,7 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected status 200 OK, got %d", resp.StatusCode)
 	}
-	var response models.BoardResponse
+	var response shared.BoardResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		t.Fatal("error decoding response:", err)

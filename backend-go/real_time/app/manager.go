@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"net/url"
 	"strconv"
@@ -19,12 +20,14 @@ type Manager struct {
 	ConnectionRegistry *ws.ConnectionRegistry
 }
 
-func NewManager() *Manager {
+func NewManager(lbHost, lbPort string) *Manager {
+	leaderboardUrl := fmt.Sprintf("%s:%s", lbHost, lbPort)
+
 	return &Manager{
 		Redis:              nil,
 		Rabbit:             nil,
-		QuizTracker:        ws.NewQuizTracker(),        // Initialize question tracker
-		ConnectionRegistry: ws.NewConnectionRegistry(), // Initialize ws connections registry
+		QuizTracker:        ws.NewQuizTracker(leaderboardUrl), // Initialize question tracker
+		ConnectionRegistry: ws.NewConnectionRegistry(),        // Initialize ws connections registry
 	}
 }
 

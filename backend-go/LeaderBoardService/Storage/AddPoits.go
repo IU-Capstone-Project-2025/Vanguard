@@ -2,10 +2,10 @@ package Storage
 
 import (
 	"context"
-	"xxx/LeaderBoardService/models"
+	"xxx/shared"
 )
 
-func (r *Redis) AddScoresBatch(quizID string, updates []models.UserCurrentPoint) error {
+func (r *Redis) AddScoresBatch(quizID string, updates []shared.UserCurrentPoint) error {
 	key := "leaderboard:" + quizID
 	pipe := r.Client.Pipeline()
 	ctx := context.Background()

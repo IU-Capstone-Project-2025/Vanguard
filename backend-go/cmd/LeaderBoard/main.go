@@ -36,8 +36,8 @@ func main() {
 			log.Fatalf("Error: could not load .env file: %v", err)
 		}
 	}
-	host := os.Getenv("SESSION_SERVICE_HOST")
-	port := os.Getenv("SESSION_SERVICE_PORT")
+	host := os.Getenv("LEADERBOARD_SERVICE_HOST")
+	port := os.Getenv("LEADERBOARD_SERVICE_PORT")
 
 	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
 	//time.Sleep(30 * time.Second)

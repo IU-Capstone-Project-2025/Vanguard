@@ -96,6 +96,47 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 
 			fmt.Println("next question triggered: ", qid, "in session ", sessionId)
 
+			if qid > 0 {
+				fmt.Println("Prepare Leader Board for ", sessionId)
+				board, err := tracker.GetLeaderboard(sessionId)
+				fmt.Println("Board from LBS: ", board)
+
+				if err != nil {
+					errorResp := ws.ServerMessage{Type: ws.MessageTypeError}
+					registry.BroadcastToSession(sessionId, errorResp.Bytes(), true)
+					fmt.Println("Leader board Error: ", err)
+				} else {
+					// Send LeaderBoard to Admin
+					leaderBoard := ws.ServerMessage{
+						Type:    ws.MessageTypeLeaderboard,
+						Payload: board.Table,
+					}
+
+					registry.SendToAdmin(sessionId, leaderBoard.Bytes())
+
+					usersAnswers := tracker.GetAnswers(sessionId)
+					fmt.Println("USERS ANSWERS: ", usersAnswers)
+
+					// Send question statistics to participant
+					for _, connectionCtx := range registry.GetConnections(sessionId) {
+						if connectionCtx.Role == shared.RoleAdmin {
+							continue
+						}
+						user := connectionCtx.UserId
+
+						stat := ws.ServerMessage{
+							Type:    ws.MessageTypeStat,
+							Correct: usersAnswers[user][qid-1].Correct,
+							Payload: board.Popular,
+						}
+
+						registry.SendMessage(stat.Bytes(), connectionCtx)
+
+					}
+				}
+
+			}
+
 			questionPayloadMsg := ws.ServerMessage{
 				Type:            ws.MessageTypeQuestion,
 				QuestionIdx:     qid + 1,
@@ -106,18 +147,14 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 
 			registry.SendToAdmin(sessionId, questionPayloadMsg.Bytes())
 
+			fmt.Printf("Send question payload for %s: %v\n", sessionId, questionPayloadMsg)
+
 			nextQuestionAck := ws.ServerMessage{
 				Type: ws.MessageTypeNextQuestion,
 			}
 			registry.BroadcastToSession(sessionId, nextQuestionAck.Bytes(), false)
 
-			// if qid == 0 {
-			// 	gameStartAck := ws.ServerMessage{
-			// 		Type:          ws.MessageTypeAck,
-			// 		IsGameStarted: true,
-			// 	}
-			// 	registry.BroadcastToSession(sessionId, gameStartAck.Bytes(), false)
-			// }
+			fmt.Printf("Send next question ack for %s: %v\n", sessionId, nextQuestionAck)
 		}
 	}(s)
 

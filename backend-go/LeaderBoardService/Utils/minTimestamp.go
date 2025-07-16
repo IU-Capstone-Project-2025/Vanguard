@@ -5,7 +5,7 @@ import (
 	"xxx/shared"
 )
 
-func GetEarliestTimestamp(answers []shared.UserAnswer) time.Time {
+func GetEarliestTimestamp(answers []shared.Answer) time.Time {
 	earliest := answers[0].Timestamp
 
 	for _, ans := range answers[1:] {
@@ -17,7 +17,7 @@ func GetEarliestTimestamp(answers []shared.UserAnswer) time.Time {
 	return earliest
 }
 
-func GetLatestTimestamp(answers []shared.UserAnswer) time.Time {
+func GetLatestTimestamp(answers []shared.Answer) time.Time {
 	earliest := answers[0].Timestamp
 
 	for _, ans := range answers[1:] {

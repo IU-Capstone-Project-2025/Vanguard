@@ -2,7 +2,7 @@ package shared
 
 import "time"
 
-type UserAnswer struct {
+type Answer struct {
 	UserId    string    `json:"user_id"`
 	Correct   bool      `json:"correct"` // correctness of user's answer
 	Answered  bool      `json:"answered"`
@@ -11,6 +11,6 @@ type UserAnswer struct {
 }
 
 type SessionAnswers struct {
-	SessionCode string `json:"session_code"`
-	Answers     []UserAnswer
+	SessionCode string   `json:"session_code"`
+	Answers     []Answer `json:"answers"`
 }

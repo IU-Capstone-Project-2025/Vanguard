@@ -1,12 +1,11 @@
 package LeaderBoard
 
 import (
-	"xxx/LeaderBoardService/models"
 	"xxx/shared"
 )
 
-func (l *LeaderBoard) PopularAns(ans shared.SessionAnswers) (models.PopularAns, error) {
-	answers := models.PopularAns{
+func (l *LeaderBoard) PopularAns(ans shared.SessionAnswers) (shared.PopularAns, error) {
+	answers := shared.PopularAns{
 		SessionCode: ans.SessionCode,
 		Answers:     make(map[string]int),
 	}

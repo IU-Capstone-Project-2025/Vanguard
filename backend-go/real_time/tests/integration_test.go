@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -49,6 +50,7 @@ func TestWithTestContainers(t *testing.T) {
 	wgRTS := &sync.WaitGroup{}
 	wgRTS.Add(1)
 	cancel := utils.StartRealTimeServer(t, wgRTS, amqpURL, redisUrl)
+	go utils.StartLeaderBoardService(t, strings.Split(redisUrl, ":")[2])
 
 	wg := &sync.WaitGroup{}
 
@@ -135,18 +137,42 @@ func TestWithTestContainers(t *testing.T) {
 
 			// 8. Start question flow
 			for i, q := range quiz.Questions {
+				t.Logf("!!!!!!!!!!!!! Question %d !!!!!!!!!!!!!\n", i)
 				t.Log("trigger question ", i, q)
 
 				publishQuestionStart(t, amqpURL, sessionId)
 
+				if i > 0 {
+					t.Log("Receiving leader board")
+					lboard := utils.ReadWs(t, adminConn)
+					t.Log("checking leader board")
+					require.Equal(t, ws.MessageTypeLeaderboard, lboard.Type)
+					t.Log("--- Leader Board: ", lboard.Payload)
+				}
+
 				questionPayload := utils.ReadWs(t, adminConn)
-				t.Log("checking question payload:")
+				t.Logf("session %s: checking question payload:", sessionId)
+				t.Log(questionPayload)
 				require.Equal(t, q.Text, questionPayload.Text)
 				require.Equal(t, ws.MessageTypeQuestion, questionPayload.Type)
 				require.Equal(t, i+1, questionPayload.QuestionIdx)
 				require.Equal(t, q.Options, questionPayload.Options)
 
-				for _, user := range usersConn {
+				// receive question stats
+				if i > 0 {
+					for j, userConn := range usersConn {
+						stat := utils.ReadWs(t, userConn)
+						t.Log("checking user stat")
+						require.Equal(t, ws.MessageTypeStat, stat.Type)
+						t.Log(j, i-1, quiz.Questions[i-1].Options[usersAnswers[j][i-1]], stat)
+						require.Equal(t, quiz.Questions[i-1].Options[usersAnswers[j][i-1]].IsCorrect, stat.Correct)
+						t.Log("--- Stat: ", stat.Payload)
+					}
+				}
+
+				// ignore next question ack for participants
+				for j, user := range usersConn {
+					t.Log("Ack for ", users[j])
 					utils.ReadWs(t, user)
 				}
 
@@ -156,10 +182,10 @@ func TestWithTestContainers(t *testing.T) {
 					msg := ws.ClientMessage{Option: option}
 					user.WriteMessage(websocket.TextMessage, msg.Bytes())
 
-					resp := utils.ReadWs(t, user)
-					require.Equal(t, ws.MessageTypeAnswer, resp.Type)
-					require.Equal(t, i+1, resp.QuestionIdx)
-					require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
+					//resp := utils.ReadWs(t, user)
+					//require.Equal(t, ws.MessageTypeAnswer, resp.Type)
+					//require.Equal(t, i+1, resp.QuestionIdx)
+					//require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
 				}
 			}
 

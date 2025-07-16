@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"xxx/LeaderBoardService/models"
+	"xxx/shared"
 )
 
 type Cache interface {
-	LoadLeaderboard(quizID string) ([]models.UserScore, error)
-	AddScoresBatch(quizID string, updates []models.UserCurrentPoint) error
+	LoadLeaderboard(quizID string) ([]shared.UserScore, error)
+	AddScoresBatch(quizID string, updates []shared.UserCurrentPoint) error
 }
 
 type Redis struct {

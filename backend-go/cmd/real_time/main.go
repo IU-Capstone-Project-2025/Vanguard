@@ -32,7 +32,7 @@ func main() {
 
 	cfg := config.LoadConfig()
 
-	manager := app.NewManager()
+	manager := app.NewManager(cfg.LB.Host, cfg.LB.Port)
 
 	// Connect to the rabbit MQ
 	fmt.Println("Connecting to broker...")
