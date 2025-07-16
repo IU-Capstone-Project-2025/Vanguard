@@ -43,7 +43,7 @@ const QuizStorePage = () => {
       //   }
       // )
 
-      const url = `${API_ENDPOINTS.QUIZ}/ `
+      const url = `${API_ENDPOINTS.QUIZ}/`
       // console.log(url)
       try {
         const response = await fetch(url) // заглушка, убрано чтобы не было ошибки

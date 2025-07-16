@@ -25,12 +25,12 @@ scrape_configs:
 - job_name: 'auth-service'
   static_configs:
   - targets: [ 'auth:8000' ]
-  metrics_path: '/metrics'
+  metrics_path: '/metrics/'
 
 - job_name: 'quiz-service'
   static_configs:
   - targets: [ 'quiz:8000' ]
-  metrics_path: '/metrics'
+  metrics_path: '/metrics/'
 
 - job_name: 'realtime-service'
   static_configs:
