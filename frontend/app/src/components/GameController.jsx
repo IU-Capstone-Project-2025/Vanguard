@@ -76,7 +76,9 @@ const GameController = () => {
   
   const handleAnswer = (index) => {
     if (!wsRefRealtime.current) return;
-    wsRefRealtime.current.send(JSON.stringify({ option: index }));
+    const timestamp = new Date().toISOString();
+    console.log(`Sending answer: ${index} at ${timestamp}`);
+    wsRefRealtime.current.send(JSON.stringify({ option: index, "timestamp": timestamp }));
     setHasAnswered(true);
   };
 

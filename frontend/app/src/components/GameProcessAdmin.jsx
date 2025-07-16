@@ -81,14 +81,25 @@ const toNextQuestion = async (sessionCode) => {
           sessionStorage.setItem('currentQuestion', JSON.stringify(data));
           return data
         }
+        else if (data.type === 'leaderboard') {
+          console.log('Received leaderboard:', data);
+          sessionStorage.setItem("leaders", JSON.stringify(data.payload.users.slice(0, 3)));
+          return data;
+        }
       };
     } catch (error) {
-      console.error('Error listening for quiz questions:', error);
+      console.error('Error listening for realtime-service:', error);
       return
     }
   };
 
   const finishSession = async (code) => {
+    toNextQuestion(code);
+    const data = await listenQuizQuestion(code);
+    if (data.type !== 'leaderboard') {
+      console.error('Expected leaderboard data, but got:', data);
+      return;
+    }
     try {
       const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${code}/end`, {
         method: 'POST',
@@ -107,11 +118,10 @@ const toNextQuestion = async (sessionCode) => {
       // Закрытие WebSocket соединений
       closeWsRefRealtime();
       closeWsRefSession();
-      navigate('/')
+      navigate('/final')
     } catch (error) {
       console.error('Error end the session:', error);
     }
-    
   }
 
   /* -------- кнопка "Next" -------- */
