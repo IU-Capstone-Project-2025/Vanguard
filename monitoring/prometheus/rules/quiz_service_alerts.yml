@@ -1,0 +1,67 @@
+groups:
+- name: quiz_service_alerts
+  rules:
+  - alert: HighQuizErrorRate
+    expr: |
+      sum(rate(http_requests_total{service="quiz", status=~"5.."}[5m]))
+      / 
+      sum(rate(http_requests_total{service="quiz"}[5m])) 
+      > 0.05
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High error rate in Quiz Service ({{ $value }}%)"
+      description: "HTTP error rate above 5% for 5 minutes"
+
+  - alert: QuizHighLatency
+    expr: |
+      histogram_quantile(0.99, 
+        sum by(le) (rate(http_request_duration_seconds{service="quiz"}[5m]))
+      ) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High latency in Quiz Service"
+      description: "99th percentile latency above 1s (current: {{ $value }}s)"
+
+  - alert: QuizImageUploadServerErrors
+    expr: |
+      sum(rate(quiz_image_uploads_total{service="quiz", status=~"s3_error|unexpected_error"}[1h])) > 5
+    labels:
+      severity: critical
+    annotations:
+      summary: "Image upload server errors"
+      description: "More than 5 server-side image upload errors in last hour"
+
+  - alert: QuizImageUploadClientErrors
+    expr: |
+      sum(rate(quiz_image_uploads_total{service="quiz", status=~"too_large|invalid_type"}[1h])) > 20
+    labels:
+      severity: warning
+    annotations:
+      summary: "Image upload client errors"
+      description: "More than 20 client-side image upload errors in last hour (types: {{ $labels.status }})"
+
+  - alert: LargeImageUploads
+    expr: |
+      avg(quiz_image_upload_size_bytes{service="quiz"}) > 10e6
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Large image uploads detected"
+      description: "Average image upload size >10MB"
+
+  - alert: QuizServiceSaturation
+    expr: |
+      http_requests_in_flight{service="quiz"} > 100
+      and
+      rate(http_requests_total{service="quiz"}[5m]) < 5
+    for: 15m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Quiz service saturated"
+      description: "High in-flight requests with low request rate"

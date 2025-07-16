@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from fastapi import Depends, Request, HTTPException
@@ -8,6 +9,8 @@ from shared.utils.unitofwork import UnitOfWork
 
 from quiz_app.services.image_service import S3ImageService
 from quiz_app.services.quiz_service import QuizService
+
+logger = logging.getLogger("app")
 
 uow = UnitOfWork(async_session_maker)
 
@@ -29,6 +32,9 @@ async def get_image_service() -> S3ImageService:
 
 async def get_potential_user_id(request: Request) -> UUID | None:
     try:
-        return await get_current_user_id(request)
-    except HTTPException:
+        user_id = await get_current_user_id(request)
+        logger.debug(f"Authenticated user: {user_id}")
+        return user_id
+    except HTTPException as exc:
+        logger.debug(f"Unauthenticated request: {exc.detail}")
         return None

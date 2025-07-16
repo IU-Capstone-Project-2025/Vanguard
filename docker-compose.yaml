@@ -1,3 +1,15 @@
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  promtail_positions:
+
+networks:
+  main:
+    driver: bridge
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -11,6 +23,8 @@ services:
       TZ: ${TZ}
     ports:
       - "5432:5432"
+    networks:
+      - main
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
@@ -22,6 +36,8 @@ services:
     image: redis:7-alpine
     ports:
       - "6739:6379"
+    networks:
+      - main
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -35,6 +51,8 @@ services:
     ports:
       - "15672:15672"  # Management UI
       - "5672:5672"    # AMQP port
+    networks:
+      - main
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./rabbit/definitions.json:/etc/rabbitmq/definitions.json:ro
@@ -64,33 +82,43 @@ services:
       TEST_DB_URL: ${TEST_DB_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
-      ENVIRONMENT: "prod"
+      ENVIRONMENT: "development"
+    networks:
+      - main
     depends_on:
       postgres:
         condition: service_healthy
 
   auth:
+    labels:
+    - "promtail=true"
     build:
       context: backend-python
       dockerfile: auth_service/Dockerfile
     ports:
       - "8000:8000"
+    networks:
+      - main
     environment:
       DB_URL: ${DB_URL}
       TEST_DB_URL: ${TEST_DB_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
       JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
-      ENVIRONMENT: "prod"
+      ENVIRONMENT: "development"
       DEBUG: "true"
     depends_on:
       - migrator
 
   quiz:
+    labels:
+    - "promtail=true"
     build:
       context: backend-python
       dockerfile: quiz_service/Dockerfile
     ports:
       - "8001:8000"
+    networks:
+      - main
     environment:
       DB_URL: ${DB_URL}
       TEST_DB_URL: ${TEST_DB_URL}
@@ -102,17 +130,21 @@ services:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
       MAX_IMAGE_SIZE: ${MAX_IMAGE_SIZE}
-      ENVIRONMENT: "prod"
+      ENVIRONMENT: "development"
       DEBUG: "true"
     depends_on:
       - auth
 
   real-time:
+    labels:
+    - "promtail=true"
     build:
       context: backend-go
       dockerfile: real_time/Dockerfile
     ports:
       - "8080:8080"
+    networks:
+      - main
     environment:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
@@ -131,11 +163,15 @@ services:
         condition: service_healthy
 
   session:
+    labels:
+    - "promtail=true"
     build:
       context: backend-go
       dockerfile: SessionService/Dockerfile
     ports:
       - "8081:8081"
+    networks:
+      - main
     environment:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
@@ -156,11 +192,15 @@ services:
         condition: service_healthy
 
   frontend:
+    labels:
+    - "promtail=true"
     build:
       context: frontend
       dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
+    networks:
+      - main
     volumes:
       - ./frontend/app:/app
       - /app/node_modules
@@ -178,10 +218,122 @@ services:
       - real-time
       - session
 
-volumes:
-  postgres_data:
-  rabbitmq_data:
+  node-exporter: # host resource metrics
+    image: prom/node-exporter:v1.9.1
+    container_name: node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
+    ports: [] # 9100
+    networks:
+      - main
+    restart: unless-stopped
 
-networks:
-  default:
-    driver: bridge
+  cadvisor: # containers resource metrics
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports: [] # 8080
+    networks:
+      - main
+    restart: unless-stopped
+
+  prometheus: # metrics
+    image: prom/prometheus:v2.40.0
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.wal-compression'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports: [] # 9090
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - auth
+      - quiz
+      - real-time
+      - session
+      - node-exporter
+      - cadvisor
+      - alertmanager
+
+  grafana: # dashboards
+    image: grafana/grafana:12.0.1
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: false
+    ports:
+      - "3001:3000"
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - loki
+      - promtail
+
+  alertmanager: # alerts
+    image: prom/alertmanager:v0.28.1
+    container_name: alertmanager
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    ports: [] # 9093
+    networks:
+      - main
+    restart: unless-stopped
+
+  loki: # logs db
+    image: grafana/loki:3.5.0
+    container_name: loki
+    volumes:
+      - ./monitoring/loki:/etc/loki
+      - loki_data:/tmp/loki
+    command:
+    - '-config.file=/etc/loki/config.yml'
+    ports: [] # 3100
+    networks:
+      - main
+    restart: unless-stopped
+
+  promtail: # logs collector
+    image: grafana/promtail:3.5.0
+    container_name: promtail
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./monitoring/promtail:/etc/promtail
+      - promtail_positions:/tmp
+    command: -config.file=/etc/promtail/config.yml
+    ports: [] # 9080
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - loki

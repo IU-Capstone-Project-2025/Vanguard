@@ -6,10 +6,10 @@ export const BASE_URL = isDev
 
 export const API_ENDPOINTS = {
   AUTH: isDev
-    ? process.env.REACT_APP_AUTH_API || 'http://localhost:8000'
+    ? process.env.REACT_APP_AUTH_API || 'http://localhost:8000/api'
     : '/api/auth',
   QUIZ: isDev
-    ? process.env.REACT_APP_QUIZ_API || 'http://localhost:8001'
+    ? process.env.REACT_APP_QUIZ_API || 'http://localhost:8001/api'
     : '/api/quiz',
   SESSION: isDev
     ? process.env.REACT_APP_SESSION_API || 'http://localhost:8081'

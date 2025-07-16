@@ -31,7 +31,7 @@ async def uow_test():
 @pytest.fixture
 async def test_client(uow_test):
     app.dependency_overrides = {get_uow: lambda: uow_test}
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test/api") as client:
         yield client
 
 @pytest.fixture
@@ -54,7 +54,7 @@ async def test_client_authed(uow_test, test_user):
         get_current_user_id: lambda: test_user.id,
         get_potential_user_id: lambda: test_user.id
     }
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test/api") as client:
         yield client
 
 @pytest.fixture

@@ -1,0 +1,43 @@
+{
+  "title": "Quiz Service Dashboard",
+  "panels": [
+    {
+      "title": "HTTP Traffic",
+      "type": "graph",
+      "targets": [
+        {"expr": "rate(http_requests_total{service=\"quiz\"}[5m])", "legendFormat": "Total"},
+        {"expr": "http_requests_in_flight{service=\"quiz\"}", "legendFormat": "In-Flight"}
+      ],
+      "gridPos": {"x":0, "y":0, "w":12, "h":6}
+    },
+    {
+      "title": "Quiz Operations",
+      "type": "graph",
+      "targets": [
+        {"expr": "rate(quiz_creations_total{service=\"quiz\", status=\"success\"}[5m])", "legendFormat": "Creations"},
+        {"expr": "rate(quiz_fetches_total{service=\"quiz\", status=\"success\"}[5m])", "legendFormat": "Fetches"},
+        {"expr": "rate(quiz_updates_total{service=\"quiz\", status=\"success\"}[5m])", "legendFormat": "Updates"}
+      ],
+      "gridPos": {"x":0, "y":6, "w":8, "h":6}
+    },
+    {
+      "title": "Image Upload Stats",
+      "type": "stat",
+      "targets": [
+        {"expr": "rate(quiz_image_uploads_total{service=\"quiz\", status=\"success\"}[5m])", "legendFormat": "Uploads/s"},
+        {"expr": "avg(quiz_image_upload_size_bytes{service=\"quiz\"})", "legendFormat": "Avg Size"}
+      ],
+      "gridPos": {"x":8, "y":6, "w":8, "h":3}
+    },
+    {
+      "title": "Operation Failure Rates",
+      "type": "gauge",
+      "targets": [
+        {"expr": "sum(rate(quiz_creations_total{service=\"quiz\", status!=\"success\"}[5m])) / sum(rate(quiz_creations_total{service=\"quiz\"}[5m])) * 100", "legendFormat": "Creations"},
+        {"expr": "sum(rate(quiz_fetches_total{service=\"quiz\", status!=\"success\"}[5m])) / sum(rate(quiz_fetches_total{service=\"quiz\"}[5m])) * 100", "legendFormat": "Fetches"},
+        {"expr": "sum(rate(quiz_image_uploads_total{service=\"quiz\", status!=\"success\"}[5m])) / sum(rate(quiz_image_uploads_total{service=\"quiz\"}[5m])) * 100", "legendFormat": "Image Uploads"}
+      ],
+      "gridPos": {"x":0, "y":12, "w":24, "h":6}
+    }
+  ]
+}

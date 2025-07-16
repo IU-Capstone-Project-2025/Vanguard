@@ -1,53 +1,72 @@
+from fastapi import status
 from uuid import UUID
 
 
-class NotFoundError(Exception):
-    """Base exception for when a resource is not found"""
-    def __init__(self, resource: str, identifier: str | int | UUID):
-        self.resource = resource
-        self.identifier = identifier
-        super().__init__(f"{resource} with id '{identifier}' not found")
+class QuizServiceError(Exception):
+    """Base exception for quiz service."""
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    detail = "An error occurred with the quiz service"
 
 
-class ForbiddenError(Exception):
-    """Base exception for when access is forbidden"""
-    def __init__(self, message: str = "Action is forbidden"):
-        super().__init__(message)
-
-
-class BadRequestError(Exception):
-    """Base exception for when a request is bad request"""
-    def __init__(self, message: str = "Bad Request"):
-        super().__init__(message)
-
-
-class ImageS3Error(Exception):
-    """Base exception for image upload related errors"""
-    pass
-
-
-class QuizNotFoundError(NotFoundError):
+class QuizNotFoundError(QuizServiceError):
     """Raised when a quiz is not found"""
+    status_code = status.HTTP_404_NOT_FOUND
+
     def __init__(self, identifier: str | int | UUID):
-        super().__init__("Quiz", identifier)
+        self.detail = f"Quiz with id '{identifier}' not found"
 
 
-class InvalidQuizQueryParametersError(BadRequestError):
+class QuizForbiddenError(QuizServiceError):
+    """Base exception for when access is forbidden"""
+    status_code = status.HTTP_403_FORBIDDEN
+
+    def __init__(self, message: str = "Action with quiz is forbidden"):
+        self.detail = message
+
+
+class InvalidQuizQueryParametersError(QuizServiceError):
     """Raised when a quiz parameters are invalid"""
+    status_code = status.HTTP_400_BAD_REQUEST
+
     def __init__(self, message: str = "Invalid quiz query parameters"):
-        super().__init__(message)
+        self.detail = message
 
 
-class InvalidImageError(ImageS3Error):
+class ImageServiceError(Exception):
+    """Base exception for image service."""
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    def __init__(self, message: str = "An error occurred with the image service"):
+        self.detail = message
+
+
+class InvalidImageError(ImageServiceError):
     """Raised when invalid image file is provided"""
-    pass
+    status_code = status.HTTP_400_BAD_REQUEST
+
+    def __init__(self, message: str = "Invalid image file"):
+        self.detail = message
 
 
-class FileTooLargeError(ImageS3Error):
+class FileTooLargeError(ImageServiceError):
     """Raised when file exceeds size limit"""
-    pass
+    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+
+    def __init__(self, message: str = "File size exceeds maximum allowed limit"):
+        self.detail = message
 
 
-class ImageNotFoundError(ImageS3Error):
+class ImageNotFoundError(ImageServiceError):
     """Raised when image to delete is not found"""
-    pass
+    status_code = status.HTTP_404_NOT_FOUND
+
+    def __init__(self, message: str = "Image not found"):
+        self.detail = message
+
+
+class InvalidImageURL(ImageServiceError):
+    """Raised when an invalid S3 image URL is provided"""
+    status_code = status.HTTP_400_BAD_REQUEST
+
+    def __init__(self, message: str = "Invalid image URL"):
+        self.detail = message
