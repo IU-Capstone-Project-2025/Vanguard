@@ -1,10 +1,13 @@
 package ws
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"xxx/real_time/cache"
 	"xxx/real_time/cache/redis"
+	"xxx/real_time/leaderboard"
 	"xxx/real_time/models"
 	"xxx/shared"
 )
@@ -12,19 +15,21 @@ import (
 // QuizTracker tracks the current quiz for each session in the map: sessionId -> models.OngoingQuiz.
 // The tracker is thread-safe
 type QuizTracker struct {
-	mu      sync.RWMutex
+	mu      sync.Mutex
 	answers map[string]map[string][]models.UserAnswer // sessionId -> userId -> [1st question correctness, 2nd, etc.]
 	tracker map[string]models.OngoingQuiz             // stores the whole quiz data for each session.
 	// Includes the index of current question and all questions with answer options.
 	cache cache.Cache // cache (e.g. Redis storage manager) to store copy of states from quiz tracker
+	lb    *leaderboard.Client
 }
 
-func NewQuizTracker() *QuizTracker {
+func NewQuizTracker(leaderboardUrl string) *QuizTracker {
 	qt := &QuizTracker{
-		mu:      sync.RWMutex{},
+		mu:      sync.Mutex{},
 		answers: make(map[string]map[string][]models.UserAnswer),
 		tracker: make(map[string]models.OngoingQuiz),
 		cache:   &redis.Client{},
+		lb:      leaderboard.NewClient(leaderboardUrl),
 	}
 
 	return qt
@@ -39,8 +44,8 @@ func (q *QuizTracker) SetCache(cache cache.Cache) {
 
 // GetCurrentQuestion method returns the current question index of the session [sessionId] and the payload of the question
 func (q *QuizTracker) GetCurrentQuestion(sessionId string) (int, *shared.Question) {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
 	if quiz, exists := q.tracker[sessionId]; !exists {
 		return -1, nil
@@ -66,19 +71,24 @@ func (q *QuizTracker) SetCurrQuestionIdx(sessionId string, questionIdx int) {
 
 // IncQuestionIdx method increments the current question index of the session [sessionId]
 func (q *QuizTracker) IncQuestionIdx(sessionId string) bool {
-	idx, question := q.GetCurrentQuestion(sessionId)
-	if question == nil {
+	quiz, ok := q.tracker[sessionId]
+	if !ok {
+		return false
+	}
+	if quiz.CurrQuestionIdx+1 >= quiz.QuizData.Len() {
 		return false
 	}
 
-	q.SetCurrQuestionIdx(sessionId, idx+1)
+	quiz.CurrQuestionIdx++
+	q.tracker[sessionId] = quiz
+	_ = q.cache.SetQuestionIndex(sessionId, quiz.CurrQuestionIdx)
 	return true
 }
 
 // GetCorrectOption returns the index and the object of the correct answer for the given question
 func (q *QuizTracker) GetCorrectOption(sessionId string, questionIdx int) (int, *shared.Option) {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
 	if quiz, exists := q.tracker[sessionId]; !exists {
 		return -1, nil
@@ -105,8 +115,8 @@ func (q *QuizTracker) RecordAnswer(sessionId, userId string, answer models.UserA
 
 // GetAnswers returns the correctness of all answers given by users
 func (q *QuizTracker) GetAnswers(sessionId string) map[string][]models.UserAnswer {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
 	return q.answers[sessionId]
 }
@@ -140,20 +150,43 @@ func (q *QuizTracker) DeleteSession(sessionId string) {
 }
 
 // GetLeaderboard returns a simple map of userId -> correctFlag
-func (q *QuizTracker) GetLeaderboard(sessionId string) map[string][]models.UserAnswer {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
-	// copy to avoid races
-	copyMap := make(map[string][]models.UserAnswer, len(q.answers[sessionId]))
-	for user, answers := range q.answers[sessionId] {
-		copyMap[user] = answers
+func (q *QuizTracker) GetLeaderboard(sessionId string) (shared.BoardResponse, error) {
+	q.mu.Lock()
+
+	qid := q.tracker[sessionId].CurrQuestionIdx
+	if qid > 0 {
+		qid-- // Leader board is counted for previous question
 	}
-	return copyMap
+
+	q.mu.Unlock()
+
+	currQuestionAnswers := make([]shared.Answer, 0, len(q.answers[sessionId]))
+	for user, answers := range q.answers[sessionId] {
+		ans := answers[qid]
+
+		lbAns := shared.Answer{
+			UserId:    user,
+			Correct:   ans.Correct,
+			Answered:  ans.Answered,
+			Option:    strconv.Itoa(ans.Option),
+			Timestamp: ans.Timestamp,
+		}
+		currQuestionAnswers = append(currQuestionAnswers, lbAns)
+	}
+
+	fmt.Println("currQuestionAnswers: ", currQuestionAnswers)
+
+	board, err := q.lb.GetResults(context.Background(), sessionId, currQuestionAnswers)
+	if err != nil {
+		return shared.BoardResponse{}, err
+	}
+
+	return board, nil
 }
 
 func (q *QuizTracker) GetQuizLen(sessionId string) int {
-	q.mu.RLock()
-	defer q.mu.RUnlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
 
 	return q.tracker[sessionId].QuizData.Len()
 }

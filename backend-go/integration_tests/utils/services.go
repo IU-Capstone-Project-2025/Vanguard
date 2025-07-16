@@ -3,11 +3,13 @@ package utils
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"sync"
 	"testing"
+	"xxx/LeaderBoardService/HttpServer"
 	"xxx/SessionService/httpServer"
 	"xxx/real_time/app"
 	"xxx/real_time/config"
@@ -80,6 +82,22 @@ func StartSessionService(t *testing.T, amqpUrl, redisUrl string) {
 	server, err := httpServer.InitHttpServer(log, host, port, amqpUrl, redisUrl)
 	if err != nil {
 		t.Fatal("error creating http server", "error", err)
+		return
+	}
+	server.Start()
+}
+
+func StartLeaderBoardService(t *testing.T, redisPort string) {
+	host := os.Getenv("LEADERBOARD_SERVICE_HOST")
+	port := os.Getenv("LEADERBOARD_SERVICE_PORT")
+
+	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), redisPort)
+
+	//time.Sleep(30 * time.Second)
+	log := setupLogger()
+	server, err := HttpServer.InitHttpServer(log, host, port, redisUrl)
+	if err != nil {
+		t.Error("error creating http server", "error", err)
 		return
 	}
 	server.Start()

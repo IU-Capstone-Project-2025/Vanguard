@@ -13,12 +13,17 @@ import (
 type MessageType string
 
 const (
-	MessageTypeAnswer       = MessageType("result")
-	MessageTypeQuestion     = MessageType("question")
-	MessageTypeLeaderboard  = MessageType("leaderboard")
-	MessageTypeAck          = MessageType("game_start")
+	MessageTypeAnswer   = MessageType("result")
+	MessageTypeQuestion = MessageType("question")
+
+	MessageTypeLeaderboard = MessageType("leaderboard")
+	MessageTypeStat        = MessageType("question_stat")
+
+	MessageTypeEnd = MessageType("end") // sent to admin when game ends
+
 	MessageTypeNextQuestion = MessageType("next_question") // sent to admin when next question is triggered
-	MessageTypeEnd          = MessageType("end")           // sent to admin when game ends
+
+	MessageTypeError = MessageType("error")
 )
 
 // ClientMessage describes what we get from the user
@@ -49,9 +54,10 @@ type ServerMessage struct {
 	Text            string          `json:"text,omitempty"`            // question text or feedback
 	Options         []shared.Option `json:"options,omitempty"`         // for question
 
-	// ------ if Type is MessageTypeAnswer ------
+	// ------ if Type is MessageTypeAnswer or MessageTypeStat ------
 	Correct bool `json:"correct,omitempty"` // for answerResult
 
+	// ------ if Type is MessageTypeLeaderboard or MessageTypeStat ------
 	Payload interface{} `json:"payload,omitempty"` // extra data (e.g. leaderboard)
 }
 
@@ -114,6 +120,7 @@ func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage)
 
 	isCorrect := msg.Option == correctIdx
 	userAnswer := models.UserAnswer{
+		Option:    msg.Option,
 		Answered:  true,
 		Correct:   isCorrect,
 		Timestamp: msg.Timestamp,
@@ -125,10 +132,10 @@ func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage)
 
 	// Send immediate feedback
 
-	resp := ServerMessage{
-		Type:        MessageTypeAnswer,
-		QuestionIdx: qid + 1,
-		Correct:     isCorrect,
-	}
-	deps.Registry.sendMessage(resp.Bytes(), ctx)
+	//resp := ServerMessage{
+	//	Type:        MessageTypeAnswer,
+	//	QuestionIdx: qid + 1,
+	//	Correct:     isCorrect,
+	//}
+	//deps.Registry.SendMessage(resp.Bytes(), ctx)
 }
