@@ -143,6 +143,7 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 				QuestionsAmount: questionsAmount,
 				Text:            question.Text,
 				Options:         question.Options,
+				Payload:         question.ImageUrl,
 			}
 
 			registry.SendToAdmin(sessionId, questionPayloadMsg.Bytes())
