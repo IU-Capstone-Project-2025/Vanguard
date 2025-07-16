@@ -14,6 +14,9 @@ export const API_ENDPOINTS = {
   SESSION: isDev
     ? process.env.REACT_APP_SESSION_API || 'http://localhost:8081'
     : '/api/session',
+  LEADERBOARD: isDev
+    ? process.env.REACT_APP_LEADERBOARD_API || 'http://localhost:8082'
+    : '/api/leaderboard',
   SESSION_WS: isDev
     ? process.env.REACT_APP_SESSION_WS || 'ws://localhost:8081/ws'
     : '/api/session/ws',
