@@ -132,10 +132,10 @@ const toNextQuestion = async (sessionCode) => {
   /* -------- UI -------- */
   return (
     <div className="game-process">
-      <div className='controller-question-title'>
-        <h1>Live Quiz</h1>
-
-        <p>Question {questionIndex + 1}</p>
+      <div className='controller-question-title' 
+        // style={{backgroundImage: `url(${currentQuestion.payload})`}}
+      >
+        <img src={currentQuestion.payload} alt="Question" className="question-image" height={300}/>
       
         <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
       </div>
