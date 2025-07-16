@@ -105,6 +105,11 @@ const GameProcessAdmin = () => {
     }
   };
 
+  const handleLeaderboardClick = () => {
+    wsRefRealtime.current.send(JSON.stringify({ type: 'next_question' }));
+    setLeaderboardVisible(false);
+  }
+
   const handleNextQuestion = async (e) => {
     e.preventDefault();
     const sessionCode = sessionStorage.getItem('sessionCode');
@@ -119,7 +124,7 @@ const GameProcessAdmin = () => {
       {leaderboardVisible && leaderboardData ? (
         <ShowLeaderBoardComponent
           leaderboardData={leaderboardData}
-          onClose={() => setLeaderboardVisible(false)}
+          onClose={() => handleLeaderboardClick()} 
         />
       ) : (
         <>

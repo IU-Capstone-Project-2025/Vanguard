@@ -20,9 +20,10 @@ const GameController = () => {
   });
 
   const [choosenOption, setChosenOption] = useState(null);
+  const [correct, setCorrect] = useState(false);
   const [popularAnswers, setPopularAnswers] = useState({});
   const [userAnswers, setUserAnswers] = useState([]);
-  const [stage, setStage] = useState("waiting_question"); // "question", "waiting", "statistics", "waiting_question"
+  const [stage, setStage] = useState("question"); // "question", "waiting", "statistics", "waiting_question"
 
   const sessionCode = sessionStorage.getItem("sessionCode");
 
@@ -57,11 +58,13 @@ const GameController = () => {
             setChosenOption(null);
             setPopularAnswers({});
             setStage("question");
+            setCorrect(false);
             break;
 
           case "question_stat":
             console.log("Received question statistics:", data);
             setPopularAnswers(data.payload.answers);
+            setCorrect(data.correct);
             setStage("statistics");
 
             // Обновляем массив правильности ответов
@@ -70,6 +73,11 @@ const GameController = () => {
               sessionStorage.setItem("userAnswers", JSON.stringify(updated));
               return updated;
             });
+            break;
+          case "next_message":
+            console.log("Received next message:", data);
+            setStage("question");
+            setChosenOption(null);
             break;
 
           default:
@@ -82,11 +90,11 @@ const GameController = () => {
       };
     }
 
-    if (wsRefSession.current) {
-      wsRefSession.current.onclose = () => {
-        endSession();
-      };
-    }
+    // if (wsRefSession.current) {
+    //   wsRefSession.current.onclose = () => {
+    //     endSession();
+    //   };
+    // }
 
     return () => {
       if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
@@ -114,7 +122,8 @@ const GameController = () => {
       {stage === "statistics" && (
         <ShowQuizStatistics
           stats={popularAnswers}
-          onClose={() => setStage("waiting_question")} // переходим в ожидание next_question
+          correct={correct}
+          onClose={() => setStage("question")} // переходим в next_question
         />
       )}
 

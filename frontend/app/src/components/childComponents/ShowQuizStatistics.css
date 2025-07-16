@@ -4,7 +4,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(20, 20, 20, 0.96);
+  background-color: var(--orange);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -12,6 +12,22 @@
   z-index: 9999;
   padding: 2rem;
   box-sizing: border-box;
+}
+
+.quiz-stats-header-correct {
+  background-color: #4caf50; /* Green */
+  color: var(--bage);
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.quiz-stats-header-incorrect {
+  background-color: #f44336; /* Red */
+  color: var(--bage);
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
 }
 
 .quiz-stats-title {
