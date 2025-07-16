@@ -274,6 +274,13 @@ services:
       - main
     restart: unless-stopped
 
+  loki-init:
+    image: busybox
+    command: chown -R 10001:10001 /mnt
+    volumes:
+      - loki_data:/mnt
+    restart: "no"
+
   loki:
     image: grafana/loki:3.5.0
     container_name: loki
