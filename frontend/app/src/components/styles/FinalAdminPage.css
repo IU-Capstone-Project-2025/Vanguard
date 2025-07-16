@@ -20,6 +20,22 @@
   margin-bottom: 5vh;
 }
 
+.primary-button {
+  margin-top: 2rem;
+  width: 40vw; /* Match .podium width */
+  background-color: var(--dark);
+  color: var(--bage);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.primary-button:hover {
+  background-color: #1f1f1f;
+}
+
 .podium {
     background-color: var(--bage);
     padding: 2rem;
@@ -30,6 +46,7 @@
     align-items: flex-end;
     gap: 2vw;
     height: 30vh;
+    width: 40vw; /* Add this line */
 }
 
 .podium-block {

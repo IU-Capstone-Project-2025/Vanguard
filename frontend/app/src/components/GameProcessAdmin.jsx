@@ -82,27 +82,14 @@ const GameProcessAdmin = () => {
   const finishSession = async (code) => {
     await toNextQuestion(code);
     await listenQuizQuestion(code);
+    // sessionStorage.removeItem('sessionCode');
+    sessionStorage.removeItem('quizData');
+    sessionStorage.removeItem('currentQuestion');
+
+    closeWsRefRealtime();
+    closeWsRefSession();
+    navigate('/final');
     // если leaderboard не придёт, не вызываем завершение сразу
-
-    try {
-      const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${code}/end`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) throw new Error(`Failed to end session with code: ${code}`);
-
-      sessionStorage.removeItem('sessionCode');
-      sessionStorage.removeItem('quizData');
-      sessionStorage.removeItem('currentQuestion');
-
-      closeWsRefRealtime();
-      closeWsRefSession();
-      navigate('/final');
-    } catch (error) {
-      console.error('Error ending the session:', error);
-    }
   };
 
   const handleLeaderboardClick = () => {
