@@ -13,7 +13,7 @@ import (
 type MessageType string
 
 const (
-	MessageTypeAnswer   = MessageType("result")
+	MessageTypeAnswer   = MessageType("answer")
 	MessageTypeQuestion = MessageType("question")
 
 	MessageTypeLeaderboard = MessageType("leaderboard")
@@ -22,13 +22,17 @@ const (
 	MessageTypeEnd = MessageType("end") // sent to admin when game ends
 
 	MessageTypeNextQuestion = MessageType("next_question") // sent to admin when next question is triggered
+	MessageTypeUserAnswered = MessageType("user_answered") // sent to admin when participant submitted his answer
 
 	MessageTypeError = MessageType("error")
 )
 
 // ClientMessage describes what we get from the user
 type ClientMessage struct {
-	Option    int       `json:"option"`              // chosen answer index
+	Type MessageType `json:"type"` // MessageTypeAnswer or MessageTypeNextQuestion
+
+	// ------ if Type is MessageTypeAnswer ------
+	Option    int       `json:"option,omitempty"`    // chosen answer index
 	Timestamp time.Time `json:"timestamp,omitempty"` // time user have answered
 }
 
@@ -44,9 +48,6 @@ func (m *ClientMessage) Bytes() []byte {
 type ServerMessage struct {
 	// ------ response message type; on each response ------
 	Type MessageType `json:"type"` // "question", "result", "leaderboard"
-
-	// ------ if Type is MessageTypeAck ------
-	IsGameStarted bool `json:"isGameStarted,omitempty"` // broadcasting ack when first question triggered
 
 	// ------ 'question payload' response to admin (triggered on next_question event); if Type is MessageTypeQuestion ------
 	QuestionIdx     int             `json:"questionId,omitempty"`      // if Type is MessageTypeAnswer or MessageTypeQuestion
@@ -102,19 +103,24 @@ func handleRead(ctx *ConnectionContext, deps HandlerDeps) {
 		switch ctx.Role {
 		case shared.RoleParticipant:
 			go processAnswer(ctx, deps, &msg)
+		case shared.RoleAdmin:
+			go func() {
+				responder := NewResponder(deps.Registry, ctx.SessionId)
+				responder.SendNextQuestionAck()
+			}()
 		}
 	}
 }
 
 // processAnswer processes an incoming UserMessage from a WebSocket client, then (optionally) sends immediate answer
 func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage) {
-	session := ctx.SessionId
+	sessionId := ctx.SessionId
 	qid, _ := deps.Tracker.GetCurrentQuestion(ctx.SessionId)
 
 	// Look up the correct option from the QuizTracker
-	correctIdx, correctOpt := deps.Tracker.GetCorrectOption(session, qid)
+	correctIdx, correctOpt := deps.Tracker.GetCorrectOption(sessionId, qid)
 	if correctOpt == nil {
-		log.Printf("no correct option found for session %s question %d", session, qid)
+		log.Printf("no correct option found for sessionId %s question %d", sessionId, qid)
 		return
 	}
 
@@ -127,15 +133,15 @@ func processAnswer(ctx *ConnectionContext, deps HandlerDeps, msg *ClientMessage)
 	}
 
 	// Record the answer
-	deps.Tracker.RecordAnswer(session, ctx.UserId, userAnswer)
+	deps.Tracker.RecordAnswer(sessionId, ctx.UserId, userAnswer)
 	fmt.Println("recorded answer ", userAnswer, "from ", ctx.UserId)
 
-	// Send immediate feedback
-
-	//resp := ServerMessage{
-	//	Type:        MessageTypeAnswer,
-	//	QuestionIdx: qid + 1,
-	//	Correct:     isCorrect,
-	//}
-	//deps.Registry.SendMessage(resp.Bytes(), ctx)
+	// notify admin about new answered user
+	resp := ServerMessage{
+		Type: MessageTypeUserAnswered,
+		Payload: map[string]string{
+			"userId": ctx.UserId,
+		},
+	}
+	deps.Registry.SendToAdmin(sessionId, resp.Bytes())
 }

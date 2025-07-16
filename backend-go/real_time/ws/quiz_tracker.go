@@ -16,7 +16,7 @@ import (
 // The tracker is thread-safe
 type QuizTracker struct {
 	mu      sync.Mutex
-	answers map[string]map[string][]models.UserAnswer // sessionId -> userId -> [1st question correctness, 2nd, etc.]
+	answers map[string]map[string][]models.UserAnswer // sessionId -> userId -> [models.UserAnswer]
 	tracker map[string]models.OngoingQuiz             // stores the whole quiz data for each session.
 	// Includes the index of current question and all questions with answer options.
 	cache cache.Cache // cache (e.g. Redis storage manager) to store copy of states from quiz tracker
@@ -113,6 +113,18 @@ func (q *QuizTracker) RecordAnswer(sessionId, userId string, answer models.UserA
 	q.cache.RecordAnswer(sessionId, userId, qid, answer)
 }
 
+// AddParticipant initializes new user's answers array with default values.
+// []models.UserAnswer array must be initialized, since user can leave question without answer recording,
+// and then it will be marked just an 'not answered'
+func (q *QuizTracker) AddParticipant(sessionId, userId string) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if _, ok := q.answers[sessionId][userId]; !ok {
+		q.answers[sessionId][userId] = make([]models.UserAnswer, q.tracker[sessionId].QuizData.Len()) // create array with length = the amount of questions
+	}
+}
+
 // GetAnswers returns the correctness of all answers given by users
 func (q *QuizTracker) GetAnswers(sessionId string) map[string][]models.UserAnswer {
 	q.mu.Lock()
@@ -168,7 +180,7 @@ func (q *QuizTracker) GetLeaderboard(sessionId string) (shared.BoardResponse, er
 			UserId:    user,
 			Correct:   ans.Correct,
 			Answered:  ans.Answered,
-			Option:    strconv.Itoa(ans.Option),
+			Option:    strconv.Itoa(ans.Option + 1), // 1-based option index
 			Timestamp: ans.Timestamp,
 		}
 		currQuestionAnswers = append(currQuestionAnswers, lbAns)
@@ -176,7 +188,9 @@ func (q *QuizTracker) GetLeaderboard(sessionId string) (shared.BoardResponse, er
 
 	fmt.Println("currQuestionAnswers: ", currQuestionAnswers)
 
-	board, err := q.lb.GetResults(context.Background(), sessionId, currQuestionAnswers)
+	_, question := q.GetCurrentQuestion(sessionId)
+
+	board, err := q.lb.GetResults(context.Background(), sessionId, currQuestionAnswers, len(question.Options))
 	if err != nil {
 		return shared.BoardResponse{}, err
 	}
