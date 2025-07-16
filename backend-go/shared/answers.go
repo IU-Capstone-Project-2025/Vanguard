@@ -11,6 +11,7 @@ type Answer struct {
 }
 
 type SessionAnswers struct {
-	SessionCode string   `json:"session_code"`
-	Answers     []Answer `json:"answers"`
+	SessionCode   string   `json:"session_code"`
+	OptionsAmount int      `json:"options_amount"`
+	Answers       []Answer `json:"answers"`
 }
