@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSessionSocket } from '../contexts/SessionWebSocketContext';
 import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
 import './styles/GameProcess.css'
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants/api';
 import ShapedButton from './childComponents/ShapedButton';
+import ShowLeaderBoardComponent from './childComponents/ShowLeaderBoardComponent';
 import Alien from './assets/Alien.svg'
 import Corona from './assets/Corona.svg'
 import Ghosty from './assets/Ghosty.svg'
@@ -14,37 +15,33 @@ const GameProcessAdmin = () => {
   const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
   const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') != undefined ?
-  JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
+    JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [leaderboardVisible, setLeaderboardVisible] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState(null);
+
   const questionsAmount = currentQuestion.questionsAmount - 1;
-  console.log(`received questions amount [${questionsAmount}] and current index [${questionIndex}]`)
   const navigate = useNavigate();
-  const [questionOptions, setQuestionOptions] = useState([
-        Alien,
-        Corona,
-        Ghosty,
-        Cookie6
-      ] // Default empty question to avoid errors
-    )
+  const [questionOptions] = useState([
+    Alien,
+    Corona,
+    Ghosty,
+    Cookie6
+  ]);
 
   useEffect(() => {
     const token = sessionStorage.getItem('jwt');
     if (!token) return;
 
-    // console.log('Current question from sessionStorage:', currentQuestion);
-
-    /* отписка при размонтировании */
     return () => {
       if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
-      if (wsRefSession.current)  wsRefSession.current.onmessage  = null;
-      if (wsRefRealtime.current) wsRefRealtime.current.onclose = {finishSession}
-      if (wsRefSession.current) wsRefSession.current.onclose = {finishSession}
+      if (wsRefSession.current) wsRefSession.current.onmessage = null;
+      if (wsRefRealtime.current) wsRefRealtime.current.onclose = { finishSession };
+      if (wsRefSession.current) wsRefSession.current.onclose = { finishSession };
     };
   }, [connectSession, connectRealtime, wsRefSession, wsRefRealtime]);
 
-const toNextQuestion = async (sessionCode) => {
-    console.log("give the next question api call in game-process-admin");
-
+  const toNextQuestion = async (sessionCode) => {
     if (!sessionCode) {
       console.error('Session code is not available');
       return;
@@ -56,115 +53,96 @@ const toNextQuestion = async (sessionCode) => {
           'Content-Type': 'application/json',
         },
       });
-      if (!response.ok) {
-        throw new Error('Failed to start next question');
-      }
-      console.log('Next question started:', response);
+      if (!response.ok) throw new Error('Failed to start next question');
     } catch (error) {
       console.error('Error starting next question:', error);
     }
   };
-
 
   const listenQuizQuestion = async (sessionCode) => {
     if (!sessionCode) {
       console.error('Session code is not available');
       return;
     }
-    try {
-      wsRefRealtime.current.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'question') {
-          console.log('Received question:', data);
-          
-          setCurrentQuestion(data);
-          sessionStorage.setItem('currentQuestion', JSON.stringify(data));
-          return data
-        }
-      };
-    } catch (error) {
-      console.error('Error listening for quiz questions:', error);
-      return
-    }
+
+    wsRefRealtime.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'question') {
+        setCurrentQuestion(data);
+        sessionStorage.setItem('currentQuestion', JSON.stringify(data));
+      } else if (data.type === 'leaderboard') {
+        console.log('Received leaderboard:', data);
+        sessionStorage.setItem('leaders', JSON.stringify(data.payload.users.slice(0, 3)));
+        setLeaderboardData(data.payload);
+        setLeaderboardVisible(true);
+      }
+    };
   };
 
   const finishSession = async (code) => {
-    try {
-      const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${code}/end`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to end session with code: ${code}`);
-      }
-      console.log(`end session with code: [${code}] response:`, response);
-      // Очистка sessionStorage
-      sessionStorage.removeItem('sessionCode');
-      sessionStorage.removeItem('quizData');
-      sessionStorage.removeItem('currentQuestion');
-      // Закрытие WebSocket соединений
-      closeWsRefRealtime();
-      closeWsRefSession();
-      navigate('/')
-    } catch (error) {
-      console.error('Error end the session:', error);
-    }
-    
+    await toNextQuestion(code);
+    await listenQuizQuestion(code);
+    // sessionStorage.removeItem('sessionCode');
+    sessionStorage.removeItem('quizData');
+    sessionStorage.removeItem('currentQuestion');
+
+    closeWsRefRealtime();
+    closeWsRefSession();
+    navigate('/final');
+    // если leaderboard не придёт, не вызываем завершение сразу
+  };
+
+  const handleLeaderboardClick = () => {
+    wsRefRealtime.current.send(JSON.stringify({ type: 'next_question' }));
+    setLeaderboardVisible(false);
   }
 
-  /* -------- кнопка "Next" -------- */
   const handleNextQuestion = async (e) => {
     e.preventDefault();
     const sessionCode = sessionStorage.getItem('sessionCode');
 
-    // if (questionIndex === questionsAmount) {
-    //   await finishSession(sessionCode)
-    // }
-
-    toNextQuestion(sessionCode);
+    await toNextQuestion(sessionCode);
     setQuestionIndex((prevIndex) => prevIndex + 1);
-
-    const quizData = await listenQuizQuestion(sessionCode)
+    await listenQuizQuestion(sessionCode);
   };
 
-  /* -------- UI -------- */
   return (
     <div className="game-process">
-      <div className='controller-question-title' 
-        // style={{backgroundImage: `url(${currentQuestion.payload})`}}
-      >
-        <img src={currentQuestion.payload} alt="Question" className="question-image" height={300}/>
-      
-        <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
-      </div>
+      {leaderboardVisible && leaderboardData ? (
+        <ShowLeaderBoardComponent
+          leaderboardData={leaderboardData}
+          onClose={() => handleLeaderboardClick()} 
+        />
+      ) : (
+        <>
+          <div className="controller-question-title">
+            <img src={currentQuestion.payload} alt="Question" className="question-image" height={300} />
+            <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
+          </div>
 
-      <div className="options-grid">
-        {currentQuestion &&
-          currentQuestion.options.map((option, idx) => (
-            <ShapedButton 
-              key={idx}
-              shape={questionOptions[idx]}
-              text={option.text} 
-              onClick={
-                () => {console.log('svg clicked')}
-              }
-            />
-          ))
-        }
-      </div>
+          <div className="options-grid">
+            {currentQuestion && currentQuestion.options.map((option, idx) => (
+              <ShapedButton
+                key={idx}
+                shape={questionOptions[idx]}
+                text={option.text}
+                onClick={() => console.log('svg clicked')}
+              />
+            ))}
+          </div>
 
-      <div className="button-group">
-        {questionIndex < questionsAmount && (
-          <button onClick={handleNextQuestion} className="button">
-            Next
-          </button>
-        )} 
-        <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
-          Finish
-        </button>
-      </div>
+          <div className="button-group">
+            {questionIndex < questionsAmount && (
+              <button onClick={handleNextQuestion} className="button">
+                Next
+              </button>
+            )}
+            <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
+              Finish
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };

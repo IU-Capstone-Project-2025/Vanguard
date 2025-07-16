@@ -162,7 +162,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 		}
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			t.Fatal("user1 dial error:", err)
+			t.Error("user1 dial error:", err)
 			return
 		}
 		for i := 0; i < 2; i++ {
@@ -187,7 +187,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 		}
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			t.Fatal("user2 dial error:", err)
+			t.Error("user2 dial error:", err)
 			return
 		}
 		for i := 0; i < 1; i++ {
@@ -301,7 +301,7 @@ func Test_HttpDeleteUser(t *testing.T) {
 			t.Fatalf("user2 read error: %v", err)
 			return
 		}
-		fmt.Println(string(msg))
+		t.Log(string(msg))
 		user3Chan <- string(msg)
 
 	}()

@@ -85,20 +85,21 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 	defer server.Stop()
 	reqURL := fmt.Sprintf("http://%s:%s/get-results", host, port)
 	sessionData := shared.SessionAnswers{
-		SessionCode: "ABC123",
+		SessionCode:   "ABC123",
+		OptionsAmount: 4,
 		Answers: []shared.Answer{
 			{
 				UserId:    "user_001",
 				Correct:   true,
 				Answered:  true,
-				Option:    "A",
+				Option:    "1",
 				Timestamp: time.Now().Add(-2 * time.Second),
 			},
 			{
 				UserId:    "user_002",
 				Correct:   true,
 				Answered:  true,
-				Option:    "C",
+				Option:    "3",
 				Timestamp: time.Now().Add(-1 * time.Second),
 			},
 			{
@@ -112,7 +113,7 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 				UserId:    "user_004",
 				Correct:   true,
 				Answered:  true,
-				Option:    "A",
+				Option:    "3",
 				Timestamp: time.Now(),
 			},
 		},
