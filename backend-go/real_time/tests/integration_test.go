@@ -145,6 +145,10 @@ func TestWithTestContainers(t *testing.T) {
 				if i > 0 {
 					t.Log("Receiving leader board")
 					lboard := utils.ReadWs(t, adminConn)
+					for lboard.Type == ws.MessageTypeUserAnswered {
+						t.Log("received that user answered")
+						lboard = utils.ReadWs(t, adminConn)
+					}
 					t.Log("checking leader board")
 					require.Equal(t, ws.MessageTypeLeaderboard, lboard.Type)
 					t.Log("--- Leader Board: ", lboard.Payload)
@@ -170,17 +174,27 @@ func TestWithTestContainers(t *testing.T) {
 					}
 				}
 
+				if i > 0 {
+					m := ws.ClientMessage{Type: ws.MessageTypeNextQuestion}
+					adminConn.WriteMessage(websocket.TextMessage, m.Bytes())
+				}
+
 				// ignore next question ack for participants
 				for j, user := range usersConn {
 					t.Log("Ack for ", users[j])
 					utils.ReadWs(t, user)
 				}
 
+				// answer the question
 				for j, user := range usersConn {
 					option := usersAnswers[j][i]
-					t.Logf("user %s send answer: %d", users[j], option)
-					msg := ws.ClientMessage{Option: option}
-					user.WriteMessage(websocket.TextMessage, msg.Bytes())
+					if i == 0 {
+						t.Logf("user %s do not send answer in question: %d", users[j], i)
+					} else {
+						t.Logf("user %s send answer: %d", users[j], option)
+						msg := ws.ClientMessage{Type: ws.MessageTypeAnswer, Option: option}
+						user.WriteMessage(websocket.TextMessage, msg.Bytes())
+					}
 
 					//resp := utils.ReadWs(t, user)
 					//require.Equal(t, ws.MessageTypeAnswer, resp.Type)
@@ -197,21 +211,6 @@ func TestWithTestContainers(t *testing.T) {
 			t.Log("---- Users received end message:")
 			for _, user := range usersConn {
 				utils.ReadWs(t, user)
-				// t.Log(lb.Payload)
-				// ans, ok := lb.Payload.(map[string]interface{})
-				// require.Equal(t, true, ok)
-
-				// userChosen, ok := ans[users[i]].([]interface{})
-				// require.Equal(t, true, ok)
-
-				// for j, isCorrectInter := range userChosen {
-				// 	chosenIdx := usersAnswers[i][j]
-
-				// 	isCorrect, ok := isCorrectInter.(bool)
-				// 	require.Equal(t, true, ok)
-
-				// 	require.Equal(t, quiz.Questions[j].Options[chosenIdx].IsCorrect, isCorrect)
-				// }
 			}
 
 			t.Log("Close connections:")

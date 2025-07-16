@@ -36,11 +36,12 @@ func NewClient(baseURL string) *Client {
 }
 
 // GetResults sends answers for one session and returns the leaderboard.
-func (c *Client) GetResults(ctx context.Context, sessionCode string, answers []shared.Answer) (shared.BoardResponse, error) {
+func (c *Client) GetResults(ctx context.Context, sessionCode string, answers []shared.Answer, optionsAmount int) (shared.BoardResponse, error) {
 
 	reqBody, err := json.Marshal(shared.SessionAnswers{
-		SessionCode: sessionCode,
-		Answers:     answers,
+		SessionCode:   sessionCode,
+		Answers:       answers,
+		OptionsAmount: optionsAmount,
 	})
 	if err != nil {
 		return shared.BoardResponse{}, fmt.Errorf("marshal request: %w", err)

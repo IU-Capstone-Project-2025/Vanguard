@@ -61,7 +61,18 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
 
 ---
 
-## 2.3 Receiving a Leader Board (Only Admin)
+## 2.4 (SKIP FOR QUESTION 1) Sending request to notify users (Only Admin)
+
+- **When**: When Admin displayed leaderboard, and ready to show next question
+    - **Request**: Admin sends to server a **`next_question`** message:
+      ```json
+      {
+        "type": "next_question"
+      }
+
+---
+
+## 2.4 Receiving a Leader Board (Only Admin)
 
 - **When**: When the next question triggers, admin receives leaderboard.
   - **Response**: Server sends to admin a **`leaderboard`** message:
@@ -83,7 +94,7 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
         }
     }
 
-## 2.4 Receiving a Question Statistics (Only Participants)
+## 2.5 Receiving a Question Statistics (Only Participants)
 
 - **When**: When the next question triggers, participants receive following statistics.
     - **Response**: Server sends to admin a **`question_stat`** message:
@@ -101,6 +112,7 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
           }
       }
 
+
 <div style="background-color: transparent; border-top: 4px solid red; padding: 0;">
 </div>
 
@@ -117,9 +129,23 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
 
   ```json
   {
+    "type": "answer",
     "option": <integer zero-based index>,
     "timestamp": <timestamp (in UTC) of user answer moment> "2025-07-17T12:34:56.789Z"
   }
+
+## 3.1 Notification that one more user answered (Admin Only)
+
+- **When**: After answer from the user.
+  - **Response**: Send a WebSocket message with the chosen option index:
+
+    ```json
+    {
+      "type": "user_answered",
+      "payload": {
+        "user_id": id,
+      }
+    }
 
 ## 4. Game End (Only Participants)
 

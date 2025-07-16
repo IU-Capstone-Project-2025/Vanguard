@@ -7,6 +7,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"strings"
 	"sync"
+	"xxx/real_time/models"
 	"xxx/real_time/ws"
 	"xxx/shared"
 )
@@ -45,10 +46,10 @@ func CreateQuestionStartQueue(ch *amqp.Channel, sessionId string) (amqp.Queue, e
 
 // ConsumeQuestionStart method listens to "next question start" events delivered to the corresponding queue.
 func (r *RealTimeRabbit) ConsumeQuestionStart(
-	registry *ws.ConnectionRegistry, tracker *ws.QuizTracker, s string) {
-	q, _ := CreateQuestionStartQueue(r.channel, s)
+	registry *ws.ConnectionRegistry, tracker *ws.QuizTracker, sid string) {
+	q, _ := CreateQuestionStartQueue(r.channel, sid)
 
-	consumerTag := fmt.Sprintf("question_start_%s", s)
+	consumerTag := fmt.Sprintf("question_start_%sid", sid)
 
 	msgs, err := r.channel.Consume(
 		q.Name, // the name of the already created queue
@@ -64,22 +65,24 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 		fmt.Println(err)
 	}
 
-	r.QuestionStartedQsTags[s] = consumerTag
+	r.QuestionStartedQsTags[sid] = consumerTag
 	fmt.Println("!-----------------------! ", r.QuestionStartedQsTags)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	fmt.Printf("Listen for new messages in question.%s.start queue\n", s)
+	fmt.Printf("Listen for new messages in question.%sid.start queue\n", sid)
 
 	// listen to messages in parallel goroutine
 	go func(s string) {
+		responder := ws.NewResponder(registry, sid)
+
 		var sessionId string
 
 		defer wg.Done()
 		for d := range msgs { // ignore the contents in the queue, since only event itself matters
 			sessionId = strings.Split(d.RoutingKey, ".")[1]
-			fmt.Printf("------ in consumer for %s found sessionId %s\n", s, sessionId)
+			fmt.Printf("------ in consumer for %sid found sessionId %sid\n", s, sessionId)
 
 			tracker.IncQuestionIdx(sessionId)
 
@@ -87,10 +90,7 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 			questionsAmount := tracker.GetQuizLen(sessionId)
 
 			if qid == questionsAmount { // zero-based index equal to amount, means index out of range -> game already ended
-				gameEndAck := ws.ServerMessage{
-					Type: ws.MessageTypeEnd,
-				}
-				registry.BroadcastToSession(sessionId, gameEndAck.Bytes(), false)
+				responder.SendGameEnd()
 				continue
 			}
 
@@ -102,62 +102,35 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 				fmt.Println("Board from LBS: ", board)
 
 				if err != nil {
-					errorResp := ws.ServerMessage{Type: ws.MessageTypeError}
-					registry.BroadcastToSession(sessionId, errorResp.Bytes(), true)
+					responder.SendError()
 					fmt.Println("Leader board Error: ", err)
 				} else {
 					// Send LeaderBoard to Admin
-					leaderBoard := ws.ServerMessage{
-						Type:    ws.MessageTypeLeaderboard,
-						Payload: board.Table,
+					responder.SendLeaderboard(board.Table)
+
+					allAnswers := tracker.GetAnswers(sessionId) // users' answers on all questions
+					fmt.Println("USERS ANSWERS: ", allAnswers)
+
+					currQuestionAnswers := make(map[string]models.UserAnswer)
+					for userId, answers := range allAnswers {
+						currQuestionAnswers[userId] = answers[qid-1]
 					}
-
-					registry.SendToAdmin(sessionId, leaderBoard.Bytes())
-
-					usersAnswers := tracker.GetAnswers(sessionId)
-					fmt.Println("USERS ANSWERS: ", usersAnswers)
 
 					// Send question statistics to participant
-					for _, connectionCtx := range registry.GetConnections(sessionId) {
-						if connectionCtx.Role == shared.RoleAdmin {
-							continue
-						}
-						user := connectionCtx.UserId
-
-						stat := ws.ServerMessage{
-							Type:    ws.MessageTypeStat,
-							Correct: usersAnswers[user][qid-1].Correct,
-							Payload: board.Popular,
-						}
-
-						registry.SendMessage(stat.Bytes(), connectionCtx)
-
-					}
+					responder.SendQuestionStat(board.Popular, currQuestionAnswers)
 				}
-
 			}
 
-			questionPayloadMsg := ws.ServerMessage{
-				Type:            ws.MessageTypeQuestion,
-				QuestionIdx:     qid + 1,
-				QuestionsAmount: questionsAmount,
-				Text:            question.Text,
-				Options:         question.Options,
-				Payload:         question.ImageUrl,
+			responder.SendQuestionPayload(qid+1, // 1-based index
+				questionsAmount, *question)
+
+			// send ack for participants immediately after sending a question only for very first question
+			// since further it will be sent when Admin requests it (check message.go/handleRead)
+			if qid == 0 {
+				responder.SendNextQuestionAck()
 			}
-
-			registry.SendToAdmin(sessionId, questionPayloadMsg.Bytes())
-
-			fmt.Printf("Send question payload for %s: %v\n", sessionId, questionPayloadMsg)
-
-			nextQuestionAck := ws.ServerMessage{
-				Type: ws.MessageTypeNextQuestion,
-			}
-			registry.BroadcastToSession(sessionId, nextQuestionAck.Bytes(), false)
-
-			fmt.Printf("Send next question ack for %s: %v\n", sessionId, nextQuestionAck)
 		}
-	}(s)
+	}(sid)
 
 	wg.Wait() // defer this function termination while consuming from the queue
 	fmt.Println("Question_start queue was deleted for session ")
