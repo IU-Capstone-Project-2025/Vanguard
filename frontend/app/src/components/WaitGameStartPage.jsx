@@ -78,6 +78,9 @@ const WaitGameStartPlayer = () => {
       if (incomingData.type === "next_question") {
         console.log("📨 Received start game signal:", incomingData);
         handleStartGame();
+      } else if (incomingData.type === "end_session") {
+        console.log("📨 Received end session signal:", incomingData);
+        endSession();
       } else {
         console.warn("⚠️ Unknown message type:", incomingData.type);
       }
@@ -119,6 +122,7 @@ const WaitGameStartPlayer = () => {
         </div>
         <div className="players-grid">
           {Array.from(players.entries()).map(([id,name]) => (
+            name !== "Admin" && 
             <div key={id} className="player-box">
               <span>{name}</span>
             </div>

@@ -65,12 +65,12 @@
 
 /* Подиумные позиции */
 .position-1 {
-  height: 14vh;
-  background-color: silver;
-}
-.position-2 {
   height: 18vh;
   background-color: gold;
+}
+.position-2 {
+  height: 14vh;
+  background-color: silver;
 }
 .position-3 {
   height: 10vh;
