@@ -148,6 +148,7 @@ func (r *ConnectionRegistry) RegisterConnection(sessionID, userID, userName stri
 		return fmt.Errorf("session %s not found", sessionID)
 	}
 	rooms[userID] = userName
+	go r.HandleCloseConnection(userID, userName, conn)
 	return nil
 }
 
@@ -302,5 +303,17 @@ func handleDelete(sessionID, userID string, reg *ConnectionRegistry) {
 			continue
 		}
 		reg.logger.Info("ws send message to user", "userId", userID)
+	}
+}
+
+func (r *ConnectionRegistry) HandleCloseConnection(userId, userName string, conn *websocket.Conn) {
+	for {
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			r.logger.Info("Connection closed:", "userId", userId,
+				"userName", userName,
+				"err", err)
+			break
+		}
 	}
 }
