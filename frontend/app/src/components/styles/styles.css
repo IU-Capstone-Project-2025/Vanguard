@@ -177,16 +177,28 @@
             .quiz-search-panel{
                 padding: 0;
                 margin: 0;
+                text-align: center;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
 
                 input {
-                    width: 100%;
+                    width: 93%;
                     padding: 1vh 1vw;
                     font-size: 18px;
                     border: none;
                     border-radius: 10px;
                 }
 
+                .quiz-list {
+                    overflow: visible;
+                }
+                
+
                 .quiz-item {
+                    text-align: left;
                     width: 100%;
                     background-color: var(--gray);
                     color: var(--bage);
@@ -229,7 +241,7 @@
         .title {
             position: relative;
             display: block;
-            text-align: center;
+            text-align: left;
             justify-items: left;
             margin-left: 25%;
             margin-right: 5%;
@@ -314,7 +326,7 @@
     .title {
         position: relative;
         display: block;
-        text-align: center;
+        text-align: left;
         justify-items: left;
         margin-left: 12.5%;
         margin-right: 5%;

@@ -154,6 +154,8 @@ services:
       REDIS_PORT: "6379"
       REALTIME_SERVICE_HOST: "0.0.0.0"
       REALTIME_SERVICE_PORT: "8080"
+      LEADERBOARD_SERVICE_HOST: "leaderboard"
+      LEADERBOARD_SERVICE_PORT: "8082"
       JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
       ENV: ${GO_ENV}
     depends_on:
@@ -191,6 +193,37 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  leaderboard:
+    labels:
+    - "promtail=true"
+    build:
+      context: backend-go
+      dockerfile: LeaderBoardService/Dockerfile
+    ports:
+      - "8082:8082"
+    networks:
+      - main
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: rabbit
+      RABBITMQ_PORT: "5672"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REALTIME_SERVICE_HOST: "real-time"
+      REALTIME_SERVICE_PORT: "8080"
+      SESSION_SERVICE_HOST: "session"
+      SESSION_SERVICE_PORT: "8081"
+      LEADERBOARD_SERVICE_HOST: "0.0.0.0"
+      LEADERBOARD_SERVICE_PORT: "8082"
+      JWT_SECRET_KEY: ${GO_JWT_SECRET_KEY}
+      ENV: ${GO_ENV}
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   frontend:
     labels:
     - "promtail=true"
@@ -217,6 +250,7 @@ services:
       - quiz
       - real-time
       - session
+      - leaderboard
 
 #  node-exporter: # host resource metrics
 #    image: prom/node-exporter:v1.9.1
