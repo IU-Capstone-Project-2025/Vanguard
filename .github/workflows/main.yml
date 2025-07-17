@@ -225,7 +225,6 @@ jobs:
     needs: [ set-globals, auth-service, quiz-service, real-time-service, session-service, leaderboard-service, frontend, shared-migrations ]
     if: |
       (
-        github.event_name == 'push' &&
         github.ref == 'refs/heads/main'
       ) || (
         github.event_name == 'workflow_dispatch' &&
