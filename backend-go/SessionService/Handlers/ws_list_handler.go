@@ -154,6 +154,10 @@ func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool
 	e2 := false
 	if sessions, exists1 := r.connections[sessionID]; exists1 {
 		e1 = true
+		if sessions[userID] != nil && sessions[userID].Conn != nil {
+			_ = sessions[userID].Conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "user left"))
+			sessions[userID].Conn.Close()
+		}
 		delete(sessions, userID)
 	}
 	if rooms, exists2 := r.rooms[sessionID]; exists2 {
@@ -274,9 +278,8 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 			continue
 		}
 	}
-
 	for {
-		_, _, err := ctx.Conn.Conn.ReadMessage()
+		_, _, err := UserConn.Conn.ReadMessage()
 		if err != nil {
 			reg.logger.Info("Connection closed", "userId", ctx.UserId, "err", err)
 			break
@@ -284,7 +287,6 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 	}
 
 	reg.UnregisterConnection(ctx.SessionId, ctx.UserId)
-	ctx.Conn.Conn.Close()
 }
 
 func handleDelete(sessionID, userID string, reg *ConnectionRegistry) {
