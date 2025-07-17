@@ -1,0 +1,50 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  path_prefix: /tmp/loki
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: memberlist
+  storage:
+    s3:
+      endpoint: ${S3_ENDPOINT_URL}
+      region: ${S3_REGION}
+      bucketnames: ${S3_BUCKET_LOG}
+      access_key_id: ${AWS_ACCESS_KEY_ID}
+      secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+      insecure: false
+      s3forcepathstyle: false
+
+schema_config:
+  configs:
+  - from: "2025-07-15"
+    store: tsdb
+    object_store: s3
+    schema: v13
+    index:
+      prefix: tsdb_
+      period: 24h
+
+storage_config:
+  tsdb_shipper:
+    active_index_directory: /tmp/loki/tsdb-active
+    cache_location: /tmp/loki/tsdb-cache
+    mode: opensource
+
+compactor:
+  working_directory: /tmp/loki/compactor
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 10
+  delete_request_store: filesystem
+
+limits_config:
+  retention_period: 168h # 7 days retention
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  allow_structured_metadata: true

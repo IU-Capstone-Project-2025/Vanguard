@@ -56,6 +56,7 @@ const WaitGameStartPlayer = () => {
   const endSession = () => {
     console.log(`Ending session... ${sessionCode}`);
     sessionStorage.removeItem('sessionCode');
+    sessionStorage.removeItem('nickname')
     closeWsRefRealtime();
     closeWsRefSession();
     navigate('/');
@@ -77,6 +78,9 @@ const WaitGameStartPlayer = () => {
       if (incomingData.type === "next_question") {
         console.log("📨 Received start game signal:", incomingData);
         handleStartGame();
+      } else if (incomingData.type === "end_session") {
+        console.log("📨 Received end session signal:", incomingData);
+        endSession();
       } else {
         console.warn("⚠️ Unknown message type:", incomingData.type);
       }
@@ -89,8 +93,8 @@ const WaitGameStartPlayer = () => {
     try {
       const data = JSON.parse(event.data); // ["Alice", "Bob", ...]
 
-      setPlayers((prevPlayers) => {
-        const newPlayers = new Map(prevPlayers);
+      setPlayers(() => {
+        const newPlayers = new Map();
         for (const [userId,name] of Object.entries(data)) {
           if (!newPlayers.has(userId)) {
             newPlayers.set(userId, name);
@@ -118,6 +122,7 @@ const WaitGameStartPlayer = () => {
         </div>
         <div className="players-grid">
           {Array.from(players.entries()).map(([id,name]) => (
+            name !== "Admin" && 
             <div key={id} className="player-box">
               <span>{name}</span>
             </div>

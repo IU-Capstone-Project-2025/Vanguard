@@ -14,10 +14,14 @@ import GameProcessAdmin from './components/GameProcessAdmin';
 import AuthPage from './components/AuthPage';
 import NotFoundPage from './components/NotFoundPage';
 import RegisterPage from './components/RegisterPage';
-// import ProtectedRoute from './components/ProtectedRoute';
+import QuizStorePage from './components/QuizStorePage';
+import FinalAdminPage from './components/FinalAdminPage';
+
+import ProtectedRoute from './components/ProtectedRoute';
 
 import { SessionWebSocketProvider } from './contexts/SessionWebSocketContext';
 import { RealtimeWebSocketProvider } from './contexts/RealtimeWebSocketContext';
+import ConstructorPage from './components/ConstructorPage';
 
 function App() {
   return (
@@ -31,7 +35,23 @@ function App() {
         <Route path="/enter-nickname" element={<EnterNicknamePage />} />
         <Route path="/join" element={<JoinGamePage />} />
         <Route path="/ask-to-join/:sessionCode" element={<AskToJoinSessionPage />} />
+        <Route path="/final" element={<FinalAdminPage />} />
         <Route path="*" element={<NotFoundPage />} />
+        <Route
+          path="/store"
+          element={
+              <QuizStorePage/>
+          }
+        />
+
+        {/* Protected страницы */}
+        <Route
+          path="/constructor/:quizID/"
+          element={
+            <ProtectedRoute>
+              <ConstructorPage />
+            </ProtectedRoute>
+          } />
 
         {/* Страницы с WebSocket */}
         

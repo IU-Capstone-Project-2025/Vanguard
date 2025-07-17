@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"xxx/real_time/app"
 	"xxx/real_time/config"
-	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
 )
 
@@ -33,21 +32,23 @@ func main() {
 
 	cfg := config.LoadConfig()
 
-	manager := app.NewManager()
+	manager := app.NewManager(cfg.LB.Host, cfg.LB.Port)
 
 	// Connect to the rabbit MQ
-	fmt.Println("Connecting to broker")
-	err := manager.ConnectRabbitMQ(fmt.Sprintf("amqp://%s:%s@%s:%s/",
+	fmt.Println("Connecting to broker...")
+	broker, err := manager.ConnectRabbitMQ(fmt.Sprintf("amqp://%s:%s@%s:%s/",
 		cfg.MQ.User, cfg.MQ.Password, cfg.MQ.Host, cfg.MQ.Port))
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Connected to broker")
 
-	//err = manager.ConnectRedis()
-	//if err != nil {
-	//
-	//}
+	fmt.Println("Connecting to Redis...")
+	err = manager.ConnectRedis(fmt.Sprintf("redis://%s:%s", cfg.Redis.Host, cfg.Redis.Port))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connected to Redis")
 
 	handlerDeps := ws.HandlerDeps{
 		Tracker:  manager.QuizTracker,
@@ -64,7 +65,6 @@ func main() {
 		log.Fatal(err)
 	}()
 
-	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
 	fmt.Println("Service is up!")
 
 	sessionStartReady := make(chan struct{})

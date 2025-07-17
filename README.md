@@ -14,26 +14,79 @@ Vanguard is an interactive learning platform that allows users to create and par
 ## 🚀 Getting Started with Docker Compose
 
 ### 1. Clone the repository
+
 ```sh
 git clone https://github.com/IU-Capstone-Project-2025/Vanguard.git
 cd Vanguard
 ```
 
-### 2. Build and start the services
+---
+
+## 🛠 Development Deployment
+
+### 1. Copy or create the environment file
+
 ```sh
-docker compose --env-file .env.dev.example up -d --build
+cp .env.dev.example .env
 ```
 
-or just make .env and launch as following
+### 2. Start without monitoring
 
 ```sh
-docker compose --env-file .env up -d --build
+docker compose --env-file .env -f docker-compose.yaml -f docker-compose.dev.yaml up -d --build frontend
 ```
 
-### 3. Access the platform
-- React frontend: http://localhost:3000
+### 3. Start with monitoring (Grafana)
 
-### 4. Shut down the deployment
 ```sh
-docker compose down
+docker compose --env-file .env -f docker-compose.yaml -f docker-compose.dev.yaml up -d --build
 ```
+
+### 4. Access the platform
+
+* Frontend available at: [http://localhost:3000](http://localhost:3000)
+* Grafana available at: [http://localhost:3001](http://localhost:3001)
+
+---
+
+## 🔐 Production Deployment
+
+### 1. Copy the production environment file
+
+```sh
+cp .env.prod.example .env
+```
+
+### 2. Run SSL setup (required before first deployment)
+
+```sh
+chmod +x setup.sh
+./setup.sh
+```
+
+### 3. Start all services with monitoring
+
+```sh
+docker compose --env-file .env -f docker-compose.yaml -f docker-compose.prod.yaml up -d --build
+```
+
+### 4. Access the platform
+
+* Frontend available at: [https://tryit.selnastol.ru](https://tryit.selnastol.ru)
+* Grafana available at: [https://grafana.tryit.selnastol.ru](https://grafana.tryit.selnastol.ru)
+
+---
+
+## 🧹 Stopping Services
+
+To stop and remove all running containers:
+
+- For dev:
+    ```sh
+    docker compose -f docker-compose.yaml -f docker-compose.dev.yaml down
+    ```
+
+- For prod:
+    ```sh
+    docker compose -f docker-compose.yaml -f docker-compose.prod.yaml down
+    ```

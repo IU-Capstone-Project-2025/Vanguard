@@ -1,0 +1,37 @@
+{
+  "title": "System Overview",
+  "uid": "system-overview",
+  "version": 1,
+  "panels": [
+    {
+      "title": "CPU Usage",
+      "type": "gauge",
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)"}]
+    },
+    {
+      "title": "Memory Usage",
+      "type": "gauge",
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"}]
+    },
+    {
+      "title": "Disk Usage",
+      "type": "gauge",
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+      "targets": [{"expr": "(node_filesystem_size_bytes{mountpoint=\"/\"} - node_filesystem_free_bytes{mountpoint=\"/\"}) / node_filesystem_size_bytes{mountpoint=\"/\"} * 100"}]
+    },
+    {
+      "title": "Container CPU Usage",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [{"expr": "sum by(name) (rate(container_cpu_usage_seconds_total{name!=\"\"}[5m])) * 100"}]
+    },
+    {
+      "title": "Container Memory Usage",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [{"expr": "sum by(name) (container_memory_usage_bytes{name!=\"\"})"}]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DOMAIN="tryit.selnastol.ru"
+SUBDOMAIN="grafana.tryit.selnastol.ru"
 EMAIL="adagamov05@mail.ru"
 DATA_PATH="/opt/certbot"
 
@@ -28,7 +29,7 @@ echo "ACME_TEST" > "$DATA_PATH/www/.well-known/acme-challenge/test.txt"
 
 # Start NGINX with dummy certs
 echo "Starting NGINX with dummy certs..."
-docker compose -f docker-compose.prod.yaml --env-file .env up -d frontend
+docker compose -f docker-compose.yaml -f docker-compose.prod.yaml --env-file .env up -d frontend
 
 # Verify the challenge file is accessible
 echo "Verifying challenge endpoint..."
@@ -42,8 +43,9 @@ rm -rf "$DATA_PATH/conf/live/$DOMAIN"
 rm -rf "$DATA_PATH/conf/archive/$DOMAIN"
 rm -f    "$DATA_PATH/conf/renewal/$DOMAIN.conf"
 
-docker compose -f docker-compose.prod.yaml run --rm --entrypoint "certbot certonly --webroot -w /var/www/certbot \
+docker compose -f docker-compose.yaml -f docker-compose.prod.yaml run --rm --entrypoint "certbot certonly --webroot -w /var/www/certbot \
 -d $DOMAIN \
+-d $SUBDOMAIN \
 --email $EMAIL \
 --cert-name $DOMAIN \
 --rsa-key-size 4096 \
@@ -53,6 +55,6 @@ docker compose -f docker-compose.prod.yaml run --rm --entrypoint "certbot certon
 
 # Reload NGINX to pick up real certs
 echo "Restarting NGINX with real certificates..."
-docker compose -f docker-compose.prod.yaml restart frontend
+docker compose -f docker-compose.yaml -f docker-compose.prod.yaml restart frontend
 
 echo "Done! Certificates issued for: ${DOMAIN}"

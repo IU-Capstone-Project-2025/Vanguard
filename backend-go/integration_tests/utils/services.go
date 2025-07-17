@@ -3,31 +3,40 @@ package utils
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"sync"
 	"testing"
+	"xxx/LeaderBoardService/HttpServer"
 	"xxx/SessionService/httpServer"
 	"xxx/real_time/app"
 	"xxx/real_time/config"
-	"xxx/real_time/rabbit"
 	"xxx/real_time/ws"
 )
 
-func StartRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl string) (ctxCancel context.CancelFunc) {
+func StartRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl, redisUrl string) (ctxCancel context.CancelFunc) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := config.LoadConfig()
-	manager := app.NewManager()
+	manager := app.NewManager("localhost", "8082")
 
 	// Connect to the rabbit MQ
-	t.Log("Connecting to broker")
-	err := manager.ConnectRabbitMQ(amqpUrl)
+	t.Log("Connecting to broker...")
+	broker, err := manager.ConnectRabbitMQ(amqpUrl)
+
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log("Connected to broker")
+
+	t.Log("Connecting to Redis...")
+	err = manager.ConnectRedis(redisUrl)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("Connected to Redis")
 
 	handlerDeps := ws.HandlerDeps{
 		Tracker:  manager.QuizTracker,
@@ -39,15 +48,10 @@ func StartRealTimeServer(t *testing.T, wg *sync.WaitGroup, amqpUrl string) (ctxC
 	srv := &http.Server{Addr: cfg.Host + ":" + cfg.Port, Handler: mux}
 	go func() {
 		t.Log("HTTP server starting")
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			t.Fatalf("http listen: %v", err)
+		if err = srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			t.Errorf("http listen: %v", err)
 		}
 	}()
-
-	broker, err := rabbit.NewRealTimeRabbit(manager.Rabbit)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	sessionStartReady := make(chan struct{})
 	sessionEndReady := make(chan struct{})
@@ -78,6 +82,24 @@ func StartSessionService(t *testing.T, amqpUrl, redisUrl string) {
 	server, err := httpServer.InitHttpServer(log, host, port, amqpUrl, redisUrl)
 	if err != nil {
 		t.Fatal("error creating http server", "error", err)
+		return
+	}
+	server.Start()
+}
+
+func StartLeaderBoardService(t *testing.T, redisPort string) {
+	//host := os.Getenv("LEADERBOARD_SERVICE_HOST")
+	//port := os.Getenv("LEADERBOARD_SERVICE_PORT")
+	host := "localhost"
+	port := "8082"
+
+	redisUrl := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), redisPort)
+
+	//time.Sleep(30 * time.Second)
+	log := setupLogger()
+	server, err := HttpServer.InitHttpServer(log, host, port, redisUrl)
+	if err != nil {
+		t.Error("error creating http server", "error", err)
 		return
 	}
 	server.Start()

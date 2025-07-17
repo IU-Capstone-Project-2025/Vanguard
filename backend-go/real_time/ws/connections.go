@@ -106,7 +106,7 @@ func (r *ConnectionRegistry) BroadcastToSession(sessionId string, payload []byte
 			}
 		}
 	}
-	r.sendMessage(payload, receivers...)
+	r.SendMessage(payload, receivers...)
 }
 
 // SendToAdmin sends the given payload only to the admin user of a specific session.
@@ -120,14 +120,14 @@ func (r *ConnectionRegistry) SendToAdmin(sessionId string, payload []byte) {
 	for _, ctx := range r.connections[sessionId] {
 		if ctx.Role == shared.RoleAdmin {
 			fmt.Println("admin id: ", ctx.UserId)
-			r.sendMessage(payload, ctx)
+			r.SendMessage(payload, ctx)
 		}
 	}
 }
 
-// sendMessage sends a WebSocket message (payload) to one or more connections.
+// SendMessage sends a WebSocket message (payload) to one or more connections.
 // It logs errors but does not halt on failure to individual connections.
-func (r *ConnectionRegistry) sendMessage(payload []byte, receivers ...*ConnectionContext) {
+func (r *ConnectionRegistry) SendMessage(payload []byte, receivers ...*ConnectionContext) {
 	for _, ctx := range receivers {
 		if ctx.Conn == nil {
 			log.Println("Skipped sending message: connection is nil")

@@ -3,6 +3,8 @@ from fastapi import status
 
 class AuthServiceError(Exception):
     """Base exception for auth service."""
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    detail = "An error occurred with the auth service"
 
 
 class EmailAlreadyExists(AuthServiceError):

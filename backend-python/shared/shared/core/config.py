@@ -1,12 +1,14 @@
-import os
+from enum import Enum
 
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
-ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
 
-if ENVIRONMENT != "prod" and ENVIRONMENT != "test":
-    from dotenv import load_dotenv
-    load_dotenv()
+class Environment(str, Enum):
+    PROD = "production"
+    DEV = "development"
+    TEST = "test"
+    STAGING = "staging"
 
 
 class Settings(BaseSettings):
@@ -15,10 +17,16 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
+    ENVIRONMENT: Environment = Environment.PROD
 
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
 
-settings = Settings()
+try:
+    settings = Settings()
+except ValidationError:
+    from dotenv import load_dotenv
+    load_dotenv()
+    settings = Settings()

@@ -1,0 +1,122 @@
+{
+  "title": "Session Service Dashboard",
+  "panels": [
+    {
+      "title": "HTTP Request Rate",
+      "type": "graph",
+      "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+      "targets": [
+        {
+          "expr": "sum by(status) (rate(http_requests_total{service=\"session\"}[1m]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "title": "HTTP Latency (99p)",
+      "type": "stat",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 3},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(http_request_duration_seconds{service=\"session\"}[5m])))",
+          "legendFormat": "{{method}} {{handler}}"
+        }
+      ]
+    },
+
+    {
+      "title": "WebSocket Connections",
+      "type": "graph",
+      "gridPos": {"x": 0, "y": 6, "w": 8, "h": 6},
+      "targets": [
+        {
+          "expr": "sum by(user_type) (websocket_active_connections{service=\"session\"})",
+          "legendFormat": "{{user_type}}"
+        }
+      ]
+    },
+    {
+      "title": "Message Throughput",
+      "type": "graph",
+      "gridPos": {"x": 8, "y": 6, "w": 8, "h": 6},
+      "targets": [
+        {
+          "expr": "sum by(msg_type) (rate(websocket_messages_sent_total{service=\"session\"}[1m]))",
+          "legendFormat": "Sent {{msg_type}}"
+        },
+        {
+          "expr": "sum(rate(websocket_messages_received_total{service=\"session\"}[1m]))",
+          "legendFormat": "Received"
+        }
+      ]
+    },
+
+    {
+      "title": "Session Lifecycle",
+      "type": "graph",
+      "gridPos": {"x": 0, "y": 12, "w": 8, "h": 6},
+      "targets": [
+        {
+          "expr": "rate(sessions_created_total{service=\"session\"}[5m])",
+          "legendFormat": "Created"
+        },
+        {
+          "expr": "rate(sessions_started_total{service=\"session\"}[5m])",
+          "legendFormat": "Started"
+        },
+        {
+          "expr": "rate(sessions_ended_total{service=\"session\"}[5m])",
+          "legendFormat": "Ended"
+        }
+      ]
+    },
+    {
+      "title": "Active Sessions",
+      "type": "gauge",
+      "gridPos": {"x": 8, "y": 12, "w": 4, "h": 4},
+      "targets": [
+        {
+          "expr": "sessions_active{service=\"session\"}"
+        }
+      ]
+    },
+
+    {
+      "title": "Participant Activity",
+      "type": "graph",
+      "gridPos": {"x": 0, "y": 18, "w": 8, "h": 6},
+      "targets": [
+        {
+          "expr": "rate(session_joins_total{service=\"session\", status=\"success\"}[5m])",
+          "legendFormat": "Successful Joins"
+        },
+        {
+          "expr": "rate(user_removals_total{service=\"session\"}[5m])",
+          "legendFormat": "User Removals"
+        }
+      ]
+    },
+    {
+      "title": "Question Flow",
+      "type": "graph",
+      "gridPos": {"x": 8, "y": 18, "w": 8, "h": 6},
+      "targets": [
+        {
+          "expr": "rate(questions_advanced_total{service=\"session\"}[5m])",
+          "legendFormat": "Questions Advanced"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "query": "label_values(http_requests_total, service)",
+        "current": {"value": "session"}
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "refresh": "1m"
+}

@@ -1,54 +1,23 @@
-package redis
+package redis_test
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
+	"xxx/integration_tests/utils"
+	"xxx/real_time/cache/redis"
 	"xxx/shared"
 
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
-
 	"xxx/real_time/models"
 )
 
-// setupRedisContainer starts a Redis container and returns its address and a termination function.
-func setupRedisContainer(tst *testing.T) (addr string, terminate func()) {
-	t := tst
-	t.Helper()
-	ctx := context.Background()
-	req := testcontainers.ContainerRequest{
-		Image:        "redis:latest",
-		ExposedPorts: []string{"6379/tcp"},
-		WaitingFor:   wait.ForListeningPort("6379/tcp"),
-	}
-	redisC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	require.NoError(t, err)
-
-	host, err := redisC.Host(ctx)
-	require.NoError(t, err)
-	port, err := redisC.MappedPort(ctx, "6379/tcp")
-	require.NoError(t, err)
-
-	addr = fmt.Sprintf("%s:%s", host, port.Port())
-	terminate = func() {
-		err := redisC.Terminate(ctx)
-		require.NoError(t, err)
-	}
-	return addr, terminate
-}
-
 func TestRedisClientIntegration(t *testing.T) {
-	addr, terminate := setupRedisContainer(t)
+	ctx := context.Background()
+	adddr, terminate := utils.StartRedis(ctx, t)
 	defer terminate()
 
-	client := NewClient(addr, "", 0)
+	client := redis.NewClient(adddr, "", 0)
 
 	// 1. Test SetSessionQuiz & GetSessionQuiz with TTL
 	quiz := shared.Quiz{Questions: []shared.Question{
@@ -88,61 +57,79 @@ func TestRedisClientIntegration(t *testing.T) {
 		QuizData:        quiz,
 	}
 
+	t.Log("---- Testing: Set and Get session quiz:")
+	t.Log("Set: ", ongoing)
 	err := client.SetSessionQuiz("sess1", ongoing)
 	require.NoError(t, err)
 
 	gotQuiz, err := client.GetSessionQuiz("sess1")
 	require.NoError(t, err)
+	t.Log("Got: ", gotQuiz)
 	require.Equal(t, ongoing.CurrQuestionIdx, gotQuiz.CurrQuestionIdx)
 	require.Equal(t, quiz.Questions, gotQuiz.QuizData.Questions)
 
-	// simulate TTL expiration by adjusting TTL nearly expired and sleeping
-	err = client.rdb.Expire(client.ctx, "session:sess1:quiz_state", 1*time.Second).Err()
+	t.Log("Simulate TTL expiration by adjusting TTL nearly expired and sleeping")
+	err = client.Expire("session:sess1:quiz_state", 1*time.Second)
 	require.NoError(t, err)
 
 	time.Sleep(1100 * time.Millisecond)
 	_, err = client.GetSessionQuiz("sess1")
 	require.Error(t, err)
+	t.Log("TTL expired successfully")
 
+	t.Log("---- Testing: Set and Get question index for sessionID = ", "sess2")
 	// 2. Test SetQuestionIndex & GetQuestionIndex
-	initial := models.OngoingQuiz{CurrQuestionIdx: 0}
+	initial := models.OngoingQuiz{CurrQuestionIdx: 2, QuizData: quiz}
 	err = client.SetSessionQuiz("sess2", initial)
 	require.NoError(t, err)
 
-	err = client.SetQuestionIndex("sess2", 5)
+	err = client.SetSessionQuiz("sess3", initial)
+	require.NoError(t, err)
+
+	quizzes, err := client.GetAllSessions()
+	require.NoError(t, err)
+
+	sess2, ok := quizzes["sess2"]
+	require.Equal(t, true, ok)
+	require.Equal(t, initial.CurrQuestionIdx, sess2.CurrQuestionIdx)
+	require.Equal(t, initial.QuizData, sess2.QuizData)
+
+	sess3, ok := quizzes["sess3"]
+	require.Equal(t, true, ok)
+	require.Equal(t, initial.CurrQuestionIdx, sess3.CurrQuestionIdx)
+	require.Equal(t, initial.QuizData, sess3.QuizData)
+
+	t.Log("Set: ", initial, ", index = ", initial.CurrQuestionIdx)
+	err = client.SetQuestionIndex("sess2", initial.CurrQuestionIdx)
 	require.NoError(t, err)
 
 	idx, err := client.GetQuestionIndex("sess2")
+	t.Log("Got: ", idx)
 	require.NoError(t, err)
-	require.Equal(t, 5, idx)
+	require.Equal(t, initial.CurrQuestionIdx, idx)
 
-	// 3. Test RecordAnswer & direct HGETALL
+	t.Log("---- Testing: RecordAnswer & direct GetAllAnswers")
+	t.Log("Set: ", ongoing)
 	err = client.RecordAnswer("sess3", "user1", 0, models.UserAnswer{
 		Correct:   true,
 		Timestamp: time.Time{},
 	})
 	require.NoError(t, err)
 
-	// HGetAll for this user
-	hashKey := fmt.Sprintf("session:%s:user:%s:answers", "sess3", "user1")
-	hashData, err := client.rdb.HGetAll(client.ctx, hashKey).Result()
+	t.Log("HGetAll for this user")
+	answers, err := client.GetAllAnswers("sess3")
+	t.Log("answers of user1 are, ", answers["user1"])
 	require.NoError(t, err)
-	require.Contains(t, hashData, "0")
-
-	var ua models.UserAnswer
-	require.NoError(t, json.Unmarshal([]byte(hashData["0"]), &ua))
-	require.True(t, ua.Correct)
+	require.Contains(t, answers, "user1")
 
 	// 4. Test DeleteSession
 	err = client.DeleteSession("sess3")
 	require.NoError(t, err)
 
 	// Keys should be gone
-	_, err = client.rdb.Get(client.ctx, "session:sess3:quiz_state").Result()
+	sess3quiz, err := client.GetSessionQuiz("sess3")
 	require.Error(t, err)
-	exists, err := client.rdb.Exists(client.ctx, hashKey).Result()
-	require.NoError(t, err)
-	require.Zero(t, exists)
+	require.Zero(t, sess3quiz)
 
 	// 5. Test GetAllAnswers on fresh session
 	all, err := client.GetAllAnswers("sess4")

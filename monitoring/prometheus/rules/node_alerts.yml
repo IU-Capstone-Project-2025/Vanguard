@@ -1,0 +1,52 @@
+groups:
+- name: node_alerts
+  rules:
+  - alert: HighCPULoad
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU load (instance {{ $labels.instance }})"
+      description: "CPU load is > 80%
+
+        \  VALUE = {{ $value }}%
+
+        \  LABELS: {{ $labels }}"
+
+  - alert: HighMemoryLoad
+    expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory load (instance {{ $labels.instance }})"
+      description: "Memory load is > 80%
+
+        \  VALUE = {{ $value }}%
+
+        \  LABELS: {{ $labels }}"
+
+  - alert: HighDiskUsage
+    expr: (node_filesystem_size_bytes{fstype=~"ext4|xfs"} - node_filesystem_free_bytes{fstype=~"ext4|xfs"}) / node_filesystem_size_bytes{fstype=~"ext4|xfs"} * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High disk usage (instance {{ $labels.instance }})"
+      description: "Disk usage is > 85%
+
+        \  VALUE = {{ $value }}%
+
+        \  LABELS: {{ $labels }}"
+
+  - alert: UnusualMemoryGrowth
+    expr: deriv(node_memory_MemAvailable_bytes[30m]) < -10 * 1024 * 1024
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual memory consumption rate (instance {{ $labels.instance }})"
+      description: "Memory is being consumed at a rate of more than 10MB/min
+
+        \  VALUE = {{ $value | humanize }}B/s"

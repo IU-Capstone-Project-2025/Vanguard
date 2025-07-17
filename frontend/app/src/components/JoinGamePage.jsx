@@ -9,31 +9,42 @@ const JoinGamePage = () => {
     const [code, setCode] = useState("");
     const navigate = useNavigate()
     const realTimeWsRef = useRef(null);
+    const inputRef = useRef(null);
 
-    // 🎯 POST-запрос к /api/session/join
-    const joinSession = async (sessionCode, userName) => {
-        console.log("Joining session with code:", sessionCode, "and username:", userName);
+    // 🎯 POST-запрос к /api/session/validate
+    const joinSession = async (sessionCode) => {
+        console.log("Joining session with code:", sessionCode);
 
         // Проверка на наличие кода с символом '#'
-        const response = await fetch(`${API_ENDPOINTS.SESSION}/join`, {
+        const response = await fetch(`${API_ENDPOINTS.SESSION}/validate`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                "code": sessionCode,
-                "userName": userName
+                "code": sessionCode
             }),
         });
-        if (response.code === 400) {
+
+        if (response.ok) {
+            return true
+        }else if (response.statusCode === 400) {
             console.error("❌ Error joining session:", response.statusText);
             alert("Failed to join session. Please check the code and try again.");
-            return;
+        }else if (response.statusCode === 405) {
+            console.error("❌ Error joining session:", response.statusText);
+        }else if (response.statusCode === 500) {
+            console.error("❌ Error joining session:", response.statusText);
         }
-        const data = await response.json();
-        return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt":"string", "sessionId":"string"}
+        return false;
+
+
 
     };
+    useEffect(() => {
+        inputRef.current.focus();
+    }, []);
+
     useEffect(() => {
         console.log("code updated:", code);
     }, [code]);
@@ -41,15 +52,14 @@ const JoinGamePage = () => {
     const handlePlay = async () => {
         if (code) {
             console.log("code updated:", code);
-            const sessionData = await joinSession(code, sessionStorage.getItem("nickname"))
-            if (!sessionData || !sessionData.sessionId) {
+            const sessionData = await joinSession(code)
+            if (!sessionData) {
                 console.error("❌ Failed to join session or session ID is missing");
                 alert("Failed to join session. Please check the code and try again.");
                 return;
             }
             sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
-            sessionStorage.setItem('jwt', sessionData.jwt);
-            navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
+            navigate(`/enter-nickname`); // Navigate to the waiting page with the session code
         }
     };
 
@@ -62,6 +72,7 @@ const JoinGamePage = () => {
                     </h1>
                     <input
                         type="text"
+                        ref={inputRef}
                         placeholder="enter a code here"
                         value={code}
                         onChange={(e) => {
@@ -69,6 +80,7 @@ const JoinGamePage = () => {
                             if (/^[A-Z0-9]*$/.test(value)){
                                 setCode(value);
                         }}} // Remove '#' and convert to uppercase
+                        onKeyDown={(e) => e.key === "Enter" && handlePlay()}
                         required
                         autoFocus
                         pattern="^[A-Z0-9]+$" // Ensure only alphanumeric characters are
@@ -77,12 +89,7 @@ const JoinGamePage = () => {
                     <div className="button-group">
                         <button id="play"
                                 className="play-button"
-                                onClick={
-                                    (e) => {
-                                        handlePlay();
-                                        e.preventDefault();
-                                    }
-                                }
+                                onClick={handlePlay}
                         >
                             <span>Play</span>
                         </button>

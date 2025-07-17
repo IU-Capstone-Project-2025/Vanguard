@@ -13,6 +13,7 @@ const ProtectedRoute = ({ children }) => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": `Bearer ${sessionStorage.getItem("access_token")}`
             },
             body: JSON.stringify({
                 refresh_token: Cookies.get("refresh_token")

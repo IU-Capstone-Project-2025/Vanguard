@@ -1,4 +1,3 @@
-from datetime import datetime, UTC
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Header, Request, status
@@ -9,24 +8,10 @@ from shared.schemas.auth import (
 
 from shared.core.dependencies import get_current_user_id
 
-from auth_app.core.config import settings
 from auth_app.core.dependencies import get_auth_service
 from auth_app.services.auth_service import AuthService
 
-router = APIRouter(tags=["auth-service"])
-
-@router.get(
-    "/health",
-    summary="Health Check",
-    response_description="Service status, version, and timestamp",
-    status_code=status.HTTP_200_OK,
-)
-async def health_check():
-    return {
-        "status": "OK",
-        "version": settings.APP_VERSION,
-        "timestamp": datetime.now(UTC).isoformat()
-    }
+router = APIRouter(prefix="/api", tags=["auth-service"])
 
 
 @router.post(

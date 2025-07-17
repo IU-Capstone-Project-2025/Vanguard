@@ -1,0 +1,73 @@
+groups:
+- name: realtime_service_alerts
+  rules:
+  # Connection alerts
+  - alert: HighWebSocketFailureRate
+    expr: |
+      sum(rate(websocket_connection_attempts_total{service="realtime", status!="success"}[5m]))
+      /
+      sum(rate(websocket_connection_attempts_total{service="realtime"}[5m])) > 0.2
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High WebSocket failure rate ({{ $value }}%)"
+      description: "More than 20% of WebSocket connections failing"
+
+  - alert: WebSocketConnectionDrop
+    expr: |
+      websocket_active_connections{service="realtime"}
+      <
+      0.7 * (websocket_active_connections{service="realtime"} offset 15m)
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "WebSocket connections dropped significantly"
+      description: "Active connections dropped >30% compared to 15 minutes ago"
+
+  # Message processing alerts
+  - alert: HighWebSocketErrorRate
+    expr: |
+      sum(rate(websocket_message_errors_total{service="realtime"}[5m]))
+      /
+      sum(rate(websocket_messages_received_total{service="realtime"}[5m])) > 0.1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High WebSocket message error rate ({{ $value }}%)"
+      description: "More than 10% of messages failing processing"
+
+  - alert: SlowMessageProcessing
+    expr: |
+      histogram_quantile(0.95, rate(websocket_message_processing_seconds{service="realtime"}[5m])) > 1
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Slow WebSocket message processing"
+      description: "95th percentile message processing >1s"
+
+  # Session alerts
+  - alert: StaleSessions
+    expr: |
+      sessions_in_progress{service="realtime"}
+      * on() group_left()
+      (max(websocket_connection_duration_seconds_count{service="realtime"}) == 0)
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      summary: "Stale quiz sessions detected"
+      description: "Sessions exist with no active connections"
+
+  - alert: NoAnswersSubmitted
+    expr: |
+      rate(quiz_answers_submitted_total{service="realtime"}[15m]) == 0
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "No quiz answers submitted"
+      description: "Zero answers received in last 15 minutes"
