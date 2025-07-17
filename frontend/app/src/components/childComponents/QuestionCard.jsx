@@ -60,7 +60,7 @@ const QuestionCard = ({ question, index, onChange }) => {
     formData.append("file", file); // название поля должно быть "image"
 
     try {
-      const res = await fetch(`${API_ENDPOINTS.QUIZ}/images/upload/`, {
+      const res = await fetch(`${API_ENDPOINTS.QUIZ}/images/upload`, {
         method: "POST",
         body: formData,
       });

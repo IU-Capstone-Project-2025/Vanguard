@@ -70,8 +70,8 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 			t.Fatalf("could not load .env file: %v", err)
 		}
 	}
-	host := os.Getenv("LEADER_BOARD_HOST")
-	port := os.Getenv("LEADER_BOARD_PORT")
+	host := os.Getenv("LEADERBOARD_SERVICE_HOST")
+	port := os.Getenv("LEADERBOARD_SERVICE_PORT")
 
 	redisC, redisURL := startRedis(context.Background(), t)
 	defer redisC.Terminate(context.Background())

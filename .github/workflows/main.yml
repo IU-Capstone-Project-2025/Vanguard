@@ -34,6 +34,10 @@ on:
         description: 'Run Session Service job'
         required: false
         type: boolean
+      leaderboard_service:
+        description: 'Run Leaderboard Service job'
+        required: false
+        type: boolean
       frontend:
         description: 'Run Frontend job'
         required: false
@@ -55,6 +59,7 @@ jobs:
       quiz-service-name: ${{ steps.set.outputs.quiz-service-name }}
       realtime-service-name: ${{ steps.set.outputs.realtime-service-name }}
       session-service-name: ${{ steps.set.outputs.session-service-name }}
+      leaderboard-service-name: ${{ steps.set.outputs.leaderboard-service-name }}
       frontend-service-name: ${{ steps.set.outputs.frontend-service-name }}
       migrator-service-name: ${{ steps.set.outputs.migrator-service-name }}
     steps:
@@ -65,6 +70,7 @@ jobs:
         echo "quiz-service-name=tryit-quiz-service"     >> $GITHUB_OUTPUT
         echo "realtime-service-name=tryit-real-time-service" >> $GITHUB_OUTPUT
         echo "session-service-name=tryit-session-service"   >> $GITHUB_OUTPUT
+        echo "leaderboard-service-name=tryit-leaderboard-service"   >> $GITHUB_OUTPUT
         echo "frontend-service-name=tryit-frontend"          >> $GITHUB_OUTPUT
         echo "migrator-service-name=tryit-migrator"          >> $GITHUB_OUTPUT
 
@@ -77,6 +83,7 @@ jobs:
       quiz-service: ${{ steps.changes.outputs.quiz-service }}
       real-time-service: ${{ steps.changes.outputs.real-time-service }}
       session-service: ${{ steps.changes.outputs.session-service }}
+      leaderboard-service: ${{ steps.changes.outputs.leaderboard-service }}
       frontend: ${{ steps.changes.outputs.frontend }}
       shared-migrations: ${{ steps.changes.outputs.shared-migrations }}
     steps:
@@ -103,6 +110,10 @@ jobs:
           session-service:
             - 'backend-go/cmd/SessionService/**'
             - 'backend-go/SessionService/**'
+            - 'backend-go/shared/**'
+          leaderboard-service:
+            - 'backend-go/cmd/LeaderBoard/**'
+            - 'backend-go/LeaderBoardService/**'
             - 'backend-go/shared/**'
           frontend:
             - 'frontend/**'
@@ -167,6 +178,20 @@ jobs:
       push-to-docker: ${{ github.event_name == 'workflow_dispatch' && inputs.session_service == true || false }}
     secrets: inherit
 
+  leaderboard-service:
+    name: Leaderboard Service CI/CD
+    needs: [ set-globals, detect-changes ]
+    if: |
+      github.event_name == 'workflow_dispatch' && inputs.leaderboard_service == true ||
+      needs.detect-changes.outputs.leaderboard-service == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release')
+    uses: ./.github/workflows/leaderboard-service.yml
+    with:
+      service-name: ${{ needs.set-globals.outputs.leaderboard-service-name }}
+      push-to-docker: ${{ github.event_name == 'workflow_dispatch' && inputs.leaderboard_service == true || false }}
+    secrets: inherit
+
   frontend:
     name: Frontend CI/CD
     needs: [ set-globals, detect-changes ]
@@ -197,10 +222,19 @@ jobs:
 
   deploy:
     name: Deploy to Production
-    needs: [ set-globals, auth-service, quiz-service, real-time-service, session-service, frontend, shared-migrations ]
+    needs: [ set-globals, auth-service, quiz-service, real-time-service, session-service, leaderboard-service, frontend, shared-migrations ]
     if: |
-      github.ref == 'refs/heads/main' &&
-      (github.event_name != 'workflow_dispatch' || inputs.deploy == true)
+      (
+        github.ref == 'refs/heads/main'
+      ) || (
+        github.event_name == 'workflow_dispatch' &&
+        (
+          github.ref == 'refs/heads/main' ||
+          github.ref == 'refs/heads/ci-pipeline' ||
+          startsWith(github.ref, 'refs/heads/release')
+        ) &&
+        inputs.deploy == true
+      )
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
@@ -219,13 +253,14 @@ jobs:
         echo "QUIZ_IMAGE=${{ needs.quiz-service.outputs.image }}" >> $GITHUB_ENV  
         echo "REALTIME_IMAGE=${{ needs.real-time-service.outputs.image }}" >> $GITHUB_ENV  
         echo "SESSION_IMAGE=${{ needs.session-service.outputs.image }}" >> $GITHUB_ENV  
+        echo "LEADERBOARD_IMAGE=${{ needs.leaderboard-service.outputs.image }}" >> $GITHUB_ENV  
         echo "FRONTEND_IMAGE=${{ needs.frontend.outputs.image }}" >> $GITHUB_ENV  
         echo "MIGRATOR_IMAGE=${{ needs.shared-migrations.outputs.image }}" >> $GITHUB_ENV 
 
     - name: Verify all images exist
       run: |
         if [ -z "$AUTH_IMAGE" ] || [ -z "$QUIZ_IMAGE" ] || [ -z "$REALTIME_IMAGE" ] || \  
-          [ -z "$SESSION_IMAGE" ] || [ -z "$FRONTEND_IMAGE" ] || [ -z "$MIGRATOR_IMAGE" ]; then  
+          [ -z "$SESSION_IMAGE" ] || [ -z "$LEADERBOARD_IMAGE" ] || [ -z "$FRONTEND_IMAGE" ] || [ -z "$MIGRATOR_IMAGE" ]; then  
           echo "::error::One or more images are missing!"  
           exit 1  
         fi
@@ -254,6 +289,7 @@ jobs:
         QUIZ_IMAGE=${{ env.QUIZ_IMAGE }}
         REALTIME_IMAGE=${{ env.REALTIME_IMAGE }}
         SESSION_IMAGE=${{ env.SESSION_IMAGE }}
+        LEADERBOARD_IMAGE=${{ env.LEADERBOARD_IMAGE }}
         FRONTEND_IMAGE=${{ env.FRONTEND_IMAGE }}
         MIGRATOR_IMAGE=${{ env.MIGRATOR_IMAGE }}
 
@@ -261,15 +297,17 @@ jobs:
         POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
         POSTGRES_DB=${{ secrets.POSTGRES_DB }}
         TEST_POSTGRES_DB=${{ secrets.TEST_POSTGRES_DB }}
-        TZ=UTC
+
         RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
         RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+
         CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
         DB_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB }}
         TEST_DB_URL=postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.TEST_POSTGRES_DB }}
+
         AUTH_JWT_SECRET_KEY=${{ secrets.AUTH_JWT_SECRET_KEY }}
         GO_JWT_SECRET_KEY=${{ secrets.GO_JWT_SECRET_KEY }}
-        GO_ENV=production
+
         S3_REGION=${{ secrets.S3_REGION }}
         S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}
         S3_BUCKET=${{ secrets.S3_BUCKET }}
@@ -277,8 +315,7 @@ jobs:
         S3_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
         S3_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
         MAX_IMAGE_SIZE=5242880
-        NODE_ENV=production
-        CHOKIDAR_USEPOLLING=true
+
         GF_SECURITY_ADMIN_PASSWORD=${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
         EOF
 

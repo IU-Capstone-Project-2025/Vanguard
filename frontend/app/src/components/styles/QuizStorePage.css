@@ -48,6 +48,7 @@
   border: none;
   background: transparent;
 }
+
 .top-bar input:focus {
   border: none;
   outline: none;
@@ -85,9 +86,6 @@
     
     background-color: #fafafa;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.quiz-card {
     h3 {
         padding: 8px 16px;
         text-align: left;
@@ -119,9 +117,8 @@
     padding: 16px;
     gap: 10px;
     margin-top: 10px;
-}
 
-.quiz-buttons button.primary-button {
+    button.primary-button {
     padding: 8px 16px;
     font-size: 14px;
     cursor: pointer;
@@ -130,18 +127,16 @@
     background-color: var(--orange);
     color: var(--bage);
     transition: all 0.2s ease-in-out;
-}
+  }
 
-.quiz-buttons button.primary-button:hover {
+  button.primary-button:hover {
     background-color: var(--dark);
     color: var(--bage);
     transform: translateY(-2px);
     /* letter-spacing: 1px; */
     /* padding-left: 13px; */
-}
-
-
-.quiz-buttons button.secondary-button {
+  }
+  button.secondary-button {
     padding: 8px 16px;
     font-size: 14px;
     cursor: pointer;
@@ -152,12 +147,13 @@
     color: var(--dark);
     transition: all 0.2s ease-in-out;
 }
-.quiz-buttons button.secondary-button:hover {
+  button.secondary-button:hover {
     background-color: #efefef;
     color: var(--dark);
     transform: translateY(-2px);
     /* letter-spacing: 1px; */
     /* padding-left: 13px; */
+  }
 }
 
 .floating-create-button {

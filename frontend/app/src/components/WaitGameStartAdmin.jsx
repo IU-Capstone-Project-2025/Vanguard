@@ -21,6 +21,7 @@ const WaitGameStartAdmin = () => {
           newPlayers.set(userId, name);
         }
       }
+      sessionStorage.setItem('players', JSON.stringify(newPlayers));
       return newPlayers;
     });
   };
@@ -138,6 +139,10 @@ const WaitGameStartAdmin = () => {
     setHasClickedNext(true);
     const sessionCode = sessionStorage.getItem('sessionCode');
     await toNextQuestion(sessionCode);
+    console.log(players); 
+    sessionStorage.setItem("players", JSON.stringify(
+      Array.from(players.entries()).map(([id, name]) => ({ id, name }))
+    ));
     navigate(`/game-controller/${sessionCode}`);
   };
 

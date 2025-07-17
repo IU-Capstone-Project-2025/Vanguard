@@ -15,6 +15,7 @@ import AuthPage from './components/AuthPage';
 import NotFoundPage from './components/NotFoundPage';
 import RegisterPage from './components/RegisterPage';
 import QuizStorePage from './components/QuizStorePage';
+import FinalAdminPage from './components/FinalAdminPage';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -34,6 +35,7 @@ function App() {
         <Route path="/enter-nickname" element={<EnterNicknamePage />} />
         <Route path="/join" element={<JoinGamePage />} />
         <Route path="/ask-to-join/:sessionCode" element={<AskToJoinSessionPage />} />
+        <Route path="/final" element={<FinalAdminPage />} />
         <Route path="*" element={<NotFoundPage />} />
         <Route
           path="/store"

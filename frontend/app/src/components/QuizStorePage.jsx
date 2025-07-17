@@ -35,36 +35,35 @@ const QuizStorePage = () => {
     setSelectedQuiz(null);
   };
 
-  useEffect(() => {
-    const fetchQuizzes = async () => {
-      // const queryParams = new URLSearchParams(
-      //   {
-      //     user_id: user_id,
-      //   }
-      // )
+  const fetchQuizzes = async () => {
+    // e.preventDefault();
+    // const queryParams = new URLSearchParams({
+    //   user_id: user_id,
+    // });
 
-      const url = `${API_ENDPOINTS.QUIZ}/ `
-      // console.log(url)
-      try {
-        const response = await fetch(url) // заглушка, убрано чтобы не было ошибки
-        // console.log(response)
-        if (!response.ok) {
-          throw new Error(`Network error: ${response.status}`);
-          // console.log(data)
-        } 
-        const data = await response.json();
-        if (!Array.isArray(data)) {
-          throw new Error("Expected an array of quizzes.");
-        }
-        setQuizzes(data);
-      } catch (error) {
-        console.error(error)
+    const url = `${API_ENDPOINTS.QUIZ}/`;
+    // console.log(url)
+    try {
+      const response = await fetch(url) // заглушка, убрано чтобы не было ошибки
+      // console.log(response)
+      if (!response.ok) {
+        throw new Error(`Network error: ${response.status}`);
+        // console.log(data)
+      } 
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error("Expected an array of quizzes.");
       }
+      setQuizzes(data);
+    } catch (error) {
+      console.error(error)
+    }
 
-    };
-    // Заглушка с локальными квизами
+  };
+  // Заглушка с локальными квизами
+  useEffect(() => {
     fetchQuizzes();
-  }, [quizzes, setQuizzes, user_id]);
+  }, [setQuizzes, user_id]);
 
   const createSession = async (quizId) => {
       console.log("Creating session with quizId:", quizId, "userName:", Cookies.get("user_nickname"));
@@ -138,7 +137,7 @@ const QuizStorePage = () => {
             <div key={quiz.id} className="quiz-card">
               <img src={quiz.imageURL ?? sampleImage} alt="Quiz Preview" />
               <h3>{quiz.title}</h3>
-              <p>{quiz.description}</p>
+              <p>{quiz.description === '' ? "No description available" : quiz.description}</p>
               <div className="quiz-buttons">
                 <button
                   className="secondary-button"

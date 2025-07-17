@@ -1,38 +1,40 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRealtimeSocket } from "../contexts/RealtimeWebSocketContext";
-import "./styles/GameProcess.css";
-import { useNavigate } from "react-router-dom";
 import { useSessionSocket } from "../contexts/SessionWebSocketContext";
+import { useNavigate } from "react-router-dom";
 import ShapedButton from "./childComponents/ShapedButton";
-import Alien from './assets/Alien.svg'
-import Corona from './assets/Corona.svg'
-import Ghosty from './assets/Ghosty.svg'
-import Cookie6 from './assets/Cookie6.svg'
+import ShowQuizStatistics from "./childComponents/ShowQuizStatistics";
+import "./styles/GameProcess.css";
+import Alien from "./assets/Alien.svg";
+import Corona from "./assets/Corona.svg";
+import Ghosty from "./assets/Ghosty.svg";
+import Cookie6 from "./assets/Cookie6.svg";
 
 const GameController = () => {
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
-  const {wsRefSession, closeWsRefSession} = useSessionSocket();
-  const [question, setQuestion] = useState(
-    {"options": [
-      Alien,
-      Corona,
-      Ghosty,
-      Cookie6
-    ]} // Default empty question to avoid errors
-  )
-  const [hasAnswered, setHasAnswered] = useState(false);
-  const sessionCode = sessionStorage.getItem("sessionCode");
-  const [loading, setLoading] = useState(false);
+  const { wsRefSession, closeWsRefSession } = useSessionSocket();
   const navigate = useNavigate();
 
-  const endSession = React.useCallback(() => {
-      console.log(`Ending session... ${sessionCode}`);
-      sessionStorage.removeItem('sessionCode');
-      sessionStorage.removeItem('nickname');
-      closeWsRefRealtime();
-      closeWsRefSession();
-      navigate('/');
-    }, [sessionCode, closeWsRefRealtime, closeWsRefSession, navigate]);
+  const [question, setQuestion] = useState({
+    options: [Alien, Corona, Ghosty, Cookie6]
+  });
+
+  const [choosenOption, setChosenOption] = useState(null);
+  const [correct, setCorrect] = useState(false);
+  const [popularAnswers, setPopularAnswers] = useState({});
+  const [userAnswers, setUserAnswers] = useState([]);
+  const [stage, setStage] = useState("question"); // "question", "waiting", "statistics", "waiting_question"
+
+  const sessionCode = sessionStorage.getItem("sessionCode");
+
+  const endSession = useCallback(() => {
+    console.log(`Ending session... ${sessionCode}`);
+    sessionStorage.removeItem("sessionCode");
+    sessionStorage.removeItem("nickname");
+    closeWsRefRealtime();
+    closeWsRefSession();
+    navigate("/");
+  }, [sessionCode, closeWsRefRealtime, closeWsRefSession, navigate]);
 
   useEffect(() => {
     const token = sessionStorage.getItem("jwt");
@@ -45,64 +47,112 @@ const GameController = () => {
     if (wsRefRealtime.current) {
       wsRefRealtime.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        
-        if (data.type === "end") {
-          endSession();
+        console.log("Realtime message received:", data);
+
+        switch (data.type) {
+          case "end":
+            endSession();
+            break;
+
+          case "next_question":
+            setChosenOption(null);
+            setPopularAnswers({});
+            setStage("question");
+            setCorrect(false);
+            break;
+
+          case "question_stat":
+            console.log("Received question statistics:", data);
+            setPopularAnswers(data.payload.answers);
+            setCorrect(data.correct);
+            setStage("statistics");
+
+            // Обновляем массив правильности ответов
+            setUserAnswers((prev) => {
+              const updated = [...prev, !!data.correct];
+              sessionStorage.setItem("userAnswers", JSON.stringify(updated));
+              return updated;
+            });
+            break;
+          case "next_message":
+            console.log("Received next message:", data);
+            setStage("question");
+            setChosenOption(null);
+            break;
+
+          default:
+            break;
         }
-        if (data.type === "next_question") {
-          setHasAnswered(false);
-          setLoading(false);
-        }
-        
       };
 
       wsRefRealtime.current.onclose = () => {
         endSession();
-      }
+      };
     }
 
-    if (wsRefSession.current) {
-      wsRefSession.current.onclose = () => {
-        endSession();
-      }
-    }
+    // if (wsRefSession.current) {
+    //   wsRefSession.current.onclose = () => {
+    //     endSession();
+    //   };
+    // }
 
     return () => {
       if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
       if (wsRefSession.current) wsRefSession.current.onmessage = null;
     };
   }, [connectRealtime, endSession, wsRefRealtime, wsRefSession]);
-  
-  
-  const handleAnswer = (index) => {
-    if (!wsRefRealtime.current) return;
-    wsRefRealtime.current.send(JSON.stringify({ option: index }));
-    setHasAnswered(true);
-  };
 
-  if (loading) {
-    return (
-      <div style={{ color: "#F9F3EB", padding: "2vw" }}>
-        Question loading...
-      </div>
-    );
-  }
+  const handleAnswer = (index) => {
+    setChosenOption(index);
+    if (!wsRefRealtime.current) return;
+
+    const timestamp = new Date().toISOString();
+    const answerMessage = {
+      type: "answer",
+      option: index,
+      timestamp
+    };
+
+    wsRefRealtime.current.send(JSON.stringify(answerMessage));
+    setStage("waiting");
+  };
 
   return (
     <div className="game-process-player">
-      {hasAnswered ? (
-        <p className="waiting-text">Waiting for next question...</p>
-      ) : (
+      {stage === "statistics" && (
+        <ShowQuizStatistics
+          stats={popularAnswers}
+          correct={correct}
+          onClose={() => setStage("question")} // переходим в next_question
+        />
+      )}
+
+      {stage === "question" && (
         <div className="options-grid-player">
           {question.options.map((option, idx) => (
-            <ShapedButton 
+            <ShapedButton
               key={idx}
               shape={option}
-              text={""} 
-              onClick={() => {handleAnswer(idx);}}
+              text=""
+              onClick={() => handleAnswer(idx)}
             />
           ))}
         </div>
+      )}
+
+      {stage === "waiting" && (
+        <div className="options-grid-player">
+          <ShapedButton
+            key={0}
+            shape={question.options[choosenOption]}
+            text=" "
+            onClick={() => {}}
+          />
+        </div>
+      )}
+
+      {stage === "waiting_question" && (
+        <div className="waiting-message">Waiting for the next question...</div>
       )}
     </div>
   );
