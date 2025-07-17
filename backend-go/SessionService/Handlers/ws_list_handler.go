@@ -278,9 +278,8 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 			continue
 		}
 	}
-
 	for {
-		_, _, err := ctx.Conn.Conn.ReadMessage()
+		_, _, err := UserConn.Conn.ReadMessage()
 		if err != nil {
 			reg.logger.Info("Connection closed", "userId", ctx.UserId, "err", err)
 			break
