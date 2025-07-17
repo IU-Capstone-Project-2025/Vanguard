@@ -19,7 +19,13 @@ func (l *LeaderBoard) ComputeLeaderBoard(ans shared.SessionAnswers) (shared.Scor
 				elapsed = 0
 			}
 			timePenalty := float64(elapsed) / 20
+			if timePenalty > 1 {
+				timePenalty = 1
+			}
 			UserPoint := int(float64(MaxScore) * (1 - timePenalty))
+			if UserPoint <= 0 {
+				UserPoint = 0
+			}
 			if UserPoint >= MaxScore {
 				UserPoint = MaxScore
 			}

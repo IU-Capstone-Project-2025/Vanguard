@@ -154,6 +154,9 @@ func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool
 	e2 := false
 	if sessions, exists1 := r.connections[sessionID]; exists1 {
 		e1 = true
+		if sessions[userID] != nil && sessions[userID].Conn != nil {
+			sessions[userID].Conn.Close()
+		}
 		delete(sessions, userID)
 	}
 	if rooms, exists2 := r.rooms[sessionID]; exists2 {
@@ -284,7 +287,6 @@ func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
 	}
 
 	reg.UnregisterConnection(ctx.SessionId, ctx.UserId)
-	ctx.Conn.Conn.Close()
 }
 
 func handleDelete(sessionID, userID string, reg *ConnectionRegistry) {

@@ -252,122 +252,122 @@ services:
       - session
       - leaderboard
 
-#  node-exporter: # host resource metrics
-#    image: prom/node-exporter:v1.9.1
-#    container_name: node-exporter
-#    volumes:
-#      - /proc:/host/proc:ro
-#      - /sys:/host/sys:ro
-#      - /:/rootfs:ro
-#    command:
-#      - '--path.procfs=/host/proc'
-#      - '--path.sysfs=/host/sys'
-#      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
-#    ports: [] # 9100
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  cadvisor: # containers resource metrics
-#    image: gcr.io/cadvisor/cadvisor:v0.49.1
-#    container_name: cadvisor
-#    volumes:
-#      - /:/rootfs:ro
-#      - /var/run:/var/run:rw
-#      - /sys:/sys:ro
-#      - /var/lib/docker/:/var/lib/docker:ro
-#      - /dev/disk/:/dev/disk:ro
-#    ports: [] # 8080
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  prometheus: # metrics
-#    image: prom/prometheus:v2.40.0
-#    container_name: prometheus
-#    volumes:
-#      - ./monitoring/prometheus:/etc/prometheus
-#      - prometheus_data:/prometheus
-#    command:
-#      - '--config.file=/etc/prometheus/prometheus.yml'
-#      - '--storage.tsdb.path=/prometheus'
-#      - '--storage.tsdb.retention.time=15d'
-#      - '--storage.tsdb.wal-compression'
-#      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-#      - '--web.console.templates=/usr/share/prometheus/consoles'
-#      - '--web.enable-lifecycle'
-#    ports: [] # 9090
-#    networks:
-#      - main
-#    restart: unless-stopped
-#    depends_on:
-#      - auth
-#      - quiz
-#      - real-time
-#      - session
-#      - node-exporter
-#      - cadvisor
-#      - alertmanager
-#
-#  grafana: # dashboards
-#    image: grafana/grafana:12.0.1
-#    container_name: grafana
-#    volumes:
-#      - grafana_data:/var/lib/grafana
-#      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-#      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-#    environment:
-#      GF_SECURITY_ADMIN_USER: admin
-#      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
-#      GF_USERS_ALLOW_SIGN_UP: false
-#    ports:
-#      - "3001:3000"
-#    networks:
-#      - main
-#    restart: unless-stopped
-#    depends_on:
-#      - prometheus
-#      - loki
-#      - promtail
-#
-#  alertmanager: # alerts
-#    image: prom/alertmanager:v0.28.1
-#    container_name: alertmanager
-#    volumes:
-#      - ./monitoring/alertmanager:/etc/alertmanager
-#    command:
-#      - '--config.file=/etc/alertmanager/config.yml'
-#      - '--storage.path=/alertmanager'
-#    ports: [] # 9093
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  loki: # logs db
-#    image: grafana/loki:3.5.0
-#    container_name: loki
-#    volumes:
-#      - ./monitoring/loki:/etc/loki
-#      - loki_data:/tmp/loki
-#    command:
-#    - '-config.file=/etc/loki/config.yml'
-#    ports: [] # 3100
-#    networks:
-#      - main
-#    restart: unless-stopped
-#
-#  promtail: # logs collector
-#    image: grafana/promtail:3.5.0
-#    container_name: promtail
-#    volumes:
-#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-#      - /var/run/docker.sock:/var/run/docker.sock:ro
-#      - ./monitoring/promtail:/etc/promtail
-#      - promtail_positions:/tmp
-#    command: -config.file=/etc/promtail/config.yml
-#    ports: [] # 9080
-#    networks:
-#      - main
-#    restart: unless-stopped
-#    depends_on:
-#      - loki
+  node-exporter: # host resource metrics
+    image: prom/node-exporter:v1.9.1
+    container_name: node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
+    ports: [] # 9100
+    networks:
+      - main
+    restart: unless-stopped
+
+  cadvisor: # containers resource metrics
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports: [] # 8080
+    networks:
+      - main
+    restart: unless-stopped
+
+  prometheus: # metrics
+    image: prom/prometheus:v2.40.0
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.wal-compression'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports: [] # 9090
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - auth
+      - quiz
+      - real-time
+      - session
+      - node-exporter
+      - cadvisor
+      - alertmanager
+
+  grafana: # dashboards
+    image: grafana/grafana:12.0.1
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: false
+    ports:
+      - "3001:3000"
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - loki
+      - promtail
+
+  alertmanager: # alerts
+    image: prom/alertmanager:v0.28.1
+    container_name: alertmanager
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    ports: [] # 9093
+    networks:
+      - main
+    restart: unless-stopped
+
+  loki: # logs db
+    image: grafana/loki:3.5.0
+    container_name: loki
+    volumes:
+      - ./monitoring/loki:/etc/loki
+      - loki_data:/tmp/loki
+    command:
+    - '-config.file=/etc/loki/config.yml'
+    ports: [] # 3100
+    networks:
+      - main
+    restart: unless-stopped
+
+  promtail: # logs collector
+    image: grafana/promtail:3.5.0
+    container_name: promtail
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./monitoring/promtail:/etc/promtail
+      - promtail_positions:/tmp
+    command: -config.file=/etc/promtail/config.yml
+    ports: [] # 9080
+    networks:
+      - main
+    restart: unless-stopped
+    depends_on:
+      - loki
