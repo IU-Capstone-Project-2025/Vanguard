@@ -56,49 +56,56 @@
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: flex-start;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    /*grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));*/
     gap: 1vw;
     max-width: calc(6 * 150px + 5 * 1vw);
     width: 100%;
 }
 
-.player-box {
-  background-color: var(--light-gray);
-  color: var(--dark);
-  padding: 1vw;
-  border-radius: 10px;
-  font-size: 20px;
-  min-width: 160px;
-  text-align: center;
-  width: 12.2%; /* Adjusted for 6 players in a row */
-  transition: transform 0.2s ease;
-}
 
-.player-box:hover {
-  transform: scale(1.05);
-}
+
 
 .player-box {
   background-color: var(--light-gray);
   color: var(--dark);
   padding: 0.8vw 1.2vw;
   border-radius: 10px;
-  font-size: 20px;
+
+  /*font-size: 14px;*/
   min-width: 100px;
-  text-align: center;
+  text-align: left;
   display: flex;
   justify-content: space-between;
+  width: 14.6%; /* Adjusted for 5 players in a row */
   align-items: center;
   gap: 10px;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.player-box:hover {
+  transform: scale(1.05);
+}
+
+.player-box span {
+  font-size: clamp(10px, 20px - (var(--name-length) - 7) * 0.7px, 20px);
+  white-space: nowrap;
+  /*overflow: hidden;*/
+  text-overflow: ellipsis;
+  flex-grow: 1;
+  max-width: 100%;
 }
 
 .kick-button {
+  position: absolute;
+  right: 5px;        /* Отступ от правого края */
   background: transparent;
   border: none;
   color: var(--bage);
   font-size: 18px;
   cursor: pointer;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition: color 0.2s ease;
+  flex-shrink: 0;     /* Запрет на сжатие */
 }
 
 .kick-button:hover {

@@ -28,7 +28,7 @@
   gap: 1vw;
 }
 
-.player-box {
+.wait-player-container .player-box {
   background-color: var(--light-gray);
   color: var(--dark);
   padding: 0.8vw 1.2vw;
@@ -40,7 +40,13 @@
   justify-content: center;
   align-items: center;
 }
-
+.wait-player-container .player-box span {
+  font-size: clamp(10px, 20px - (var(--name-length) - 10) * 0.7px, 20px);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+  max-width: 100%;
+}
 
 .button-group {
   display: flex;
