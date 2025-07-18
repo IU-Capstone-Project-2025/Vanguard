@@ -66,11 +66,11 @@ jobs:
     - name: Define service name outputs
       id: set
       run: |
-        echo "auth-service-name=tryit-auth-service"     >> $GITHUB_OUTPUT
-        echo "quiz-service-name=tryit-quiz-service"     >> $GITHUB_OUTPUT
-        echo "realtime-service-name=tryit-real-time-service" >> $GITHUB_OUTPUT
-        echo "session-service-name=tryit-session-service"   >> $GITHUB_OUTPUT
-        echo "leaderboard-service-name=tryit-leaderboard-service"   >> $GITHUB_OUTPUT
+        echo "auth-service-name=tryit-auth"     >> $GITHUB_OUTPUT
+        echo "quiz-service-name=tryit-quiz"     >> $GITHUB_OUTPUT
+        echo "realtime-service-name=tryit-realtime" >> $GITHUB_OUTPUT
+        echo "session-service-name=tryit-session"   >> $GITHUB_OUTPUT
+        echo "leaderboard-service-name=tryit-leaderboard"   >> $GITHUB_OUTPUT
         echo "frontend-service-name=tryit-frontend"          >> $GITHUB_OUTPUT
         echo "migrator-service-name=tryit-migrator"          >> $GITHUB_OUTPUT
 
