@@ -124,7 +124,7 @@ const WaitGameStartPlayer = () => {
           {Array.from(players.entries()).map(([id,name]) => (
             name !== "Admin" && 
             <div key={id} className="player-box">
-              <span>{name}</span>
+              <span style={{ '--name-length': +name.length }}>{name}</span>
             </div>
           ))}
         </div>

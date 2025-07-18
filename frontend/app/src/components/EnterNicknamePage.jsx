@@ -77,7 +77,11 @@ const PlayGamePage = () => {
                         required
                         autoFocus
                         value={nickname}
-                        onChange={(e)=> setNickname(e.target.value)}
+                        onChange={(e)=> {
+                            const nick = e.target.value;
+                            if (nick.length<=16) {
+                                setNickname(nick)
+                        }}}
                         className="code-input"
                         onKeyDown={(e) => e.key === "Enter" && handlePlay()}
                     />
