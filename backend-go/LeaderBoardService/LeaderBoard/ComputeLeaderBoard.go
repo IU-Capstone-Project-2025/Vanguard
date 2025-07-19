@@ -1,6 +1,7 @@
 package LeaderBoard
 
 import (
+	"fmt"
 	"xxx/LeaderBoardService/Utils"
 	"xxx/shared"
 )
@@ -35,18 +36,25 @@ func (l *LeaderBoard) ComputeLeaderBoard(ans shared.SessionAnswers) (shared.Scor
 			CurrentPoints = append(CurrentPoints, shared.UserCurrentPoint{UserId: u.UserId, Score: UserPoint})
 		}
 	}
-	err := l.Cache.AddScoresBatch(ans.SessionCode, CurrentPoints)
+	oldScores, err := l.Cache.LoadLeaderboard(ans.SessionCode, nil)
 	if err != nil {
-		return shared.ScoreTable{}, err
+		return shared.ScoreTable{}, fmt.Errorf("error to load data from redis")
 	}
-	UserScores, err := l.Cache.LoadLeaderboard(ans.SessionCode)
-	SortedUserScore := Utils.SortUserScoresByScoreDesc(UserScores)
+	prevPlaces := make(map[string]int)
+	for _, s := range oldScores {
+		prevPlaces[s.UserId] = s.Place
+	}
+	err = l.Cache.AddScoresBatch(ans.SessionCode, CurrentPoints)
 	if err != nil {
-		return shared.ScoreTable{}, err
+		return shared.ScoreTable{}, fmt.Errorf("error to add points in redis")
+	}
+	newScores, err := l.Cache.LoadLeaderboard(ans.SessionCode, prevPlaces)
+	if err != nil {
+		return shared.ScoreTable{}, fmt.Errorf("error to load data from redis redis")
 	}
 	table := shared.ScoreTable{
 		SessionCode: ans.SessionCode,
-		Users:       SortedUserScore,
+		Users:       newScores,
 	}
 	return table, nil
 }

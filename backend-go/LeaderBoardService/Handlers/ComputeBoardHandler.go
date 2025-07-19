@@ -39,8 +39,9 @@ func (m *HandlerManager) ComputeBoardHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	resp := shared.BoardResponse{
-		Table:   userScore,
-		Popular: ans,
+		SessionCode: req.SessionCode,
+		Table:       userScore,
+		Popular:     ans,
 	}
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {

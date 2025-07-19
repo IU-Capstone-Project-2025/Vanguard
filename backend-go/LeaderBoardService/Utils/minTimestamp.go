@@ -5,7 +5,13 @@ import (
 	"xxx/shared"
 )
 
-func GetEarliestTimestamp(answers []shared.Answer) time.Time {
+func GetEarliestTimestamp(answers1 []shared.Answer) time.Time {
+	var answers []shared.Answer
+	for _, u := range answers1 {
+		if u.Correct {
+			answers = append(answers, u)
+		}
+	}
 	earliest := answers[0].Timestamp
 
 	for _, ans := range answers[1:] {
