@@ -1,0 +1,29 @@
+.floating-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.floating-icon {
+  position: absolute;
+  bottom: -60px;
+  animation: floatUp 20s linear infinite;
+  opacity: 0.6;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) rotate(30deg);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-120vh) rotate(30deg);
+    opacity: 0;
+  }
+}
+
