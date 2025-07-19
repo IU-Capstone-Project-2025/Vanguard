@@ -12,6 +12,9 @@ func GetEarliestTimestamp(answers1 []shared.Answer) time.Time {
 			answers = append(answers, u)
 		}
 	}
+	if answers == nil || len(answers) == 0 {
+		return time.Now()
+	}
 	earliest := answers[0].Timestamp
 
 	for _, ans := range answers[1:] {
