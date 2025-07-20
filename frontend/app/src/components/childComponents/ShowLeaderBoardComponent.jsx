@@ -19,6 +19,7 @@ const ShowLeaderBoardComponent = ({ leaderboardData, onClose }) => {
             transition={{ type: 'spring', stiffness: 80 }}
             >
             <h1 className="leaderboard-title">Look! Here's our champions!</h1>
+            {leaderboardData.users &&
             <div className="leaderboard-list">
                 {leaderboardData.users.map((user, index) => (
                 <div className="leaderboard-row" key={index}>
@@ -26,7 +27,7 @@ const ShowLeaderBoardComponent = ({ leaderboardData, onClose }) => {
                     <span className="player-score">{user.total_score}</span>
                 </div>
                 ))}
-            </div>
+            </div>}
             <button className="leaderboard-next-button" onClick={onClose}>
                 ▶ Next
             </button>
