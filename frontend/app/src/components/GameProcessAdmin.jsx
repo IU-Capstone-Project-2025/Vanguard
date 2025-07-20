@@ -16,11 +16,11 @@ const GameProcessAdmin = () => {
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
   const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') != undefined ?
     JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const [questionIndex, setQuestionIndex] = useState(1);
   const [leaderboardVisible, setLeaderboardVisible] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState(null);
 
-  const questionsAmount = currentQuestion.questionsAmount - 1;
+  const questionsAmount = currentQuestion.questionsAmount;
   const navigate = useNavigate();
   const [questionOptions] = useState([
     Alien,
@@ -67,28 +67,33 @@ const GameProcessAdmin = () => {
 
     wsRefRealtime.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === 'question') {
-        setCurrentQuestion(data);
-        sessionStorage.setItem('currentQuestion', JSON.stringify(data));
-      } else if (data.type === 'leaderboard') {
+      if (data.type === 'leaderboard') {
         console.log('Received leaderboard:', data);
-        sessionStorage.setItem('leaders', JSON.stringify(data.payload.users.slice(0, 3)));
+        sessionStorage.setItem('leaders', JSON.stringify(data.payload.users));
         setLeaderboardData(data.payload);
         setLeaderboardVisible(true);
-      }
+      } else if (data.type === 'question') {
+        setCurrentQuestion(data);
+        setQuestionIndex(data.questionId)
+        sessionStorage.setItem('currentQuestion', JSON.stringify(data));
+      } 
     };
   };
 
   const finishSession = async (code) => {
-    await toNextQuestion(code);
-    await listenQuizQuestion(code);
+    
     // sessionStorage.removeItem('sessionCode');
     sessionStorage.removeItem('quizData');
     sessionStorage.removeItem('currentQuestion');
-
-    closeWsRefRealtime();
-    closeWsRefSession();
-    navigate('/final');
+    if (!wsRefRealtime || !wsRefSession) {
+      navigate('/')
+    } else {
+      await toNextQuestion(code);
+      await listenQuizQuestion(code);
+      closeWsRefRealtime();
+      closeWsRefSession();
+      navigate('/final');
+    }
     // если leaderboard не придёт, не вызываем завершение сразу
   };
 
@@ -102,7 +107,6 @@ const GameProcessAdmin = () => {
     const sessionCode = sessionStorage.getItem('sessionCode');
 
     await toNextQuestion(sessionCode);
-    setQuestionIndex((prevIndex) => prevIndex + 1);
     await listenQuizQuestion(sessionCode);
   };
 
@@ -116,7 +120,9 @@ const GameProcessAdmin = () => {
       ) : (
         <>
           <div className="controller-question-title">
-            <img src={currentQuestion.payload} alt="Question" className="question-image" height={300} />
+            { currentQuestion.payload && 
+              <img src={currentQuestion.payload} alt="Question" className="question-image" height={300} />
+            }
             <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
           </div>
 
@@ -131,12 +137,13 @@ const GameProcessAdmin = () => {
             ))}
           </div>
 
-          <div className="button-group">
+          <div className="process-button-group">
             {questionIndex < questionsAmount && (
               <button onClick={handleNextQuestion} className="button">
                 Next
               </button>
             )}
+            <span>Question: {questionIndex}/{questionsAmount}</span>
             <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
               Finish
             </button>
