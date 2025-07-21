@@ -21,11 +21,14 @@ func (r *Redis) LoadLeaderboard(quizID string, previousPlaces map[string]int) ([
 		newPlace := i + 1
 		prevPlace := previousPlaces[userID]
 
-		progress := false
+		progress := shared.ProgressSame
 		if prevPlace > 0 && newPlace < prevPlace {
-			progress = true
+			progress = shared.ProgressUp
+		} else if prevPlace > 0 && newPlace == prevPlace {
+			progress = shared.ProgressSame
+		} else if prevPlace > 0 && newPlace > prevPlace {
+			progress = shared.ProgressDown
 		}
-
 		scores = append(scores, shared.UserScore{
 			UserId:        userID,
 			TotalScore:    int(z.Score),

@@ -27,7 +27,7 @@ func getEnvFilePath() string {
 // @title           Пример API
 // @version         1.0
 // @description     Это пример API с gorilla/mux и swaggo
-// @host            localhost:8081
+// @host            localhost:8082
 // @BasePath        /
 func main() {
 	if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "test" {
