@@ -119,7 +119,7 @@
     display: flex;
     height: 100vh;
     /* background-color: var(--orange); */
-    color: var(--bage);
+    color: var(--text-light);
 
     .left-side {
         width: 50%;
@@ -138,21 +138,24 @@
             h1 {
                 text-align: start;
                 font-family: Jua, sans-serif;
-                font-size: 48px;
+                font-size: 4rem;
                 color: var(--bage);
                 margin-bottom: 9vw;
+
+                span {
+                    color: var(--accent);
+                }
             }
             .code-input {
-                    padding: 1vw;
-                    font-size: 36px;
-                    border: none;
-                    border-radius: 15px;
-                    background-color:  var(--gray);
-                    color: rgb(252, 252, 252);
-                    max-width: 300px;
-                    margin-bottom: 1vw;
-                    text-align: center;
-
+                padding: 1vw 2vw;
+                font-size: 2rem;
+                border: none;
+                border-radius: 15px;
+                background-color:  var(--light-blue);
+                color: var(--accent);
+                width: 28vw;
+                margin-bottom: 1vw;
+                /* text-align: center; */
             }
             .button-group {
                 margin: 3vw 0;
@@ -161,8 +164,8 @@
                 width: 100%;
                 
                 button {
-                    background-color: var(--dark);
-                    color: var(--bage);
+                    background-color: var(--btn);
+                    color: var(--accent);
                     border-radius: 15px;
                     padding: 1vw;
                     min-width: 10vw;
@@ -173,8 +176,8 @@
                     transition: transform 0.2s ease, background-color 0.2s ease;
 
                     &:hover:not(:disabled) {
-                        background-color: #1c1c1c;
-                        transform: translateY(-2px);
+                        background-color: var(--btn-hover);
+                        transform: translateY(-5px);
                     }
 
                     &:disabled {
@@ -188,9 +191,10 @@
 
     .right-side {
         width: 50%;
+        background-color: var(--btn);
         
         img {
-            width: 100%;
+            /* width: 100%; */
             height: 100vh;
             object-fit: cover;
             object-position: center;
@@ -210,7 +214,7 @@
     display: flex;
     height: 100vh;
     /* background-color: var(--orange);  */
-    color: var(--bage);
+    color: var(--text-light);
     align-items: center;
     justify-content: left;
     .title {
@@ -218,7 +222,7 @@
         display: block;
         text-align: left;
         justify-items: left;
-        margin-left: 12.5%;
+        margin-left: 25%;
         margin-right: 5%;
 
         p {
@@ -232,17 +236,20 @@
         h1 {
             text-align: start;
             font-family: Jua, sans-serif;
-            font-size: 64px;
+            font-size: 4rem;
             color: var(--bage);
             margin-bottom: 9vw;
+            span {
+                color: var(--accent);
+            }
         }
         .code-input {
                 padding: 1vw;
                 font-size: 36px;
                 border: none;
                 border-radius: 15px;
-                background-color:  var(--gray);
-                color: rgb(252, 252, 252);
+                background-color:  var(--light-blue);
+                color: var(--accent);
                 max-width: 400px;
                 margin-bottom: 1vw;
                 text-align: center;
@@ -255,8 +262,8 @@
             width: 100%;
 
             button {
-                background-color: var(--dark);
-                color: var(--bage);
+                background-color: var(--btn);
+                color: var(--accent);
                 border-radius: 15px;
                 padding: 1vw;
                 min-width: 10vw;
@@ -267,8 +274,8 @@
                 transition: transform 0.2s ease, background-color 0.2s ease;
 
                 &:hover:not(:disabled) {
-                    background-color: #1c1c1c;
-                    transform: translateY(-2px);
+                    background-color: var(--btn-hover);
+                    transform: translateY(-5px);
                 }
 
                 &:disabled {

@@ -4,6 +4,7 @@ import {useNavigate} from "react-router-dom";
 import {useState} from "react";
 import Cookies from "js-cookie";
 import { API_ENDPOINTS } from '../constants/api';
+import nicknameIcon from './assets/nickname-page.svg'; // Import the nickname icon if needed
 
 const JoinGamePage = () => {
     const [code, setCode] = useState("");
@@ -68,7 +69,9 @@ const JoinGamePage = () => {
             <div className="left-side">
                 <div className="title">
                     <h1>
-                        Ask your quiz creator for a code
+                        Got a <span className="code">code</span>?
+                        <br/>
+                        Time to jump in!
                     </h1>
                     <input
                         type="text"
@@ -97,7 +100,9 @@ const JoinGamePage = () => {
                 </div>
             </div>
             <div className="right-side">
-
+                <div className="right-side-content">
+                    <img src={nicknameIcon} alt="nickname icon" className="nickname-icon" sizes="(max-width: 600px) 70vw, 30vw"/>
+                </div>
             </div>
         </div>
     )
