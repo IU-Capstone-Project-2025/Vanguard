@@ -7,15 +7,15 @@ from prometheus_client import make_asgi_app
 from sqlalchemy import text
 
 from shared.core.config import settings as shared_settings
+from shared.core.loggers import setup_loggers
 from shared.db.database import async_session_maker
 
 from auth_app.api.endpoints import auth_router, health_router
 from auth_app.core.config import settings, Environment
-from auth_app.core.loggers import setup_loggers
 from auth_app.core.middleware import MetricsMiddleware, LoggingMiddleware
 from auth_app.exceptions.handlers import register_exception_handlers
 
-setup_loggers(debug=settings.DEBUG)
+setup_loggers(service_name="auth", debug=settings.DEBUG)
 logger = logging.getLogger("app")
 
 @asynccontextmanager

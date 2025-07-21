@@ -158,7 +158,7 @@ async def test_upload_and_delete_image_success(test_client, test_image):
     files = {"file": ("test.png", test_image, "image/png")}
     response = await test_client.post("/images/upload", files=files)
 
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     assert "url" in response.json()
     assert response.json()["url"].startswith("https://")
 
