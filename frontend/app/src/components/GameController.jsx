@@ -8,7 +8,7 @@ import "./styles/GameProcess.css";
 import Alien from "./assets/Alien.svg";
 import Corona from "./assets/Corona.svg";
 import Ghosty from "./assets/Ghosty.svg";
-import Cookie6 from "./assets/Cookie6.svg";
+import Clover from "./assets/Clover.svg";
 
 const GameController = () => {
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
@@ -16,7 +16,7 @@ const GameController = () => {
   const navigate = useNavigate();
 
   const [question, setQuestion] = useState({
-    options: [Alien, Corona, Ghosty, Cookie6]
+    options: [Alien, Corona, Ghosty, Clover]
   });
 
   const [choosenOption, setChosenOption] = useState(null);
