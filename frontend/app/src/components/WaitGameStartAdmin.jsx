@@ -160,7 +160,8 @@ const WaitGameStartAdmin = () => {
         </div>
         <div className="players-grid">
           {(Array.from(players.entries())).map(([id, name]) => (
-            <div key={id + name} className="player-box" >
+              name !== "Admin" &&
+              <div key={id + name} className="player-box" >
               <span style={{ '--name-length': +name.length }}>{name}</span>
               {name != "Admin" &&
               <button
