@@ -11,26 +11,26 @@
 }
 
 .floating-icon {
-  stroke: #FFA45C !important;
   position: absolute;
-  bottom: -60px;
   animation: floatDiagonal 20s linear infinite;
-  opacity: 0.6;
+  opacity: 1;
+  pointer-events: none;
 }
+
 
 @keyframes floatDiagonal {
   0% {
-    transform: translate(-1000px, 600px) rotate(40deg);
-    opacity: 1;
+    transform: translate(0px, 0px) rotate(40deg);
+    opacity: 0;
   }
   10% {
-    opacity: 0.9;
+    opacity: 0.7;
   }
   50% {
     opacity: 1;
   }
   100% {
-    transform: translate(500px, -600px) rotate(40deg);
-    opacity: 1;
+    transform: translate(800px, -1000px) rotate(40deg);
+    opacity: 0;
   }
 }
