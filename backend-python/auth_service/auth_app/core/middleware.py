@@ -68,10 +68,19 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 process_time = round(time.time() - start_time, 4)
                 client = request.client.host if request.client else "unknown"
 
-                logger.info({
-                    "method": request.method,
-                    "path": path,
-                    "status_code": status_code,
-                    "process_time": f"{process_time}s",
-                    "client": client,
-                })
+                log_data = {
+                    "message": f"{request.method} {path}",
+                    "metadata": {
+                        "method": request.method,
+                        "path": path,
+                        "status_code": status_code,
+                        "process_time_seconds": process_time,
+                        "client": client,
+                        "query_params": dict(request.query_params),
+                    }
+                }
+
+                logger.info(
+                    log_data["message"],
+                    extra={"metadata": log_data["metadata"]}
+                )

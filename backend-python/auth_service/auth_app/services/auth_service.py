@@ -91,7 +91,7 @@ class AuthService:
             ))
 
             AUTH_USER_REGISTRATIONS_TOTAL.labels(service=SERVICE, status="success").inc()
-            logger.info(f"User registered successfully: {user.id}")
+            logger.info("User registered successfully", extra={"metadata": {"user_id": user.id}})
             return UserResponse.model_validate(user)
 
     async def login(self, data: UserLogin, request: Request) -> TokenResponse:
@@ -114,7 +114,7 @@ class AuthService:
 
             AUTH_USER_LOGINS_TOTAL.labels(service=SERVICE, status="success").inc()
             AUTH_ACTIVE_SESSIONS.labels(service=SERVICE).inc()
-            logger.info(f"User logged in successfully: {user.id}")
+            logger.info("User logged in successfully", extra={"metadata": {"user_id": user.id}})
 
             return TokenResponse(
                 access_token=access,
@@ -145,7 +145,7 @@ class AuthService:
             ))
 
             AUTH_TOKEN_REFRESHES_TOTAL.labels(service=SERVICE, status="success").inc()
-            logger.info(f"Token refreshed successfully for user: {token.user_id}")
+            logger.info("Token refreshed successfully", extra={"metadata": {"user_id": token.user_id}})
 
             return TokenResponse(
                 access_token=access,
@@ -196,7 +196,7 @@ class AuthService:
                 updated = True
 
             if updated:
-                logger.info(f"Profile updated for user: {user_id}")
+                logger.info("Profile updated successfully", extra={"metadata": {"user_id": user_id}})
                 user = await repo.update(user)
             else:
                 logger.debug(f"No changes detected for user: {user_id}")
@@ -212,7 +212,7 @@ class AuthService:
                 await rt_repo.revoke(token_obj)
                 AUTH_USER_LOGOUTS_TOTAL.labels(service=SERVICE, scope="single").inc()
                 AUTH_ACTIVE_SESSIONS.labels(service=SERVICE).dec()
-                logger.info(f"Logged out single session for user: {token_obj.user_id}")
+                logger.info("Logged out single session for user", extra={"metadata": {"user_id": token_obj.user_id}})
 
     async def logout_all(self, user_id: UUID) -> None:
         logger.debug(f"Logging out all sessions for user: {user_id}")
@@ -221,4 +221,4 @@ class AuthService:
             count = await rt_repo.revoke_all_for_user(user_id)
             AUTH_USER_LOGOUTS_TOTAL.labels(service=SERVICE, scope="all").inc()
             AUTH_ACTIVE_SESSIONS.labels(service=SERVICE).dec(count)
-            logger.info(f"Logged out all sessions for user: {user_id}, revoked {count} tokens")
+            logger.info("Logged out all sessions for user", extra={"metadata": {"user_id": user_id, "count": count}})

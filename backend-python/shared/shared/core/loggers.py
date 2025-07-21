@@ -3,7 +3,7 @@ from logging.config import dictConfig
 from shared.utils.logging_formatter import JsonFormatter
 
 
-def get_log_config(debug: bool = False):
+def get_log_config(service_name: str, debug: bool = False):
     if debug:  # development
         config = {
             "app": "DEBUG",
@@ -28,7 +28,8 @@ def get_log_config(debug: bool = False):
         "disable_existing_loggers": False,
         "formatters": {
             "json": {
-                "()": JsonFormatter
+                "()": JsonFormatter,
+                "service_name": service_name
             }
         },
         "handlers": {
@@ -70,5 +71,5 @@ def get_log_config(debug: bool = False):
     return log_config
 
 
-def setup_loggers(debug: bool = False):
-    dictConfig(get_log_config(debug))
+def setup_loggers(service_name: str, debug: bool = False):
+    dictConfig(get_log_config(service_name, debug))
