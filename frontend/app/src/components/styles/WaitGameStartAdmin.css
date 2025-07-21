@@ -50,10 +50,44 @@
   height: 60px;
   transition: transform 0.2s ease;
   position: relative;
+  span {
+    transition: all 0.2s ease-in-out;
+  }
 }
 
 .player-box:hover {
   transform: scale(1.05);
+  cursor: url('../assets/kill-cursor.svg'), auto;
+  span {
+    animation: shake-rotate 0.2s infinite;
+    letter-spacing: 0.1vw;
+  }
+  .tooltip {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.tooltip {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  background-color: #333;
+  color: var(--text-light);
+  padding: 6px 10px;
+  border-radius: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+@keyframes shake-rotate {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
 }
 
 .player-box span {

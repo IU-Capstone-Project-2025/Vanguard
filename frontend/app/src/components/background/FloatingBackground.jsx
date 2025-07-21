@@ -22,7 +22,6 @@ const FloatingBackground = () => {
         const size = 600 + Math.random() * 40;
 
         // Пропустить центр (40%–60%)
-        if (left > 20 && left < 40) return null;
 
         return (
           <img

@@ -21,7 +21,7 @@
 @keyframes floatDiagonal {
   0% {
     transform: translate(-1000px, 600px) rotate(40deg);
-    opacity: 0;
+    opacity: 1;
   }
   10% {
     opacity: 0.9;
@@ -31,6 +31,6 @@
   }
   100% {
     transform: translate(500px, -600px) rotate(40deg);
-    opacity: 0;
+    opacity: 1;
   }
 }

@@ -1,72 +1,102 @@
-.wait-player-container {
+.wait-player-wrapper {
   background-color: var(--orange);
   min-height: 100vh;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
+  padding: 5vh 5vw;
+  box-sizing: border-box;
+  gap: 2vw;
 }
 
-.wait-player-panel {
-  padding: 4vw;
-  width: 80%;
+.player-left-side {
+  flex: 2;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  justify-content: flex-start;
+  
 }
 
-.wait-player-panel h1 {
-  font-size: 48px;
+.waiting-title {
+  font-size: 3.5rem;
   color: var(--bage);
-  margin-bottom: 3vw;
+  margin-bottom: 3vh;
+}
+
+.waiting-title .highlight {
+  color: var(--accent);
+  font-weight: bold;
 }
 
 .players-grid {
   display: flex;
-  flex-direction: row;
   flex-wrap: wrap;
-  justify-content: flex-start;
   gap: 1vw;
+  flex: 1;
+  max-width: 70%;
 }
 
-.wait-player-container .player-box {
-  background-color: var(--light-gray);
-  color: var(--dark);
+.player-card {
+  background-color: var(--light-blue);
+  color: var(--accent);
   padding: 0.8vw 1.2vw;
-  border-radius: 10px;
-  font-size: 20px;
-  min-width: 100px;
-  text-align: center;
+  border-radius: 12px;
   display: flex;
-  justify-content: center;
   align-items: center;
-}
-.wait-player-container .player-box span {
-  font-size: clamp(10px, 20px - (var(--name-length) - 10) * 0.7px, 20px);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  flex-grow: 1;
-  max-width: 100%;
+  justify-content: space-between;
+  width: 150px;
+  height: 60px;
+  transition: transform 0.2s ease;
+  position: relative;
+  font-size: 1.5rem;
+  transition: all 0.2s ease-in-out;
 }
 
-.button-group {
+.player-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.player-right-side {
+  flex: 1;
+  background-color: var(--text-light);
+  border-radius: 30px;
+  padding: 3vh 2vw;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 2vw;
-  margin-bottom: 3vw;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  min-width: 250px;
 }
 
-.button-group button {
-  background-color: var(--dark);
-  color: var(--bage);
-  font-size: 24px;
-  padding: 1vw 2vw;
+.session-code {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 1vh;
+}
+
+.session-count {
+  font-size: 2rem;
+  margin-bottom: 4vh;
+  color: var(--accent);
+}
+
+.leave-btn {
+  background-color: var(--btn);
+  width: 100%;
+  color: var(--accent);
+  font-size: 2rem;
+  padding: 0.8vw 2vw;
+  border-radius: 12px;
   border: none;
-  border-radius: 10px;
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.3s;
 }
 
-.button-group button:hover {
+.leave-btn:hover {
   transform: scale(1.05);
-  background-color: var(--gray);
+  background-color: var(--btn-hover);
 }
