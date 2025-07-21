@@ -7,16 +7,16 @@ from prometheus_client import make_asgi_app
 from sqlalchemy import text
 
 from shared.core.config import settings as shared_settings
+from shared.core.loggers import setup_loggers
 from shared.db.database import async_session_maker
 
 from quiz_app.init_sample_data import init_sample_data
 from quiz_app.api.endpoints import health_router, quiz_router, image_router
 from quiz_app.core.config import settings, Environment
-from quiz_app.core.loggers import setup_loggers
 from quiz_app.core.middleware import MetricsMiddleware, LoggingMiddleware
 from quiz_app.exceptions.handlers import register_exception_handlers
 
-setup_loggers(debug=settings.DEBUG)
+setup_loggers(service_name="quiz", debug=settings.DEBUG)
 logger = logging.getLogger("app")
 
 @asynccontextmanager

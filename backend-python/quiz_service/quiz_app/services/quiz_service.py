@@ -44,7 +44,16 @@ class QuizService:
 
             visibility = "public" if quiz_db.is_public else "private"
             QUIZ_CREATIONS_TOTAL.labels(service=SERVICE, status="success", visibility=visibility).inc()
-            logger.info(f"Created quiz {quiz_db.id} by user {user_id}")
+            logger.info(
+                "Created quiz successfully",
+                extra={
+                    "metadata": {
+                        "user_id": user_id,
+                        "quiz_id": quiz_db.id,
+                        "visibility": visibility
+                    }
+                }
+            )
             return QuizResponse.model_validate(quiz_db)
 
     async def get_quiz_by_id(self, quiz_id: UUID, user_id: UUID | None) -> QuizResponse:
@@ -64,7 +73,15 @@ class QuizService:
                 raise QuizForbiddenError("You do not own this quiz.")
 
             QUIZ_FETCHES_TOTAL.labels(service=SERVICE, status="success", public_only=public_only).inc()
-            logger.info(f"Quiz {quiz_id} retrieved successfully by {user_id}")
+            logger.info(
+                "Quiz retrieved successfully",
+                extra={
+                    "metadata": {
+                        "user_id": user_id,
+                        "quiz_id": quiz_id
+                    }
+                }
+            )
             return QuizResponse.model_validate(quiz)
 
     async def update_quiz(self, quiz_id: UUID, user_id: UUID, data: QuizUpdate) -> QuizResponse:
@@ -96,7 +113,15 @@ class QuizService:
             await session.refresh(quiz)
 
             QUIZ_UPDATES_TOTAL.labels(service=SERVICE, status="success").inc()
-            logger.info(f"Quiz {quiz_id} updated successfully by user {user_id}")
+            logger.info(
+                "Quiz updated successfully",
+                extra={
+                    "metadata": {
+                        "user_id": user_id,
+                        "quiz_id": quiz_id
+                    }
+                }
+            )
             return QuizResponse.model_validate(quiz)
 
     async def delete_quiz(self, quiz_id: UUID, user_id: UUID) -> None:
@@ -113,7 +138,15 @@ class QuizService:
 
             await repo.delete(quiz)
             QUIZ_DELETES_TOTAL.labels(service=SERVICE, status="success").inc()
-            logger.info(f"Quiz {quiz_id} deleted by user {user_id}")
+            logger.info(
+                "Quiz deleted successfully",
+                extra={
+                    "metadata": {
+                        "user_id": user_id,
+                        "quiz_id": quiz_id
+                    }
+                }
+            )
 
     async def list_quizzes(
             self,
@@ -153,7 +186,15 @@ class QuizService:
             )
 
         QUIZ_LISTING_REQUESTS_TOTAL.labels(service=SERVICE, status="success", filter_type=filter_type).inc()
-        logger.info(f"Returned {len(quizzes)} quizzes for requester={requester_id}")
+        logger.info(
+            "Returned quizzes for requester",
+            extra={
+                "metadata": {
+                    "user_id": requester_id,
+                    "count": len(quizzes)
+                }
+            }
+        )
         return [QuizResponse.model_validate(q) for q in quizzes]
 
     @staticmethod
