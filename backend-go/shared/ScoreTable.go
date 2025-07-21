@@ -1,10 +1,16 @@
 package shared
 
+const (
+	ProgressUp   = "Up"
+	ProgressDown = "Down"
+	ProgressSame = "Same"
+)
+
 type UserScore struct {
 	UserId        string `json:"user_id"`
 	Place         int    `json:"place"`
 	PreviousPlace int    `json:"previous_place"`
-	Progress      bool   `json:"progress"`
+	Progress      string `json:"progress"`
 	TotalScore    int    `json:"total_score"`
 }
 
