@@ -5,7 +5,12 @@
     --btn-hover: #4f4d4d;
     --light-gray: #C6BDB3;
     --gray: #5D5C5D;
-    background-color: var(--orange);
+    --accent: #392B58;
+    --btn: #E5E8B6;
+    --btn-hover: #E2E88B;    /* background-color: var(--orange); */
+    --text-light: #F9F3EB;
+    --light-blue: #BFD7FF;
+    --blue: #8AB3F2;
 }
 
 .jua-regular {
@@ -23,7 +28,7 @@
 .homepage-main-content {
     display: flex;
     height: 100vh;
-    background-color: var(--orange);
+    background:transparent;
     color: var(--bage);
 
     .left-side {
@@ -39,12 +44,21 @@
             justify-items: center;
             margin: 25% ;
             width: 100%;
-            
-            h1 {
+
+            p {
                 text-align: start;
                 font-family: Jua, sans-serif;
-                font-size: 60px;
-                color: var(--bage);
+                font-size: 96px;
+                color: var(--text-light);
+                margin: 0;
+            }
+            
+            h1 {
+                margin-top: 0;
+                text-align: start;
+                font-family: Jua, sans-serif;
+                font-size: 96px;
+                color: var(--accent);
             }
 
             .button-group {
@@ -54,8 +68,8 @@
                 width: 100%;
                 
                 button {
-                    background-color: var(--dark);
-                    color: var(--bage);
+                    background-color: var(--btn);
+                    color: var(--accent);
                     border-radius: 15px;
                     padding: 1vw;
                     min-width: 10vw;
@@ -66,8 +80,9 @@
                     transition: transform 0.2s ease, background-color 0.2s ease;
 
                     &:hover:not(:disabled) {
-                        background-color: #1c1c1c;
-                        transform: translateY(-2px);
+                        background-color: var(--btn-hover);
+                        transform: translateY(-5px);
+                        box-shadow: #1c1c1c;
                     }
 
                     &:disabled {
@@ -100,143 +115,10 @@
 }
 
 
-.create-session-main-content {
-    display: flex;
-    height: 100vh;
-    background-color: var(--orange);
-    color: var(--bage);
-
-    .left-side {
-        width: 50%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-left: 8vw;
-
-        .title {
-            h2 {
-                font-size: 32px;
-                line-height: 1.4;
-                margin-bottom: 4vh;
-            }
-            max-width: 60%;
-        }
-
-        .button-group {
-            margin: 5vw 0;
-            display: flex;
-            flex-direction: column;
-            gap: 2vh;
-            width: 100%;
-
-            button {
-                background-color: var(--dark);
-                color: var(--bage);
-                border-radius: 15px;
-                padding: 1vw;
-                min-width: 10vw;
-                font-size: 28px;
-                border: none;
-                cursor: pointer;
-                transition: transform 0.2s ease, background-color 0.2s ease;
-
-                &:hover:not(:disabled) {
-                    background-color: #1c1c1c;
-                    transform: translateY(-2px);
-                }
-
-                &:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-            }
-        }
-    }
-
-    .right-side {
-        width: 50%;
-        height: 100vh;
-        padding-right: 8vw;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-
-        .quiz-list-container {
-            background-color: var(--bage);
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center; /* Center horizontally */
-            padding: 5vw;
-            height: 75%;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 28vw;
-            display: flex;
-            flex-direction: column;
-            gap: 1vh;
-
-            .quiz-search-panel{
-                padding: 0;
-                margin: 0;
-                text-align: center;
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-
-                input {
-                    width: 100%;
-                    padding: 1vh 1vw;
-                    font-size: 18px;
-                    border: none;
-                    border-radius: 10px;
-                    box-sizing: border-box;
-                }
-
-                .quiz-list {
-                    overflow: visible;
-                    width: 100%;
-                    padding: 0;
-                    margin: 0;
-                }
-                
-
-                .quiz-item {
-                    text-align: left;
-                    width: 100%;
-                    background-color: var(--gray);
-                    color: var(--bage);
-                    padding: 1.2vh 1vw;
-                    margin: 1vh 0;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    font-size: 20px;
-                    transition: background-color 0.2s ease, transform 0.2s ease;
-                    box-sizing: border-box;
-
-                    &.selected {
-                        background-color: var(--dark);
-                        font-weight: bold;
-                        transform: scale(1.02);
-                    }
-
-                    &:hover {
-                        background-color: var(--btn-hover);
-                        transform: scale(1.02);
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 .joingame-main-content {
     display: flex;
     height: 100vh;
-    background-color: var(--orange);
+    /* background-color: var(--orange); */
     color: var(--bage);
 
     .left-side {
@@ -327,7 +209,7 @@
 .playgame-main-content {
     display: flex;
     height: 100vh;
-    background-color: var(--orange);
+    /* background-color: var(--orange);  */
     color: var(--bage);
     align-items: center;
     justify-content: left;
@@ -338,6 +220,14 @@
         justify-items: left;
         margin-left: 12.5%;
         margin-right: 5%;
+
+        p {
+            text-align: start;
+            font-family: Jua, sans-serif;
+            font-size: 64px;
+            color: var(--bage);
+            margin-bottom: 9vw;
+        }
         
         h1 {
             text-align: start;

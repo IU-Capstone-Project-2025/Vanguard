@@ -9,7 +9,7 @@
 .ask-join-container {
     display: flex;
     height: 100vh;
-    background-color: var(--orange);
+    
     font-family: Jua, sans-serif;
     color: var(--bage);
 }

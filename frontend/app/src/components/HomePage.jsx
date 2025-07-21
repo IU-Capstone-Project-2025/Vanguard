@@ -20,8 +20,11 @@ const HomePage = () => {
         <div className="homepage-main-content">
             <div className="left-side">
                 <div className="title">
+                    <p>
+                        Just
+                    </p>
                     <h1>
-                        Explore the InnoQuiz
+                        TRY.IT
                     </h1>
                     <div className="button-group">
                         <button id="play"

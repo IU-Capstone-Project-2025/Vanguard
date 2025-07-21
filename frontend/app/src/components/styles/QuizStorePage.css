@@ -124,7 +124,7 @@
     cursor: pointer;
     border: none;
     border-radius: 20px;
-    background-color: var(--orange);
+    
     color: var(--bage);
     transition: all 0.2s ease-in-out;
   }

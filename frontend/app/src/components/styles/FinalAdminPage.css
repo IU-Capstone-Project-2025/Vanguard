@@ -5,7 +5,7 @@
 }
 
 .final-page-container {
-  background-color: var(--orange);
+  
   height: 100vh;
   display: flex;
   flex-direction: column;
