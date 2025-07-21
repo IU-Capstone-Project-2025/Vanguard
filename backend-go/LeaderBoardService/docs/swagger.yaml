@@ -1,0 +1,118 @@
+basePath: /
+definitions:
+  models.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  shared.Answer:
+    properties:
+      answered:
+        type: boolean
+      correct:
+        description: correctness of user's answer
+        type: boolean
+      option:
+        description: 1-based option index
+        type: string
+      timestamp:
+        description: time when user has answered
+        type: string
+      user_id:
+        type: string
+    type: object
+  shared.BoardResponse:
+    properties:
+      popular:
+        $ref: '#/definitions/shared.PopularAns'
+      session_code:
+        type: string
+      table:
+        $ref: '#/definitions/shared.ScoreTable'
+    type: object
+  shared.PopularAns:
+    properties:
+      answers:
+        additionalProperties:
+          type: integer
+        type: object
+      session_code:
+        type: string
+    type: object
+  shared.ScoreTable:
+    properties:
+      session_code:
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/shared.UserScore'
+        type: array
+    type: object
+  shared.SessionAnswers:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/shared.Answer'
+        type: array
+      options_amount:
+        description: amount of total options available for the question
+        type: integer
+      session_code:
+        type: string
+    type: object
+  shared.UserScore:
+    properties:
+      place:
+        type: integer
+      previous_place:
+        type: integer
+      progress:
+        type: string
+      total_score:
+        type: integer
+      user_id:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: Это пример API с gorilla/mux и swaggo
+  title: Пример API
+  version: "1.0"
+paths:
+  /get-results:
+    post:
+      consumes:
+      - application/json
+      description: Accepts session answers, computes user scores and returns leaderboard
+        data
+      parameters:
+      - description: Session Answers Payload
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/shared.SessionAnswers'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/shared.BoardResponse'
+        "400":
+          description: Bad Request or computation error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Compute leaderboard and get popular answers
+      tags:
+      - leaderboard
+swagger: "2.0"

@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 	"xxx/LeaderBoardService/Handlers"
+	_ "xxx/LeaderBoardService/docs"
 )
 
 type HttpServer struct {

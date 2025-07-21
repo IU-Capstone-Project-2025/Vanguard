@@ -3,10 +3,22 @@ package Handlers
 import (
 	"encoding/json"
 	"net/http"
-	models2 "xxx/SessionService/models"
+	"xxx/LeaderBoardService/models"
 	"xxx/shared"
 )
 
+// ComputeBoardHandler godoc
+// @Summary      Compute leaderboard and get popular answers
+// @Description  Accepts session answers, computes user scores and returns leaderboard data
+// @Tags         leaderboard
+// @Accept       json
+// @Produce      json
+// @Param        data  body      shared.SessionAnswers  true  "Session Answers Payload"
+// @Success      200   {object}  shared.BoardResponse
+// @Failure      400   {object}  models.ErrorResponse   "Bad Request or computation error"
+// @Failure      405   {object}  models.ErrorResponse   "Method Not Allowed"
+// @Failure      500   {object}  models.ErrorResponse   "Internal Server Error"
+// @Router /get-results [post]
 func (m *HandlerManager) ComputeBoardHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != "POST" {
@@ -22,7 +34,7 @@ func (m *HandlerManager) ComputeBoardHandler(w http.ResponseWriter, r *http.Requ
 			"Request Body", r.Body)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(models2.ErrorResponse{Message: "Bad Request"})
+		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "Bad Request"})
 		return
 	}
 	userScore, err := m.Service.ComputeLeaderBoard(req)
@@ -50,7 +62,7 @@ func (m *HandlerManager) ComputeBoardHandler(w http.ResponseWriter, r *http.Requ
 			"err", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(models2.ErrorResponse{Message: "StatusInternalServerError"})
+		json.NewEncoder(w).Encode(models.ErrorResponse{Message: "StatusInternalServerError"})
 		return
 	}
 }
