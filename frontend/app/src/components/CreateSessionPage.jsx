@@ -86,7 +86,7 @@ const CreateSessionPage = () => {
       sessionStorage.setItem('sessionCode', sessionData.sessionId);
       sessionStorage.setItem('jwt', sessionData.jwt);
 
-      navigate(`/ask-to-join/${sessionData.sessionId}`); // Navigate to the waiting page with the session code
+      navigate(`/sessionAdmin/${sessionData.sessionId}`); // Navigate to the waiting page with the session code
 
     }
   };
