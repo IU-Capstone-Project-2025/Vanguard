@@ -191,7 +191,7 @@ var SwaggerInfo = &swag.Spec{
 	Schemes:          []string{},
 	Title:            "Пример API",
 	Description:      "Это пример API с gorilla/mux и swaggo",
-	InfoInstanceName: "swagger1",
+	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
 	RightDelim:       "}}",
