@@ -9,7 +9,7 @@ import (
 )
 
 type Cache interface {
-	LoadLeaderboard(quizID string) ([]shared.UserScore, error)
+	LoadLeaderboard(quizID string, previousPlaces map[string]int) ([]shared.UserScore, error)
 	AddScoresBatch(quizID string, updates []shared.UserCurrentPoint) error
 }
 

@@ -72,7 +72,7 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 	}
 	host := os.Getenv("LEADERBOARD_SERVICE_HOST")
 	port := os.Getenv("LEADERBOARD_SERVICE_PORT")
-
+	fmt.Println("sfdf", host, port)
 	redisC, redisURL := startRedis(context.Background(), t)
 	defer redisC.Terminate(context.Background())
 	log := setupLogger(envLocal)
@@ -103,11 +103,10 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 				Timestamp: time.Now().Add(-1 * time.Second),
 			},
 			{
-				UserId:    "user_003",
-				Correct:   false,
-				Answered:  false,
-				Option:    "",
-				Timestamp: time.Now().Add(-2 * time.Second),
+				UserId:   "user_003",
+				Correct:  false,
+				Answered: false,
+				Option:   "",
 			},
 			{
 				UserId:    "user_004",
@@ -140,6 +139,66 @@ func Test_GetLeaderBoardResults(t *testing.T) {
 		t.Fatal("error decoding response:", err)
 	}
 	data, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		t.Fatalf("error marshalling response for log: %v", err)
+	}
+	t.Logf("Task status response:\n%s", data)
+
+	sessionData = shared.SessionAnswers{
+		SessionCode:   "ABC123",
+		OptionsAmount: 4,
+		Answers: []shared.Answer{
+			{
+				UserId:    "user_001",
+				Correct:   true,
+				Answered:  true,
+				Option:    "1",
+				Timestamp: time.Now().Add(-2 * time.Second),
+			},
+			{
+				UserId:    "user_002",
+				Correct:   true,
+				Answered:  true,
+				Option:    "3",
+				Timestamp: time.Now().Add(-1 * time.Second),
+			},
+			{
+				UserId:   "user_003",
+				Correct:  false,
+				Answered: false,
+				Option:   "",
+			},
+			{
+				UserId:    "user_004",
+				Correct:   true,
+				Answered:  true,
+				Option:    "3",
+				Timestamp: time.Now().Add(-3 * time.Second),
+			},
+		},
+	}
+	jsonData, err = json.Marshal(sessionData)
+	if err != nil {
+		t.Fatalf("Error marshaling request data: %v", err)
+	}
+
+	// Выполнение POST-запроса
+	resp, err = http.Post(reqURL, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		t.Fatalf("POST request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Проверка ответа
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 OK, got %d", resp.StatusCode)
+	}
+	var response2 shared.BoardResponse
+	err = json.NewDecoder(resp.Body).Decode(&response2)
+	if err != nil {
+		t.Fatal("error decoding response:", err)
+	}
+	data, err = json.MarshalIndent(response2, "", "  ")
 	if err != nil {
 		t.Fatalf("error marshalling response for log: %v", err)
 	}

@@ -155,7 +155,9 @@ func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool
 	if sessions, exists1 := r.connections[sessionID]; exists1 {
 		e1 = true
 		if sessions[userID] != nil && sessions[userID].Conn != nil {
+			sessions[userID].Mutex.Lock()
 			_ = sessions[userID].Conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "user left"))
+			sessions[userID].Mutex.Unlock()
 			sessions[userID].Conn.Close()
 		}
 		delete(sessions, userID)

@@ -77,7 +77,16 @@ class S3ImageService:
 
         QUIZ_IMAGE_UPLOADS_TOTAL.labels(service=SERVICE, status="success").inc()
         QUIZ_IMAGE_UPLOAD_SIZE_BYTES.labels(service=SERVICE, status="success").observe(file.size)
-        logger.info(f"Uploaded image {file.filename} as {key} ({file.size} bytes)")
+        logger.info(
+            "Uploaded image successfully",
+            extra={
+                "metadata": {
+                    "filename": file.filename,
+                    "key": key,
+                    "size": file.size
+                }
+            }
+        )
 
         url = self.get_file_url(key)
         return ImageUploadResponse(url=url)
@@ -97,7 +106,15 @@ class S3ImageService:
         try:
             key = self.get_key_from_url(img_url)
             self.client.delete_object(Bucket=self.bucket, Key=key)
-            logger.info(f"Deleted image {key} from bucket {self.bucket}")
+            logger.info(
+                "Deleted image from bucket",
+                extra={
+                    "metadata": {
+                        "key": key,
+                        "bucket": self.bucket
+                    }
+                }
+            )
         except self.client.exceptions.NoSuchKey:
             raise ImageNotFoundError()
         except (ClientError, BotoCoreError) as e:

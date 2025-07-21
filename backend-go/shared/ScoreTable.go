@@ -1,8 +1,11 @@
 package shared
 
 type UserScore struct {
-	UserId     string `json:"user_id"`
-	TotalScore int    `json:"total_score"`
+	UserId        string `json:"user_id"`
+	Place         int    `json:"place"`
+	PreviousPlace int    `json:"previous_place"`
+	Progress      bool   `json:"progress"`
+	TotalScore    int    `json:"total_score"`
 }
 
 type UserCurrentPoint struct {
