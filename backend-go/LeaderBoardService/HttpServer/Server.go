@@ -3,7 +3,6 @@ package HttpServer
 import (
 	"context"
 	"github.com/gorilla/mux"
-	httpSwagger "github.com/swaggo/http-swagger"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"syscall"
 	"time"
 	"xxx/LeaderBoardService/Handlers"
-	_ "xxx/LeaderBoardService/docs"
 )
 
 type HttpServer struct {
@@ -95,7 +93,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 func (hs *HttpServer) registerHandlers() *mux.Router {
 	router := mux.NewRouter()
 	router.Use(corsMiddleware)
-	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 	router.HandleFunc("/get-results", hs.ComputeBoardHandler).Methods("POST", "OPTIONS")
 	hs.logger.Info("Routes registered", "host", hs.Host, "port", hs.Port)
 	return router
