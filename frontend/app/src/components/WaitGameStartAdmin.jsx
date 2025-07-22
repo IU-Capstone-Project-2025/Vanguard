@@ -158,8 +158,8 @@ const WaitGameStartAdmin = () => {
       <div className="wait-layout">
         <div className="players-grid">
          {Array.from(players.entries()).map(([id, name]) => (
-            <div className="player-box" key={id} onClick={() => handleKick(id)}>
-              <span>{name}</span>
+            <div key={id + name} className="player-box" key={id} onClick={() => handleKick(id)}>
+              <span style={{ '--name-length': +name.length }}>{name}</span>
               <div className="tooltip">Click to kick user</div>
             </div>
           ))}

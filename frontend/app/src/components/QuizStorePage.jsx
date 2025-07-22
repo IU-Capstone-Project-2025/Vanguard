@@ -91,7 +91,7 @@ const QuizStorePage = () => {
     sessionStorage.setItem('sessionCode', response.sessionId);
     sessionStorage.setItem('jwt', response.jwt);
 
-    navigate(`/ask-to-join/${response.sessionId}`);
+    navigate(`/sessionAdmin/${response.sessionId}`);
   };
 
   // Локальный поиск по имени квиза
