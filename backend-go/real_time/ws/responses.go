@@ -47,7 +47,7 @@ func (r Responder) SendLeaderboard(lb shared.ScoreTable) {
 	r.registry.SendToAdmin(r.sessionId, leaderBoard.Bytes())
 }
 
-func (r Responder) SendQuestionStat(questionStat shared.PopularAns, questionAnswers map[string]models.UserAnswer) {
+func (r Responder) SendQuestionStat(questionStat shared.PopularAns, questionAnswers map[string]models.UserAnswer, options []shared.Option) {
 	for _, connectionCtx := range r.registry.GetConnections(r.sessionId) { // iterate through all connections to retrieve userIds
 		if connectionCtx.Role == shared.RoleAdmin { // skip admin, since we do not send stat to him
 			continue
@@ -58,6 +58,7 @@ func (r Responder) SendQuestionStat(questionStat shared.PopularAns, questionAnsw
 			Type:    MessageTypeStat,
 			Correct: questionAnswers[user].Correct,
 			Payload: questionStat,
+			Options: options,
 		}
 
 		r.registry.SendMessage(stat.Bytes(), connectionCtx)
