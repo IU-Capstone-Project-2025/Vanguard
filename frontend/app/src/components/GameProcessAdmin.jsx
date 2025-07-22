@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useSessionSocket } from '../contexts/SessionWebSocketContext';
 import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
-import './styles/GameProcess.css'
+import './styles/GameProcess.css';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants/api';
 import ShapedButton from './childComponents/ShapedButton';
 import ShowLeaderBoardComponent from './childComponents/ShowLeaderBoardComponent';
-import Alien from './assets/Alien.svg'
-import Corona from './assets/Corona.svg'
-import Ghosty from './assets/Ghosty.svg'
-import Cookie6 from './assets/Cookie6.svg'
+import PentagonYellow from './assets/Pentagon-yellow.svg';
+import CoronaIndigo from './assets/Corona-indigo.svg';
+import ArrowOrange from './assets/Arrow-orange.svg';
+import Cookie4Blue from './assets/Cookie4-blue.svg';
+import Triangle from './assets/Triangle.svg';
+import Alien from './assets/Alien.svg';
 
 const GameProcessAdmin = () => {
   const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
@@ -23,10 +25,10 @@ const GameProcessAdmin = () => {
   const questionsAmount = currentQuestion.questionsAmount;
   const navigate = useNavigate();
   const [questionOptions] = useState([
-    Alien,
-    Corona,
-    Ghosty,
-    Cookie6
+    PentagonYellow,
+    CoronaIndigo,
+    ArrowOrange,
+    Cookie4Blue
   ]);
 
   useEffect(() => {
@@ -46,12 +48,11 @@ const GameProcessAdmin = () => {
       console.error('Session code is not available');
       return;
     }
+      
     try {
       const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to start next question');
     } catch (error) {
@@ -68,25 +69,22 @@ const GameProcessAdmin = () => {
     wsRefRealtime.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'leaderboard') {
-        console.log('Received leaderboard:', data);
         sessionStorage.setItem('leaders', JSON.stringify(data.payload.users));
         setLeaderboardData(data.payload);
         setLeaderboardVisible(true);
       } else if (data.type === 'question') {
         setCurrentQuestion(data);
-        setQuestionIndex(data.questionId)
+        setQuestionIndex(data.questionId);
         sessionStorage.setItem('currentQuestion', JSON.stringify(data));
-      } 
+      }
     };
   };
 
   const finishSession = async (code) => {
-    
-    // sessionStorage.removeItem('sessionCode');
     sessionStorage.removeItem('quizData');
     sessionStorage.removeItem('currentQuestion');
     if (!wsRefRealtime || !wsRefSession) {
-      navigate('/')
+      navigate('/');
     } else {
       await toNextQuestion(code);
       await listenQuizQuestion(code);
@@ -94,18 +92,17 @@ const GameProcessAdmin = () => {
       closeWsRefSession();
       navigate('/final');
     }
-    // если leaderboard не придёт, не вызываем завершение сразу
   };
 
   const handleLeaderboardClick = () => {
     wsRefRealtime.current.send(JSON.stringify({ type: 'next_question' }));
     setLeaderboardVisible(false);
-  }
+  };
 
   const handleNextQuestion = async (e) => {
     e.preventDefault();
     const sessionCode = sessionStorage.getItem('sessionCode');
-
+    
     await toNextQuestion(sessionCode);
     await listenQuizQuestion(sessionCode);
   };
@@ -118,37 +115,74 @@ const GameProcessAdmin = () => {
           onClose={() => handleLeaderboardClick()} 
         />
       ) : (
-        <>
-          <div className="controller-question-title">
-            { currentQuestion.payload && 
-              <img src={currentQuestion.payload} alt="Question" className="question-image" height={300} />
-            }
-            <h2>{currentQuestion ? currentQuestion.text : 'Waiting for question…'}</h2>
+        <div className="game-container">
+          <div className="question-section">
+            <div className="question-header">
+              <div className='answer-indicator'>
+                <span className='indicator-text'>11/17</span>
+              </div>
+
+              {currentQuestion.payload && (
+                <img
+                  src={currentQuestion.payload}
+                  alt="Question"
+                  className="process-question-image"
+                />
+              )}
+
+              <div className='timer-indicator'>
+                <span className='indicator-text'>11/17</span>
+              </div>
+            </div>
+            <div className="question-body">
+              <div className="question-number-bubble">
+                {questionIndex}
+              </div>
+              <h2 className="question-text">
+                {currentQuestion?.text || 'Waiting for question…'}
+              </h2>
+              
+              <div className="question-go-button">
+                {questionIndex < questionsAmount ?
+                (<button
+                  className="shaped-button"
+                  onClick={(e) => handleNextQuestion(e)}
+                >
+                  <img src={Triangle} alt="Go" className="shaped-button-icon" fill="var(--dark)"/>
+                </button>)
+                : (
+                <button className="shaped-button"
+                  onClick={() => finishSession(sessionStorage.getItem('sessionCode'))}
+                >
+                  <img src={Triangle} alt="Finish" className="shaped-button-icon" fill="var(--dark)"/>
+                </button>)}
+              </div>
+            </div>
           </div>
 
           <div className="options-grid">
-            {currentQuestion && currentQuestion.options.map((option, idx) => (
-              <ShapedButton
-                key={idx}
-                shape={questionOptions[idx]}
-                text={option.text}
-                onClick={() => console.log('svg clicked')}
-              />
+            {currentQuestion?.options.map((option, idx) => (
+              <div key={idx} className={`option-item ${idx % 2 === 0 ? 'option-item-left' : 'option-item-right'}`}>
+                <img src={questionOptions[idx]} alt={option.text} className={`option-image`} />
+                <span className="option-text">{option.text}</span>
+              </div>
             ))}
           </div>
 
-          <div className="process-button-group">
-            {questionIndex < questionsAmount && (
-              <button onClick={handleNextQuestion} className="button">
-                Next
+          {/* <div className="process-footer">
+            <div className="process-button-group">
+              {questionIndex < questionsAmount && (
+                <button onClick={handleNextQuestion} className="button">
+                  Next
+                </button>
+              )}
+              <span>Question: {questionIndex}/{questionsAmount}</span>
+              <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
+                Finish
               </button>
-            )}
-            <span>Question: {questionIndex}/{questionsAmount}</span>
-            <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
-              Finish
-            </button>
-          </div>
-        </>
+            </div>
+          </div> */}
+        </div>
       )}
     </div>
   );

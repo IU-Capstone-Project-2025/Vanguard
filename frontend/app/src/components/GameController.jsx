@@ -4,11 +4,11 @@ import { useSessionSocket } from "../contexts/SessionWebSocketContext";
 import { useNavigate } from "react-router-dom";
 import ShapedButton from "./childComponents/ShapedButton";
 import ShowQuizStatistics from "./childComponents/ShowQuizStatistics";
-import "./styles/GameProcess.css";
-import Alien from "./assets/Alien.svg";
-import Corona from "./assets/Corona.svg";
-import Ghosty from "./assets/Ghosty.svg";
-import Cookie6 from "./assets/Cookie6.svg";
+import "./styles/GameController.css";
+import PentagonYellow from './assets/Pentagon-yellow.svg';
+import CoronaIndigo from './assets/Corona-indigo.svg';
+import ArrowOrange from './assets/Arrow-orange.svg';
+import Cookie4Blue from './assets/Cookie4-blue.svg';
 
 const GameController = () => {
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
@@ -16,7 +16,7 @@ const GameController = () => {
   const navigate = useNavigate();
 
   const [question, setQuestion] = useState({
-    options: [Alien, Corona, Ghosty, Cookie6]
+    options: [PentagonYellow, CoronaIndigo, ArrowOrange, Cookie4Blue]
   });
 
   const [choosenOption, setChosenOption] = useState(null);
@@ -130,24 +130,23 @@ const GameController = () => {
       {stage === "question" && (
         <div className="options-grid-player">
           {question.options.map((option, idx) => (
-            <ShapedButton
-              key={idx}
-              shape={option}
-              text=""
-              onClick={() => handleAnswer(idx)}
-            />
+            <div 
+              key={idx} 
+              className={`controller-answer-option ${idx === 0 || idx === 2 ? "left" : "right"}`}>
+              <button
+                className="option-button"
+                onClick={() => handleAnswer(idx)}
+                >
+                <img src={question.options[idx]} alt='option'/>
+              </button>
+            </div>
           ))}
         </div>
       )}
 
       {stage === "waiting" && (
-        <div className="options-grid-player">
-          <ShapedButton
-            key={0}
-            shape={question.options[choosenOption]}
-            text=" "
-            onClick={() => {}}
-          />
+        <div className="options-grid-player-waiting">
+          <img src={question.options[choosenOption]} alt="shape"/>
         </div>
       )}
 

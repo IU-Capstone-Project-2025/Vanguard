@@ -1,115 +1,167 @@
-:root {
-  --orange: #D38E5A;
-  --bage: #F9F3EB;
-  --dark: #2A2B2B;
-  --light-gray: #C6BDB3;
-  --gray: #5D5C5D;
-}
 
-.wait-admin-container {
-  background-color: var(--orange);
+.wait-admin-wrapper {
+  position: relative;
   min-height: 100vh;
+  /* background-color: var(--orange); */
+  padding: 5vh 6vw;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5vh;
 }
 
-.wait-admin-panel {
-    padding: 4vw;
-    width: 80%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+.waiting-title {
+  font-size: 3.6vw;
+  color: var(--text-light);
+  font-weight: bold;
+  text-align: left;
+  width: 100%;
 }
 
-.wait-admin-panel h1 {
-  font-size: 48px;
-  color: var(--bage);
-  margin-bottom: 3vw;
+.highlight {
+  color: var(--accent);
 }
 
-.admin-button-group {
+.wait-layout {
   display: flex;
-  justify-content: center;
-  gap: 2vw;
-  margin-bottom: 3vw;
-}
-
-.admin-button-group button {
-  background-color: var(--dark);
-  color: var(--bage);
-  font-size: 24px;
-  padding: 1vw 2vw;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.3s;
-}
-
-.admin-button-group button:hover {
-  transform: scale(1.05);
-  background-color: var(--gray);
+  justify-content: space-between;
+  width: 100%;
+  gap: 3vw;
+  align-items: flex-start;
 }
 
 .players-grid {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    /*grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));*/
-    gap: 1vw;
-    max-width: calc(6 * 150px + 5 * 1vw);
-    width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1vw;
+  flex: 1;
+  max-width: 70%;
 }
 
-
-
-
 .player-box {
-  background-color: var(--light-gray);
-  color: var(--dark);
+  background-color: var(--light-blue);
+  color: var(--accent);
   padding: 0.8vw 1.2vw;
-  border-radius: 10px;
-
-  /*font-size: 14px;*/
-  min-width: 100px;
-  text-align: left;
+  border-radius: 12px;
   display: flex;
-  justify-content: space-between;
-  width: 14.6%; /* Adjusted for 5 players in a row */
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  width: 150px;
+  height: 60px;
   transition: transform 0.2s ease;
   position: relative;
+  span {
+    transition: all 0.2s ease-in-out;
+  }
 }
 
 .player-box:hover {
   transform: scale(1.05);
+  cursor: url('../assets/kill-cursor.svg'), auto;
+  span {
+    animation: shake-rotate 0.2s infinite;
+    letter-spacing: 0.1vw;
+  }
+  .tooltip {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.tooltip {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  background-color: #333;
+  color: var(--text-light);
+  padding: 6px 10px;
+  border-radius: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+@keyframes shake-rotate {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
 }
 
 .player-box span {
-  font-size: clamp(10px, 20px - (var(--name-length) - 7) * 0.7px, 20px);
+  font-size: 2rem;
+  text-align: center;
   white-space: nowrap;
-  /*overflow: hidden;*/
   text-overflow: ellipsis;
+  overflow: hidden;
   flex-grow: 1;
   max-width: 100%;
 }
 
 .kick-button {
   position: absolute;
-  right: 5px;        /* Отступ от правого края */
+  right: 6px;
   background: transparent;
   border: none;
-  color: var(--bage);
-  font-size: 18px;
+  color: var(--dark);
+  font-size: 1.2vw;
   cursor: pointer;
-  transition: color 0.2s ease;
-  flex-shrink: 0;     /* Запрет на сжатие */
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .kick-button:hover {
   color: red;
   transform: scale(1.2);
 }
+
+.right-panel {
+  background-color: var(--text-light);
+  border-radius: 20px;
+  padding: 2vw 2.5vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vw;
+  align-items: center;
+  min-width: 250px;
+}
+
+.session-box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1.5vw;
+  align-items: center;
+}
+
+.session-code {
+  font-size: 3vw;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.session-count {
+  font-size: 2vw;
+  color: var(--accent);
+}
+
+.terminate-btn, .start-btn {
+  background-color: var(--btn);
+  color: var(--accent);
+  width: 100%;
+  padding: 0.8vw 2vw;
+  font-size: 2vw;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  width: 100%;
+
+  &:hover {
+    background-color: var(--btn-hover);
+    transform: scale(1.02);
+  }
+}
+
 

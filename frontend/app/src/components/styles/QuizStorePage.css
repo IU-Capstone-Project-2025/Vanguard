@@ -62,53 +62,46 @@
 }
 
 .quiz-list {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 19px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
   max-height: 70vh;
   overflow-y: auto;
-  justify-content: stretch;
-  
+  padding-bottom: 2rem;
 }
 
 .quiz-card {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    min-width: 20% ;      
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    overflow: hidden;
-    /* padding: 16px; */
-    box-sizing:border-box;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fafafa;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
 
-    
-    background-color: #fafafa;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    h3 {
-        padding: 8px 16px;
-        text-align: left;
-        margin: 0;
-    };
 
-    img {
-        width: 100%;
-        min-height: 160px;
-        /* background-clip: content-box; */
-        /* overflow-inline: clip; */
-        object-fit: cover;
-        display: block;
-    }
+.quiz-card h3 {
+  padding: 8px 16px;
+  text-align: left;
+  margin: 0;
+  font-size: 18px;
+}
 
-    p { 
-        color: #5a5a5a;
-        font-size: 12px;
-        padding: 0 16px;
-        text-align: left;
-        margin: 0;
-        margin-bottom: 13%;
-    }
+.quiz-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.quiz-card p {
+  color: #5a5a5a;
+  font-size: 14px;
+  padding: 0 16px;
+  text-align: left;
+  margin: 0;
+  margin-bottom: 16px;
 }
 
 .quiz-buttons {
@@ -124,14 +117,19 @@
     cursor: pointer;
     border: none;
     border-radius: 20px;
-    background-color: var(--orange);
+    
     color: var(--bage);
     transition: all 0.2s ease-in-out;
   }
+  button.primary-button {
+    background-color: var(--orange);
+    color: var(--bage);
+    transition: all 0.3s ease;
+  }
 
   button.primary-button:hover {
-    background-color: var(--dark);
-    color: var(--bage);
+    background-color: #FFBD7C;
+    color: var(--accent);
     transform: translateY(-2px);
     /* letter-spacing: 1px; */
     /* padding-left: 13px; */

@@ -1,117 +1,219 @@
 :root {
   --orange: #D38E5A;
-  --bage: #F9F3EB;
+  --beige: #F9F3EB;
   --dark: #2A2B2B;
+  --light-orange: #F4CBA0;
+  --bg-orange: #F6B37F;
+  --text-light: #F9F3EB;
 }
 
-.game-process-container {
-  height: 50vw;
-  justify-content: center;
-}
-
-.options-grid-player {
-  background-color: var(--bage);
-  border-radius: 25px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  margin: 10% 25%;
-  gap: 1vw;
-}
-
+/* Общий контейнер */
 .game-process {
-  background-color: var(--orange);
-  padding: 3vw;
-  font-family: Arial, sans-serif;
+  padding: 0;
+  margin: 0;
+  font-family: 'Jua', sans-serif;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content:flex-end;
-  height: 50vw;
 }
 
-.options-grid {
-  background-color: var(--bage);
-  border-radius: 25px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  /* margin: 0 25%; */
-  /* margin-bottom: -10%; */
-  /* gap: 1vw; */
-}
-.controller-question-title {
-  padding-top: 20px;
-  color: var(--bage);
-  text-align: center;
-  height: 50vh;
+/* Основной блок */
+.game-container {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+}
+
+/* === Вопрос === */
+
+.question-section {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.question-header {
+  padding: 0vw 2vw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.answer-indicator, .timer-indicator {
+  width: 10vw;
+  height: 10vw;
+  background: url('../assets/Alien-small.svg') no-repeat center center;
+  display: flex;
   align-items: center;
   justify-content: center;
-  h2 {
-    font-size: 2rem;
-    margin: 1vh 0 ;
-  }
-  .question-image {
-    width: 50%;
-    /* box-sizing: border-box; */
-    height: 100%; /* или 100%, если нужно растягивать по высоте */
-    border-radius: 8px;
-    margin: 2px;
-    align-self: center;
-    object-fit: cover;
-    object-position: center;
-  }
   
+  .indicator-text {
+    color: var(--dark);
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+  }
+}
+
+.timer-indicator {
+  opacity: 0;;
+}
+
+/* Картинка вопроса */
+.process-question-image {
+  width: 80%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+/* Текст вопроса + номер */
+.question-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2vw 2vw;
+  position: relative;
+}
+
+.question-number-bubble {
+  background-color: var(--text-light);
+  color: var(--dark);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Текст вопроса */
+.question-text {
+  color: var(--dark);
+  font-size: 2.2rem;
+  margin: 0 2vw;
+  flex: 1;
+}
+
+.question-go-button button {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  width: 80px;
+  height: 80px;
+  /* background-color: var(--bg-orange); */
+
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dark);
+  font-size: 1.5rem;
+  cursor: pointer;
+  text-align: center;
+
+  img {
+    padding-left: 8px;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.question-go-button button:hover {
+  background-color: var(--btn-hover);
+  transform: scale(1.05);
+}
+
+
+/* === Варианты ответа === */
+
+.options-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2vh 1vw;
+  /* padding: 2vh 2vw; */
+  box-sizing: border-box;
+}
+
+.option-item-left,
+.option-item-right {
+  padding: 3vh 2vw;
+  background-color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  border-radius: 35px;
+}
+
+.option-item-left {
+  flex-direction: row-reverse;
+  border-radius: 0 35px 35px 0;
+}
+
+.option-item-right {
+  flex-direction: row;
+  border-radius: 35px 0 0 35px;
+}
+
+.option-image {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.option-text {
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--dark);
+  text-align: center;
+  width: 100%;
+}
+
+/* === Нижняя панель (если понадобится) === */
+
+.process-footer {
+  display: flex;
+  justify-content: center;
+  padding: 2vh 2vw;
 }
 
 .process-button-group {
-    margin: 1vw 1vw;
-    justify-self:flex-end;
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 2vh;
-
-    span {
-      color: var(--bage);
-      font-size: 2rem;
-    }
-
-    button {
-        background-color: var(--dark);
-        color: var(--bage);
-        border-radius: 15px;
-        padding: 1vw;
-        min-width: 10vw;
-        font-size: 28px;
-        border: none;
-        cursor: pointer;
-        transition: transform 0.2s ease, background-color 0.2s ease;
-
-        &:hover:not(:disabled) {
-            background-color: #1c1c1c;
-            transform: translateY(-2px);
-        }
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-    }
+  display: flex;
+  align-items: center;
+  gap: 2vw;
 }
 
-.waiting-text {
-  font-size: 1.5rem;
-  color: #F9F3EB;
-  text-align: center;
-  margin-top: 3vh;
+.process-button-group span {
+  color: var(--beige);
+  font-size: 1.4rem;
 }
 
-.waiting-text {
-  font-size: 1.5rem;
-  color: #F9F3EB;
-  text-align: center;
-  margin-top: 3vh;
+.process-button-group button {
+  background-color: var(--dark);
+  color: var(--beige);
+  border-radius: 15px;
+  padding: 0.8rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.process-button-group button:hover:not(:disabled) {
+  background-color: #1c1c1c;
+  transform: translateY(-2px);
+}
+
+.process-button-group button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

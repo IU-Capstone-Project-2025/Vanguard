@@ -1,11 +1,5 @@
-:root {
-  --orange: #D38E5A;
-  --dark: #2A2B2B;
-  --bage: #F9F3EB;
-}
 
 .final-page-container {
-  background-color: var(--orange);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -23,8 +17,8 @@
 .final-primary-button {
   margin-top: 2rem;
   width: 40vw; /* Match .podium width */
-  background-color: var(--dark);
-  color: var(--bage);
+  background-color: var(--btn);
+  color: var(--accent);
   border: none;
   padding: 1rem 2rem;
   border-radius: 10px;
@@ -33,7 +27,7 @@
   transition: background-color 0.3s ease;
 }
 .final-primary-button:hover {
-  background-color: #1f1f1f;
+  background-color: var(--btn-hover);
 }
 
 .podium {

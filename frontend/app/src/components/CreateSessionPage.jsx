@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie"
 import { API_ENDPOINTS } from '../constants/api';
 
-import './styles/styles.css';
+import './styles/CreateSessionPage.css';
 
 const CreateSessionPage = () => {
   const navigate = useNavigate();
@@ -42,7 +42,6 @@ const CreateSessionPage = () => {
     setSelectedQuiz(quiz);
   };
 
-  // 🎯 POST-запрос к /api/session/sessions
   const createSession = async (quizId) => {
     console.log("Creating session with quizId:", quizId, "userName:", Cookies.get("user_nickname"));
     const response = await fetch(`${API_ENDPOINTS.SESSION}/sessions`, {
@@ -61,19 +60,6 @@ const CreateSessionPage = () => {
     const data = await response.json();
     return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt": "string", "sessionId":"string"}
   };
-
-  // 🌐 Устанавливаем WebSocket-соединение с Real-time Service
-  const connectToWebSocket = (token) => {
-      realTimeWsRef.current = new WebSocket(`${API_ENDPOINTS.SESSION_WS}?token=${token}`)
-      realTimeWsRef.current.onopen = () => {
-          console.log("✅ WebSocket connected with Session Service");
-      };
-
-  realTimeWsRef.current.onerror = (err) => {
-    console.error("❌ WebSocket with Session Service error:", err);
-
-  };
-}
 
 
   const handlePlay = async () => {
@@ -95,7 +81,7 @@ const CreateSessionPage = () => {
     <div className="create-session-main-content">
       <div className="left-side">
         <div className="title">
-          <h2>Now choose the quiz <br /> to start a game</h2>
+          <h2>Ready to roll? <br /> Pick your <span>quiz</span></h2>
           <div className="button-group">
             <button
               className="play-button"
@@ -108,7 +94,7 @@ const CreateSessionPage = () => {
               className="enter-store-button"
               onClick={() => navigate("/store")}
             >
-              + Enter quiz Store
+              + Quiz Store
             </button>
           </div>
         </div>
@@ -126,7 +112,7 @@ const CreateSessionPage = () => {
               className="quiz-search-input"
             />
 
-            <div className="quiz-list">
+            <div className="session-quiz-list">
               {quizzes
                 .filter((quiz) =>
                   quiz.title.toLowerCase().includes(search.toLowerCase())

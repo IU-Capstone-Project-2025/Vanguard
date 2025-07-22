@@ -22,9 +22,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { SessionWebSocketProvider } from './contexts/SessionWebSocketContext';
 import { RealtimeWebSocketProvider } from './contexts/RealtimeWebSocketContext';
 import ConstructorPage from './components/ConstructorPage';
+import FloatingBackground from './components/background/FloatingBackground';
 
 function App() {
   return (
+    <div className='app'>
+    <FloatingBackground />
     <Router>
       <Routes>
         {/* Страницы без WebSocket */}
@@ -97,6 +100,7 @@ function App() {
         />
       </Routes>
     </Router>
+  </div>
   );
 }
 

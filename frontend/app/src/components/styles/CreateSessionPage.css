@@ -1,0 +1,140 @@
+.create-session-main-content {
+    display: flex;
+    height: 100vh;
+    /* background-color: var(--orange); */
+    color: var(--accent);
+
+    .left-side {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 8vw;
+
+        .title {
+            /* flex: 1; */
+            width: 70%;
+            h2 {
+                color: var(--text-light);
+                font-size: 4rem;
+                line-height: 1.4;
+                margin-bottom: 4vh;
+                span {
+                    color: var(--accent)
+                }
+            }
+            /* max-width: 60%; */
+        }
+
+        .button-group {
+            margin: 5vw 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2vh;
+            width: 75%;
+
+            button {
+                background-color: var(--btn);
+                color: var(--accent);
+                border-radius: 15px;
+                padding: 1vw;
+                min-width: 10vw;
+                font-size: 28px;
+                border: none;
+                cursor: pointer;
+                transition: transform 0.2s ease, background-color 0.2s ease;
+
+                &:hover:not(:disabled) {
+                    background-color: var(--btn-hover);
+                    transform: translateY(-5px);
+                }
+
+                &:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+            }
+        }
+    }
+
+    .right-side {
+        width: 50%;
+        height: 100vh;
+        padding-right: 8vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        .quiz-list-container {
+            background-color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center; /* Center horizontally */
+            padding: 10px;
+            height: 75%;
+            border-radius: 20px;
+            width: 90%;
+            /* max-width: 28vw; */
+            display: flex;
+            flex-direction: column;
+            gap: 1vh;
+
+            .quiz-search-panel{
+                padding: 0;
+                margin: 0;
+                text-align: center;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+
+                input {
+                    width: 100%;
+                    background-color: var(--light-blue);
+                    color: var(--accent);
+                    padding: 1vh 1vw;
+                    font-size: 18px;
+                    border: none;
+                    border-radius: 10px;
+                    box-sizing: border-box;
+                    margin-bottom: 2vw;
+                }
+
+                .session-quiz-list {
+                    overflow: visible;
+                    width: 100%;
+                    padding: 0;
+                    margin: 0;
+                }
+                
+
+                .quiz-item {
+                    text-align: left;
+                    width: 100%;
+                    background-color: var(--light-blue);
+                    color: var(--accent);
+                    padding: 3vh 1vw;
+                    margin: 1vh 0;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    font-size: 20px;
+                    transition: all 0.3s ease-in-out;
+                    box-sizing: border-box;
+
+                    &.selected {
+                        background-color: var(--blue);
+                        font-weight: bold;
+                        transform: scale(1.02);
+                    }
+
+                    &:hover {
+                        opacity: 0.9;
+                        transform: scale(1.02);
+                    }
+                }
+            }
+        }
+    }
+}

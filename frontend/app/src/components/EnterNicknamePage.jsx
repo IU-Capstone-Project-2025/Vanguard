@@ -65,10 +65,10 @@ const PlayGamePage = () => {
     }
     return (
         <div className="playgame-main-content">
-            
+            <div className="left-side">
                 <div className="title">
                     <h1>
-                        Now enter your nickname
+                        <span>Who</span> are you today?
                     </h1>
                     <input 
                         type="text"
@@ -95,6 +95,7 @@ const PlayGamePage = () => {
                     </div>
                 </div>
             </div>
+        </div>
     )
 };
 

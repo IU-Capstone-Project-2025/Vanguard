@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import './ShapedButton.css';
+// import './ShapedButton.css';
 
-const ShapedButton = ({ shape, text, onClick }) => {
+const ShapedButton = ({ shape, text, onClick, className = '', style = {} }) => {
   const [pathData, setPathData] = useState(null);
   const [pathBBox, setPathBBox] = useState(null);
-  const clipId = `clip-${btoa(shape).replace(/[^a-zA-Z0-9]/g, '')}`;
+  const [clipId] = useState(`clip-${Math.random().toString(36).slice(2, 10)}`);
 
   useEffect(() => {
     const loadSvg = async () => {
@@ -14,30 +14,16 @@ const ShapedButton = ({ shape, text, onClick }) => {
 
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(txt, 'image/svg+xml');
-
         const path = svgDoc.querySelector('path');
+        const svgElem = svgDoc.querySelector('svg');
+
         if (!path) {
           console.error('SVG does not contain a <path> element');
           return;
         }
 
         const d = path.getAttribute('d');
-
-        // Получаем viewBox из SVG, если есть
-        const svgElem = svgDoc.querySelector('svg');
-        let viewBox = svgElem?.getAttribute('viewBox');
-        let vb = null;
-
-        if (viewBox) {
-          // Превращаем строку "minX minY width height" в массив чисел
-          vb = viewBox.split(' ').map(Number);
-        } else {
-          // Если viewBox нет — пытаемся вычислить bounding box вручную (не в DOM, а в JS)
-          // Тут нет прямого способа без рендера, можно сделать грубое приближение
-          // Но лучше требовать viewBox в SVG
-          console.warn('SVG has no viewBox, scaling may be inaccurate');
-          vb = [0, 0, 1000, 1000]; // примерный fallback
-        }
+        const vb = svgElem?.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, 1000, 1000];
 
         setPathData(d);
         setPathBBox({ x: vb[0], y: vb[1], width: vb[2], height: vb[3] });
@@ -51,17 +37,14 @@ const ShapedButton = ({ shape, text, onClick }) => {
 
   if (!pathData || !pathBBox) return null;
 
-  // Считаем масштаб для objectBoundingBox (0..1) — нужно трансформировать из viewBox в (0,0,1,1)
   const scaleX = 1 / pathBBox.width;
   const scaleY = 1 / pathBBox.height;
   const translateX = -pathBBox.x * scaleX;
   const translateY = -pathBBox.y * scaleY;
-
-  // transform: сначала сдвигаем, чтобы minX,minY стали 0,0, потом масштабируем по ширине и высоте к 1
   const transform = `translate(${translateX},${translateY}) scale(${scaleX},${scaleY})`;
 
   return (
-    <div className="shaped-button-wrapper">
+    <div className={`shaped-button-wrapper ${className}`} style={style}>
       <svg className="hidden-svg" aria-hidden="true" focusable="false">
         <defs>
           <clipPath id={clipId} clipPathUnits="objectBoundingBox">
@@ -83,6 +66,5 @@ const ShapedButton = ({ shape, text, onClick }) => {
     </div>
   );
 };
-
 
 export default ShapedButton;

@@ -150,29 +150,27 @@ const WaitGameStartAdmin = () => {
     finishSession(sessionCode);
   };
 
-  return (
-    <div className="wait-admin-container">
-      <div className="wait-admin-panel">
-        <h1>Now let's wait your friends <br /> Code: #{sessionCode}</h1>
-        <div className="admin-button-group">
-          <button onClick={handleStart} disabled={hasClickedNext}>▶️ Start</button>
-          <button onClick={handleTerminate}>❌ Terminate</button>
-        </div>
+  const storedPlayers = JSON.parse(sessionStorage.getItem('players') || '[]');
+
+  return ( 
+    <div className="wait-admin-wrapper">
+      <h1 className="waiting-title">Waiting for your awesome <span className="highlight">crew</span>...</h1>
+      <div className="wait-layout">
         <div className="players-grid">
-          {(Array.from(players.entries())).map(([id, name]) => (
-              name !== "Admin" &&
-              <div key={id + name} className="player-box" >
+         {Array.from(players.entries()).map(([id, name]) => (
+            <div key={id + name} className="player-box" key={id} onClick={() => handleKick(id)}>
               <span style={{ '--name-length': +name.length }}>{name}</span>
-              {name != "Admin" &&
-              <button
-                className="kick-button"
-                onClick={() => handleKick(id)}
-                title={`Kick ${name}`}
-              >
-                ❌
-              </button>}
+              <div className="tooltip">Click to kick user</div>
             </div>
           ))}
+        </div>
+        <div className="right-panel">
+          <div className="session-box">
+            <div className="session-code"># <strong>{sessionCode}</strong></div>
+            <div className="session-count">👤 {players.size}/40</div>
+            <button onClick={handleTerminate} className="terminate-btn">✖ Terminate</button>
+            <button onClick={handleStart} disabled={hasClickedNext} className="start-btn">▶ Start</button>
+          </div>
         </div>
       </div>
     </div>
