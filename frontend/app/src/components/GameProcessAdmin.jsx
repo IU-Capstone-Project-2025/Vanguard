@@ -48,6 +48,7 @@ const GameProcessAdmin = () => {
       console.error('Session code is not available');
       return;
     }
+      
     try {
       const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
         method: 'POST',
@@ -101,6 +102,7 @@ const GameProcessAdmin = () => {
   const handleNextQuestion = async (e) => {
     e.preventDefault();
     const sessionCode = sessionStorage.getItem('sessionCode');
+    
     await toNextQuestion(sessionCode);
     await listenQuizQuestion(sessionCode);
   };
@@ -139,13 +141,21 @@ const GameProcessAdmin = () => {
               <h2 className="question-text">
                 {currentQuestion?.text || 'Waiting for question…'}
               </h2>
+              
               <div className="question-go-button">
-                <button
+                {questionIndex < questionsAmount ?
+                (<button
                   className="shaped-button"
                   onClick={(e) => handleNextQuestion(e)}
                 >
                   <img src={Triangle} alt="Go" className="shaped-button-icon" fill="var(--dark)"/>
-                </button>
+                </button>)
+                : (
+                <button className="shaped-button"
+                  onClick={() => finishSession(sessionStorage.getItem('sessionCode'))}
+                >
+                  <img src={Triangle} alt="Finish" className="shaped-button-icon" fill="var(--dark)"/>
+                </button>)}
               </div>
             </div>
           </div>
