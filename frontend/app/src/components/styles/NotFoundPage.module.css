@@ -1,0 +1,29 @@
+.notfound-page {
+    text-align: center;
+    padding: 50px;
+    background-color: #f0f0f0;
+    min-height: 100vh;
+}
+
+.content-404 {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.home-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.home-button:hover {
+    background-color: #45a049;
+}

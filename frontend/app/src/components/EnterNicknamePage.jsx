@@ -1,22 +1,22 @@
-import React, {useEffect, useRef} from "react";
-import './styles/styles.css'
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-// Import API_ENDPOINTS from its module (adjust the path as needed)
+import styles from './styles/EnterNicknamePage.module.css';
 import { API_ENDPOINTS } from "../constants/api.js";
 
 const PlayGamePage = () => {
-    const [nickname,setNickname] = useState("")
-    const navigate = useNavigate()
-    const inputRef = useRef(null)
+    const [nickname, setNickname] = useState("");
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+    const inputRef = useRef(null);
 
     useEffect(() => {
-        inputRef.current.focus()
+        inputRef.current?.focus();
     }, []);
+
     const joinSession = async (sessionCode, userName) => {
-            console.log("Joining session with code:", sessionCode, "and username:", userName);
-    
-            // Проверка на наличие кода с символом '#'
+        try {
+            setIsLoading(true);
             const response = await fetch(`${API_ENDPOINTS.SESSION}/join`, {
                 method: "POST",
                 headers: {
@@ -27,76 +27,86 @@ const PlayGamePage = () => {
                     "userName": userName
                 }),
             });
-            if (response.statusCode === 400) {
-                console.error("❌ Error joining session:", response.statusText);
-                alert("Failed to join session. Please check the code and try again.");
-                return;
-            }else if (response.statusCode === 405) {
-                console.error("❌ Error joining session:", response.statusText);
-                return ;
-            }else if (response.statusCode === 500) {
-                console.error("❌ Error joining session:", response.statusText);
-                return ;
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Failed to join session");
             }
-            const data = await response.json();
-            return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt":"string", "sessionId":"string"}
-    
-        };
+
+            return await response.json();
+        } catch (error) {
+            console.error("Error joining session:", error);
+            setError(error.message || "Failed to join session");
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handlePlay = async () => {
-        sessionStorage.setItem('nickname', nickname     )
-        if (sessionStorage.getItem("sessionCode") !== undefined && nickname) {
-            const code = sessionStorage.getItem("sessionCode");
-            const sessionData = await joinSession(code, sessionStorage.getItem("nickname"))
-            if (!sessionData || !sessionData.sessionId) {
-                console.error("❌ Failed to join session or session ID is missing");
-                alert("Failed to join session. Please check the code and try again.");
-                return;
+        if (!nickname.trim()) {
+            setError("Please enter a nickname to continue");
+            return;
+        }
+
+        sessionStorage.setItem('nickname', nickname);
+        
+        try {
+            const sessionCode = sessionStorage.getItem("sessionCode");
+            if (sessionCode) {
+                const sessionData = await joinSession(sessionCode, nickname);
+                if (!sessionData?.sessionId) {
+                    throw new Error("Invalid session data received");
+                }
+                sessionStorage.setItem('jwt', sessionData.jwt);
+                navigate(`/wait/${sessionCode}`);
+            } else {
+                navigate('/join');
             }
-            sessionStorage.setItem('jwt', sessionData.jwt);
-            navigate(`/wait/${code}`);
-        }else if (nickname && !sessionStorage.getItem("sessionCode")) {
-            sessionStorage.setItem('nickname', nickname);
-            navigate('/join');
+        } catch (error) {
+            // Error is already handled in joinSession
         }
-        else {
-            alert("Please enter a nickname to continue.");
-        }
-    }
+    };
+
     return (
-        <div className="playgame-main-content">
-            <div className="left-side">
-                <div className="title">
+        <div className={styles['playgame-main-content']}>
+            <div className={styles['left-side']}>
+                <div className={styles.title}>
                     <h1>
                         <span>Who</span> are you today?
                     </h1>
                     <input 
                         type="text"
                         ref={inputRef}
-                        placeholder="enter the name here"
+                        placeholder="Enter your name here"
                         required
                         autoFocus
                         value={nickname}
-                        onChange={(e)=> {
+                        onChange={(e) => {
                             const nick = e.target.value;
-                            if (nick.length<=16) {
-                                setNickname(nick)
-                        }}}
-                        className="code-input"
+                            if (nick.length <= 16) {
+                                setNickname(nick);
+                                setError(null);
+                            }
+                        }}
+                        className={styles['code-input']}
                         onKeyDown={(e) => e.key === "Enter" && handlePlay()}
                     />
-                    <div className="button-group">
-                        <button id="play"
-                                className="play-button"
-                                onClick={handlePlay}
-                            >
-                            <span>Play</span>
+                    {error && <div className={styles.error}>{error}</div>}
+                    <div className={styles['button-group']}>
+                        <button
+                            id="play"
+                            className={styles['play-button']}
+                            onClick={handlePlay}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Joining..." : <span>Play</span>}
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    )
+    );
 };
 
 export default PlayGamePage;

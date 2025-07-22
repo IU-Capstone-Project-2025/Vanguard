@@ -1,7 +1,6 @@
-// ConstructorPage.jsx
 import React, { useState } from "react";
 import QuestionCard from "./childComponents/QuestionCard";
-import "./styles/ConstructorPage.css";
+import styles from './styles/ConstructorPage.module.css';
 import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "../constants/api.js";
 
@@ -58,15 +57,15 @@ const ConstructorPage = () => {
   };
 
   return (
-    <div className="constructor-page">
-      <nav className="nav-links">
+    <div className={styles["constructor-page"]}>
+      <nav className={styles["nav-links"]}>
         <a href="/">Home</a>
         <a href="/join">Join</a>
         <a href="/create">Create</a>
       </nav>
 
-      <div className="constructor-content">
-        <div className="constructor-header">
+      <div className={styles["constructor-content"]}>
+        <div className={styles["constructor-header"]}>
           <input
             type="text"
             placeholder="Enter Quiz Title"
@@ -85,12 +84,12 @@ const ConstructorPage = () => {
           />
         ))}
 
-        <div className="add-question" onClick={handleAddQuestion}>＋</div>
+        <div className={styles["add-question"]} onClick={handleAddQuestion}>＋</div>
 
-        <button className="submit-button" onClick={handleSubmit}>Submit</button>
+        <button className={styles["submit-button"]} onClick={handleSubmit}>Submit</button>
       </div>
     </div>
   );
 };
 
-export default ConstructorPage;
+export default ConstructorPage

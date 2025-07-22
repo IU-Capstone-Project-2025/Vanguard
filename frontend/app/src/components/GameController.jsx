@@ -4,7 +4,7 @@ import { useSessionSocket } from "../contexts/SessionWebSocketContext";
 import { useNavigate } from "react-router-dom";
 import ShapedButton from "./childComponents/ShapedButton";
 import ShowQuizStatistics from "./childComponents/ShowQuizStatistics";
-import "./styles/GameController.css";
+import styles from './styles/GameController.module.css';
 import PentagonYellow from './assets/Pentagon-yellow.svg';
 import CoronaIndigo from './assets/Corona-indigo.svg';
 import ArrowOrange from './assets/Arrow-orange.svg';
@@ -24,6 +24,7 @@ const GameController = () => {
   const [popularAnswers, setPopularAnswers] = useState({});
   const [userAnswers, setUserAnswers] = useState([]);
   const [stage, setStage] = useState("question"); // "question", "waiting", "statistics", "waiting_question"
+  const [error, setError] = useState(null);
 
   const sessionCode = sessionStorage.getItem("sessionCode");
 
@@ -40,12 +41,20 @@ const GameController = () => {
     const token = sessionStorage.getItem("jwt");
     const sessionCode = sessionStorage.getItem("sessionCode");
 
-    if (!token || !sessionCode) return;
+    if (!token || !sessionCode) {
+      setError("Missing session credentials");
+      return;
+    }
 
-    connectRealtime(token, sessionCode);
+    try {
+      connectRealtime(token, sessionCode);
+    } catch (err) {
+      setError("Failed to connect to the game server");
+      console.error("Connection error:", err);
+    }
 
-    if (wsRefRealtime.current) {
-      wsRefRealtime.current.onmessage = (event) => {
+    const handleRealtimeMessage = (event) => {
+      try {
         const data = JSON.parse(event.data);
         console.log("Realtime message received:", data);
 
@@ -62,20 +71,18 @@ const GameController = () => {
             break;
 
           case "question_stat":
-            console.log("Received question statistics:", data);
             setPopularAnswers(data.payload.answers);
             setCorrect(data.correct);
             setStage("statistics");
 
-            // Обновляем массив правильности ответов
             setUserAnswers((prev) => {
               const updated = [...prev, !!data.correct];
               sessionStorage.setItem("userAnswers", JSON.stringify(updated));
               return updated;
             });
             break;
+
           case "next_message":
-            console.log("Received next message:", data);
             setStage("question");
             setChosenOption(null);
             break;
@@ -83,61 +90,73 @@ const GameController = () => {
           default:
             break;
         }
-      };
+      } catch (err) {
+        console.error("Error processing message:", err);
+        setError("Error processing game data");
+      }
+    };
 
-      wsRefRealtime.current.onclose = () => {
-        endSession();
-      };
+    if (wsRefRealtime.current) {
+      wsRefRealtime.current.onmessage = handleRealtimeMessage;
+      wsRefRealtime.current.onclose = endSession;
     }
 
-    // if (wsRefSession.current) {
-    //   wsRefSession.current.onclose = () => {
-    //     endSession();
-    //   };
-    // }
-
     return () => {
-      if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
-      if (wsRefSession.current) wsRefSession.current.onmessage = null;
+      if (wsRefRealtime.current) {
+        wsRefRealtime.current.onmessage = null;
+        wsRefRealtime.current.onclose = null;
+      }
     };
-  }, [connectRealtime, endSession, wsRefRealtime, wsRefSession]);
+  }, [connectRealtime, endSession, wsRefRealtime]);
 
   const handleAnswer = (index) => {
     setChosenOption(index);
-    if (!wsRefRealtime.current) return;
+    if (!wsRefRealtime.current) {
+      setError("Connection to game server lost");
+      return;
+    }
 
-    const timestamp = new Date().toISOString();
-    const answerMessage = {
-      type: "answer",
-      option: index,
-      timestamp
-    };
-
-    wsRefRealtime.current.send(JSON.stringify(answerMessage));
-    setStage("waiting");
+    try {
+      const timestamp = new Date().toISOString();
+      const answerMessage = {
+        type: "answer",
+        option: index,
+        timestamp
+      };
+      wsRefRealtime.current.send(JSON.stringify(answerMessage));
+      setStage("waiting");
+    } catch (err) {
+      console.error("Error sending answer:", err);
+      setError("Failed to submit answer");
+    }
   };
 
   return (
-    <div className="game-process-player">
+    <div className={styles['game-process-player']}>
+      {error && <div className={styles.error}>{error}</div>}
+
       {stage === "statistics" && (
         <ShowQuizStatistics
           stats={popularAnswers}
           correct={correct}
-          onClose={() => setStage("question")} // переходим в next_question
+          onClose={() => setStage("question")}
         />
       )}
 
       {stage === "question" && (
-        <div className="options-grid-player">
+        <div className={styles['options-grid-player']}>
           {question.options.map((option, idx) => (
             <div 
               key={idx} 
-              className={`controller-answer-option ${idx === 0 || idx === 2 ? "left" : "right"}`}>
+              className={`${styles['controller-answer-option']} ${
+                idx === 0 || idx === 2 ? styles.left : styles.right
+              }`}
+            >
               <button
-                className="option-button"
+                className={styles['option-button']}
                 onClick={() => handleAnswer(idx)}
-                >
-                <img src={question.options[idx]} alt='option'/>
+              >
+                <img src={question.options[idx]} alt={`option ${idx + 1}`} />
               </button>
             </div>
           ))}
@@ -145,13 +164,15 @@ const GameController = () => {
       )}
 
       {stage === "waiting" && (
-        <div className="options-grid-player-waiting">
-          <img src={question.options[choosenOption]} alt="shape"/>
+        <div className={styles['options-grid-player-waiting']}>
+          <img src={question.options[choosenOption]} alt="selected shape" />
         </div>
       )}
 
       {stage === "waiting_question" && (
-        <div className="waiting-message">Waiting for the next question...</div>
+        <div className={styles['waiting-message']}>
+          Waiting for the next question...
+        </div>
       )}
     </div>
   );

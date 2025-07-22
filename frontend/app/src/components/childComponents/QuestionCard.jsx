@@ -1,6 +1,5 @@
-// components/childComponents/QuestionCard.jsx
 import React, { useState, useRef } from "react";
-import "./QuestionCard.css";
+import styles from './QuestionCard.module.css';
 import sampleImage from "../assets/sampleImage.png";
 import { API_ENDPOINTS } from "../../constants/api";
 
@@ -28,22 +27,13 @@ const QuestionCard = ({ question, index, onChange }) => {
       is_correct: idx === i,
     }));
     onChange({ ...question, options: updatedOptions });
-    setShowMenuIndex(null)
+    setShowMenuIndex(null);
   };
-
-  const handleMarkIncorrect = (i) => {
-    const updatedOptions = question.options.map((opt, idx) => ({
-      ...opt,
-      is_correct: false,
-    }));
-    onChange({ ...question, options: updatedOptions });
-    setShowMenuIndex(null)
-  }
 
   const handleDeleteOption = (i) => {
     const updatedOptions = question.options.filter((_, idx) => idx !== i);
     onChange({ ...question, options: updatedOptions });
-    setShowMenuIndex(null)
+    setShowMenuIndex(null);
   };
 
   const handleContextMenu = (e, i) => {
@@ -52,12 +42,11 @@ const QuestionCard = ({ question, index, onChange }) => {
   };
 
   const handleUploadImage = async (e) => {
-    console.log("Uploading image...");
     const file = e.target.files[0];
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("file", file); // название поля должно быть "image"
+    formData.append("file", file);
 
     try {
       const res = await fetch(`${API_ENDPOINTS.QUIZ}/images/upload`, {
@@ -71,61 +60,62 @@ const QuestionCard = ({ question, index, onChange }) => {
       }
 
       const data = await res.json();
-      const imageUrl = data.url;
-      console.log(imageUrl)
-
-      onChange({ ...question, image_url: imageUrl });
+      onChange({ ...question, image_url: data.url });
     } catch (err) {
-      alert("Image upload failed: " + err.message);
+      console.error("Image upload failed:", err);
     }
   };
 
   return (
-    <div className="question-card">
+    <div className={styles['question-card']}>
       <div
-        className="image-upload-container"
+        className={styles['image-upload-container']}
         onMouseEnter={() => setShowMenuIndex("image")}
-        // onMouseLeave={() => setShowMenuIndex(null)}
         onClick={handleButtonClick}
       >
         <img
           src={question.image_url || sampleImage}
           alt="Question"
-          className="question-image"
+          className={styles['question-image']}
         />
         {showMenuIndex === "image" && (
-          <div className="upload-wrapper">
-            <button className="upload-button">Upload Image</button>
+          <div className={styles['upload-wrapper']}>
+            <button className={styles['upload-button']}>Upload Image</button>
             <input
               ref={fileInputRef}
-              id={`fileInput-${index}`}
               type="file"
               accept="image/*"
               style={{ display: "none" }}
-              onChange={(e) => {
-                console.log("Image selected:", e.target.files[0]);
-                handleUploadImage(e);
-              }}
+              onChange={handleUploadImage}
             />
           </div>
         )}
-
       </div>
-      <div className="question-content">
+
+      <div className={styles['question-content']}>
         <input
           type="text"
           placeholder="Enter question text"
           value={question.text}
           onChange={handleTextChange}
-          className="question-title-input"
+          className={styles['question-title-input']}
         />
-        <div className="answer-buttons">
+        
+        <div className={styles['answer-buttons']}>
           {question.options.map((answer, i) => (
-            <div key={i} className="answer-wrapper" onContextMenu={(e) => handleContextMenu(e, i)}>
-              <button className={`answer-button ${answer.is_correct ? "highlight" : ""}`}>
+            <div 
+              key={i} 
+              className={styles['answer-wrapper']} 
+              onContextMenu={(e) => handleContextMenu(e, i)}
+            >
+              <button 
+                className={`${styles['answer-button']} ${
+                  answer.is_correct ? styles['highlight'] : ''
+                }`}
+              >
                 <input
                   type="text"
-                  className="answer-input"
+                  className={styles['answer-input']}
                   placeholder="Enter answer"
                   value={answer.text}
                   onChange={(e) => handleAnswerChange(i, e.target.value)}
@@ -133,7 +123,7 @@ const QuestionCard = ({ question, index, onChange }) => {
               </button>
 
               {showMenuIndex === i && (
-                <div className="context-menu">
+                <div className={styles['context-menu']}>
                   <div onClick={() => handleMarkCorrect(i)}>Mark as correct</div>
                   <div onClick={() => handleDeleteOption(i)}>Delete</div>
                 </div>

@@ -1,187 +1,222 @@
 import React, { useEffect, useState } from 'react';
 import { useSessionSocket } from '../contexts/SessionWebSocketContext';
 import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
-import './styles/GameProcess.css';
+import styles from './styles/GameProcess.module.css';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../constants/api';
-import ShapedButton from './childComponents/ShapedButton';
 import ShowLeaderBoardComponent from './childComponents/ShowLeaderBoardComponent';
 import PentagonYellow from './assets/Pentagon-yellow.svg';
 import CoronaIndigo from './assets/Corona-indigo.svg';
 import ArrowOrange from './assets/Arrow-orange.svg';
 import Cookie4Blue from './assets/Cookie4-blue.svg';
 import Triangle from './assets/Triangle.svg';
-import Alien from './assets/Alien.svg';
 
 const GameProcessAdmin = () => {
   const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
-  const [currentQuestion, setCurrentQuestion] = useState(sessionStorage.getItem('currentQuestion') != undefined ?
-    JSON.parse(sessionStorage.getItem('currentQuestion')) : {});
+  const [currentQuestion, setCurrentQuestion] = useState(
+    sessionStorage.getItem('currentQuestion') 
+      ? JSON.parse(sessionStorage.getItem('currentQuestion')) 
+      : {}
+  );
   const [questionIndex, setQuestionIndex] = useState(1);
   const [leaderboardVisible, setLeaderboardVisible] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const questionsAmount = currentQuestion.questionsAmount;
+  const questionsAmount = currentQuestion.questionsAmount || 0;
   const navigate = useNavigate();
-  const [questionOptions] = useState([
-    PentagonYellow,
-    CoronaIndigo,
-    ArrowOrange,
-    Cookie4Blue
-  ]);
+  const questionOptions = [PentagonYellow, CoronaIndigo, ArrowOrange, Cookie4Blue];
 
   useEffect(() => {
     const token = sessionStorage.getItem('jwt');
-    if (!token) return;
+    const sessionCode = sessionStorage.getItem('sessionCode');
+    
+    if (!token || !sessionCode) {
+      setError('Missing session credentials');
+      return;
+    }
+
+    try {
+      connectSession(token, sessionCode);
+      connectRealtime(token, sessionCode);
+    } catch (err) {
+      setError('Failed to connect to game server');
+      console.error('Connection error:', err);
+    }
+
+    const handleRealtimeMessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Realtime message:', data);
+
+        if (data.type === 'leaderboard') {
+          sessionStorage.setItem('leaders', JSON.stringify(data.payload.users));
+          setLeaderboardData(data.payload);
+          setLeaderboardVisible(true);
+        } else if (data.type === 'question') {
+          setCurrentQuestion(data);
+          setQuestionIndex(data.questionId);
+          sessionStorage.setItem('currentQuestion', JSON.stringify(data));
+        }
+      } catch (err) {
+        console.error('Error processing message:', err);
+        setError('Error processing game data');
+      }
+    };
+
+    if (wsRefRealtime.current) {
+      wsRefRealtime.current.onmessage = handleRealtimeMessage;
+    }
 
     return () => {
-      if (wsRefRealtime.current) wsRefRealtime.current.onmessage = null;
-      if (wsRefSession.current) wsRefSession.current.onmessage = null;
-      if (wsRefRealtime.current) wsRefRealtime.current.onclose = { finishSession };
-      if (wsRefSession.current) wsRefSession.current.onclose = { finishSession };
+      if (wsRefRealtime.current) {
+        wsRefRealtime.current.onmessage = null;
+      }
+      if (wsRefSession.current) {
+        wsRefSession.current.onmessage = null;
+      }
     };
   }, [connectSession, connectRealtime, wsRefSession, wsRefRealtime]);
 
   const toNextQuestion = async (sessionCode) => {
     if (!sessionCode) {
-      console.error('Session code is not available');
+      setError('Session code is missing');
       return;
     }
-      
+
     try {
+      setIsLoading(true);
       const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error('Failed to start next question');
+      
+      if (!response.ok) {
+        throw new Error('Failed to start next question');
+      }
     } catch (error) {
       console.error('Error starting next question:', error);
+      setError('Failed to advance to next question');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const listenQuizQuestion = async (sessionCode) => {
-    if (!sessionCode) {
-      console.error('Session code is not available');
-      return;
-    }
+  const finishSession = async () => {
+    try {
+      setIsLoading(true);
 
-    wsRefRealtime.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'leaderboard') {
-        sessionStorage.setItem('leaders', JSON.stringify(data.payload.users));
-        setLeaderboardData(data.payload);
-        setLeaderboardVisible(true);
-      } else if (data.type === 'question') {
-        setCurrentQuestion(data);
-        setQuestionIndex(data.questionId);
-        sessionStorage.setItem('currentQuestion', JSON.stringify(data));
-      }
-    };
-  };
+      const sessionCode = sessionStorage.getItem('sessionCode');
+      await toNextQuestion(sessionCode);
 
-  const finishSession = async (code) => {
-    sessionStorage.removeItem('quizData');
-    sessionStorage.removeItem('currentQuestion');
-    if (!wsRefRealtime || !wsRefSession) {
-      navigate('/');
-    } else {
-      await toNextQuestion(code);
-      await listenQuizQuestion(code);
+      sessionStorage.removeItem('quizData');
+      sessionStorage.removeItem('currentQuestion');
+      
       closeWsRefRealtime();
       closeWsRefSession();
+      
       navigate('/final');
+    } catch (error) {
+      console.error('Error finishing session:', error);
+      setError('Failed to end session properly');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLeaderboardClick = () => {
-    wsRefRealtime.current.send(JSON.stringify({ type: 'next_question' }));
-    setLeaderboardVisible(false);
+    if (!wsRefRealtime.current) {
+      setError('Connection to game server lost');
+      return;
+    }
+
+    try {
+      wsRefRealtime.current.send(JSON.stringify({ type: 'next_question' }));
+      setLeaderboardVisible(false);
+    } catch (err) {
+      console.error('Error sending next question:', err);
+      setError('Failed to proceed to next question');
+    }
   };
 
   const handleNextQuestion = async (e) => {
     e.preventDefault();
-    const sessionCode = sessionStorage.getItem('sessionCode');
-    
-    await toNextQuestion(sessionCode);
-    await listenQuizQuestion(sessionCode);
+    await toNextQuestion(sessionStorage.getItem('sessionCode'));
   };
 
   return (
-    <div className="game-process">
+    <div className={styles['game-process']}>
+      {error && <div className={styles.error}>{error}</div>}
+
       {leaderboardVisible && leaderboardData ? (
         <ShowLeaderBoardComponent
           leaderboardData={leaderboardData}
-          onClose={() => handleLeaderboardClick()} 
+          onClose={handleLeaderboardClick} 
         />
       ) : (
-        <div className="game-container">
-          <div className="question-section">
-            <div className="question-header">
-              <div className='answer-indicator'>
-                <span className='indicator-text'>11/17</span>
+        <div className={styles['game-container']}>
+          <div className={styles['question-section']}>
+            <div className={styles['question-header']}>
+              <div className={styles['answer-indicator']}>
+                <span className={styles['indicator-text']}>11/17</span>
               </div>
 
               {currentQuestion.payload && (
                 <img
                   src={currentQuestion.payload}
                   alt="Question"
-                  className="process-question-image"
+                  className={styles['process-question-image']}
                 />
               )}
 
-              <div className='timer-indicator'>
-                <span className='indicator-text'>11/17</span>
+              <div className={styles['timer-indicator']}>
+                <span className={styles['indicator-text']}>11/17</span>
               </div>
             </div>
-            <div className="question-body">
-              <div className="question-number-bubble">
+
+            <div className={styles['question-body']}>
+              <div className={styles['question-number-bubble']}>
                 {questionIndex}
               </div>
-              <h2 className="question-text">
-                {currentQuestion?.text || 'Waiting for question…'}
+              <h2 className={styles['question-text']}>
+                {currentQuestion?.text || 'Waiting for question...'}
               </h2>
               
-              <div className="question-go-button">
-                {questionIndex < questionsAmount ?
-                (<button
-                  className="shaped-button"
-                  onClick={(e) => handleNextQuestion(e)}
+              <div className={styles['question-go-button']}>
+                <button
+                  className={styles['shaped-button']}
+                  onClick={questionIndex < questionsAmount ? handleNextQuestion : finishSession}
+                  disabled={isLoading}
                 >
-                  <img src={Triangle} alt="Go" className="shaped-button-icon" fill="var(--dark)"/>
-                </button>)
-                : (
-                <button className="shaped-button"
-                  onClick={() => finishSession(sessionStorage.getItem('sessionCode'))}
-                >
-                  <img src={Triangle} alt="Finish" className="shaped-button-icon" fill="var(--dark)"/>
-                </button>)}
+                  <img 
+                    src={Triangle} 
+                    alt={questionIndex < questionsAmount ? "Next" : "Finish"} 
+                    className={styles['shaped-button-icon']} 
+                  />
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="options-grid">
-            {currentQuestion?.options.map((option, idx) => (
-              <div key={idx} className={`option-item ${idx % 2 === 0 ? 'option-item-left' : 'option-item-right'}`}>
-                <img src={questionOptions[idx]} alt={option.text} className={`option-image`} />
-                <span className="option-text">{option.text}</span>
+          <div className={styles['options-grid']}>
+            {currentQuestion?.options?.map((option, idx) => (
+              <div 
+                key={idx} 
+                className={`${styles['option-item']} ${
+                  idx % 2 === 0 ? styles['option-item-left'] : styles['option-item-right']
+                }`}
+              >
+                <img 
+                  src={questionOptions[idx]} 
+                  alt={option.text} 
+                  className={styles['option-image']} 
+                />
+                <span className={styles['option-text']}>{option.text}</span>
               </div>
             ))}
           </div>
-
-          {/* <div className="process-footer">
-            <div className="process-button-group">
-              {questionIndex < questionsAmount && (
-                <button onClick={handleNextQuestion} className="button">
-                  Next
-                </button>
-              )}
-              <span>Question: {questionIndex}/{questionsAmount}</span>
-              <button onClick={() => finishSession(sessionStorage.getItem('sessionCode'))} className="nav-button">
-                Finish
-              </button>
-            </div>
-          </div> */}
         </div>
       )}
     </div>

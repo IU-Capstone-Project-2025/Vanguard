@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie"; // импортируем js-cookie
+import Cookies from "js-cookie";
 import { API_ENDPOINTS } from '../constants/api';
 
-import './styles/Auth.css';
+import styles from './styles/Auth.module.css';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -30,12 +30,11 @@ const AuthPage = () => {
       if (response.status === 200) {
         const data = await response.json();
 
-        sessionStorage.setItem("access_token", data.access_token) // more security
+        sessionStorage.setItem("access_token", data.access_token);
 
-        Cookies.set("refresh_token", data.refresh_token); // default 
-        Cookies.set("token_type", data.token_type); // default
+        Cookies.set("refresh_token", data.refresh_token);
+        Cookies.set("token_type", data.token_type);
 
-        // Перенаправляем на главную
         navigate("/");
       } else {
         const data = await response.json();
@@ -51,20 +50,20 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="title">
+    <div className={styles["auth-container"]}>
+      <div className={styles["title"]}>
         <h1>Welcome back to <br /> InnoQuiz</h1>
       </div>
 
-      <div className="login-passwd-container">
-        <div className="login-passwd-panel">
+      <div className={styles["login-passwd-container"]}>
+        <div className={styles["login-passwd-panel"]}>
           <h1>Login</h1>
           <input
             type="text"
             placeholder="Email"
             value={login}
             onChange={(e) => setLogin(e.target.value)}
-            className="login-passwd-input"
+            className={styles["login-passwd-input"]}
           />
 
           <h1>Password</h1>
@@ -73,19 +72,19 @@ const AuthPage = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="login-passwd-input"
+            className={styles["login-passwd-input"]}
           />
 
-          {error && <div className="auth-error">{error}</div>}
+          {error && <div className={styles["auth-error"]}>{error}</div>}
 
-          <button className="submit-button" onClick={handleSubmit}>Submit</button>
+          <button className={styles["submit-button"]} onClick={handleSubmit}>Submit</button>
 
-          <p className="signup-question">No account yet?</p>
-          <button className="signup-button" onClick={handleSignup}>Sign Up</button>
+          <p className={styles["signup-question"]}>No account yet?</p>
+          <button className={styles["signup-button"]} onClick={handleSignup}>Sign Up</button>
         </div>
       </div>
     </div>
   );
-};
+}
 
-export default AuthPage;
+export default AuthPage

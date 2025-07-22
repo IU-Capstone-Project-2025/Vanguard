@@ -1,3 +1,28 @@
+:root {
+    --orange: #D38E5A;
+    --bage: #F9F3EB;
+    --dark: #2A2B2B;
+    --btn-hover: #4f4d4d;
+    --light-gray: #C6BDB3;
+    --gray: #5D5C5D;
+    --accent: #392B58;
+    --btn: #E5E8B6;
+    --btn-hover: #E2E88B;    /* background-color: var(--orange); */
+    --text-light: #F9F3EB;
+    --light-blue: #BFD7FF;
+    --blue: #8AB3F2;
+}
+
+.jua-regular {
+  font-family: "Jua", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+* {
+    font-family: Jua;
+}
+
 .App {
   text-align: center;
 }

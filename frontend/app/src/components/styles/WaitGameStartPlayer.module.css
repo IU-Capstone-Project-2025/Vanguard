@@ -38,12 +38,13 @@
 
 .player-card {
   background-color: var(--light-blue);
+  /* text-align: center; */
   color: var(--accent);
   padding: 0.8vw 1.2vw;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 150px;
   height: 60px;
   transition: transform 0.2s ease;
