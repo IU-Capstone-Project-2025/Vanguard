@@ -1,4 +1,29 @@
-/* ConstructorPage.css */
+/* ConstructorPage.module.css */
+
+
+.nav-links {
+    text-align: center;
+    padding: 2% 0 ;
+    /* width: 100%; */
+    display: flex;
+    justify-content: space-evenly;
+    /* padding: 0 15% ; */
+    a {
+      font-size: 18px;
+      padding: 0 15px;
+      transition: all .3s ease-in-out;
+      margin-left: 15px;
+      text-decoration: none;
+      color: var(--dark);
+      font-weight: bold;
+    }
+    
+    a:hover {
+        transform: translateY(-2px);
+        text-decoration:line-through;
+    }
+}
+
 
 .constructor-page {
   background-color: #f2f2f2;

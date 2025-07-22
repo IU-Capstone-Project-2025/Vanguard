@@ -1,24 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles/FinalAdminPage.css';
-// Import API_ENDPOINTS from its module (adjust the path as needed)
+import styles from './styles/FinalAdminPage.module.css';
 import { API_ENDPOINTS } from '../constants/api';
 
 const FinalAdminPage = () => {
-  const [players, setPlayers] = useState([]);
-  const [sessionCode, setSessionCode] = useState(sessionStorage.getItem('sessionCode') || '');
+  const [sessionCode] = useState(sessionStorage.getItem('sessionCode') || '');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const [players, setPlayers] = React.useState(new Map());
+  
   const endSession = async (code) => {
     try {
+      setIsLoading(true);
       const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${code}/end`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      if (!response.ok) throw new Error(`Failed to end session with code: ${code}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to end session with code: ${code}`);
+      }
 
+      // Clear session storage
       sessionStorage.removeItem('sessionCode');
       sessionStorage.removeItem('quizData');
       sessionStorage.removeItem('currentQuestion');
@@ -28,8 +35,11 @@ const FinalAdminPage = () => {
       navigate('/');
     } catch (error) {
       console.error('Error ending the session:', error);
+      setError('Failed to end session. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     const storedLeaders = sessionStorage.getItem('leaders');
@@ -40,7 +50,6 @@ const FinalAdminPage = () => {
       const leaders = JSON.parse(storedLeaders);
       const players = JSON.parse(storedPlayers);
 
-      // Создаём map: user_id → name
       const nameMap = {};
       players.forEach(p => {
         if (p.name !== 'Admin') {
@@ -48,9 +57,8 @@ const FinalAdminPage = () => {
         }
       });
 
-      // Соединяем лидеров с именами
       const processed = leaders
-        .filter(l => nameMap[l.user_id]) // пропускаем тех, кого нет в nameMap (напр., Admin)
+        .filter(l => nameMap[l.user_id])
         .sort((a, b) => b.score - a.score)
         .slice(0, 3)
         .map((leader, index) => ({
@@ -60,30 +68,43 @@ const FinalAdminPage = () => {
         }));
 
       setPlayers(processed);
-      console.log('Final leaders with names:', processed);
     } catch (err) {
       console.error('Error parsing leaders or players:', err);
+      setError('Failed to load leaderboard data.');
     }
   }, []);
 
-
-
-
   return (
-    <div className="final-page-container">
-      <h1 className="final-title">Meet the Champions!</h1>
-      <div className="podium">
-        {players
-          .sort((a, b) => a.position - b.position)
-          .map((player, idx) => (
-            <div key={idx} className={`podium-block position-${player.position}`}>
-              <span className="player-name">{player.name}</span>
-            </div>
-        ))}
+    <div className={styles['final-page-container']}>
+      <h1 className={styles['final-title']}>Meet the Champions!</h1>
+      
+      {error && <div className={styles.error}>{error}</div>}
+      
+      <div className={styles.podium}>
+        {players.length > 0 ? (
+          players
+            .sort((a, b) => a.position - b.position)
+            .map((player) => (
+              <div 
+                key={player.user_id} 
+                className={`${styles['podium-block']} ${styles[`position-${player.position}`]}`}
+              >
+                <span className={styles['player-name']}>{player.name}</span>
+                <span className={styles['player-score']}>{player.score} pts</span>
+              </div>
+            ))
+        ) : (
+          <div className={styles['no-players']}>No players to display</div>
+        )}
       </div>
-      <div className='buttons-container'>
-        <button className="final-primary-button " onClick={() => endSession(sessionCode)}>
-          Back to Home
+      
+      <div className={styles['buttons-container']}>
+        <button 
+          className={styles['final-primary-button']} 
+          onClick={() => endSession(sessionCode)}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Ending Session...' : 'Back to Home'}
         </button>
       </div>
     </div>
