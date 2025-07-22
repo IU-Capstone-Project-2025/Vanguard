@@ -100,22 +100,6 @@
   max-width: 100%;
 }
 
-.kick-button {
-  position: absolute;
-  right: 6px;
-  background: transparent;
-  border: none;
-  color: var(--dark);
-  font-size: 1.2vw;
-  cursor: pointer;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.kick-button:hover {
-  color: red;
-  transform: scale(1.2);
-}
-
 .right-panel {
   background-color: var(--text-light);
   border-radius: 20px;
