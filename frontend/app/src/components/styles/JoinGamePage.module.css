@@ -92,3 +92,49 @@
         }
     }
 }
+@media (max-width: 768px) {
+  .joingame-main-content {
+    flex-direction: column;
+    height: 80vh;
+
+    .left-side {
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 5vh 5vw;
+
+      .title {
+        margin: 0;
+        text-align: center;
+
+        h1 {
+          font-size: 8vw;
+          text-align: center;
+          margin-bottom: 6vh;
+        }
+
+        .code-input {
+          font-size: 6vw;
+          width: 73vw;
+          padding: 4vw;
+          margin-bottom: 4vh;
+        }
+
+        .button-group {
+          justify-content: center;
+
+          button {
+            width: 80vw;
+            font-size: 6vw;
+            padding: 4vw;
+          }
+        }
+      }
+    }
+
+    .right-side {
+      display: none;
+    }
+  }
+}
+
