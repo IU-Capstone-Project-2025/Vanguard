@@ -33,7 +33,8 @@ cp .env.dev.example .env
 ### 2. Start without monitoring
 
 ```sh
-docker compose --env-file .env -f docker-compose.yaml -f docker-compose.dev.yaml up -d --build frontend
+docker compose --env-file .env -f docker-compose.yaml -f docker-compose.dev.yaml build
+docker compose --env-file .env -f docker-compose.yaml -f docker-compose.dev.yaml up -d frontend
 ```
 
 ### 3. Start with monitoring (Grafana)
