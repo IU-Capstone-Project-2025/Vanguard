@@ -248,6 +248,7 @@
                 font-size: 36px;
                 border: none;
                 border-radius: 15px;
+                text-align: center;
                 background-color:  var(--light-blue);
                 color: var(--accent);
                 max-width: 400px;
