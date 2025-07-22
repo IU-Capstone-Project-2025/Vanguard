@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useSessionSocket } from '../contexts/SessionWebSocketContext';
 import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
 import styles from './styles/WaitGameStartAdmin.module.css';
-import { API_ENDPOINTS } from '../constants/api';
+import { API_ENDPOINTS, BASE_URL } from '../constants/api';
+import QRCodeModal from './childComponents/QRCodeModal.jsx'; // путь подкорректируй
+
 
 const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
@@ -12,6 +14,8 @@ const WaitGameStartAdmin = () => {
   const [sessionCode] = useState(sessionStorage.getItem('sessionCode'));
   const [players, setPlayers] = useState(new Map());
   const [isStarting, setIsStarting] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+
 
   const handleSessionMessage = (event) => {
     try {
@@ -90,6 +94,12 @@ const WaitGameStartAdmin = () => {
 
   return (
     <div className={styles['wait-admin-wrapper']}>
+      {showQRModal && (
+        <QRCodeModal
+          code={`${BASE_URL.REACT_APP_BASE_URL}/join/${sessionCode}`} // здесь вставь нужный URL
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
       <h1 className={styles['waiting-title']}>
         Waiting for your awesome <span className={styles['highlight']}>crew</span>...
       </h1>
@@ -108,6 +118,9 @@ const WaitGameStartAdmin = () => {
           <div className={styles['session-box']}>
             <div className={styles['session-code']}># <strong>{sessionCode}</strong></div>
             <div className={styles['session-count']}>👤 {players.size}/40</div>
+            <button onClick={() => setShowQRModal(true)} className={styles['start-btn']}>
+              📱 Show QR
+            </button>
             <button onClick={finishSession} className={styles['terminate-btn']}>
               ✖ Terminate
             </button>
