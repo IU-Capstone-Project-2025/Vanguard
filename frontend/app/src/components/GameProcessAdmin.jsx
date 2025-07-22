@@ -24,6 +24,8 @@ const GameProcessAdmin = () => {
   const [leaderboardData, setLeaderboardData] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [answerCounter, setAnswerCounter] = useState(0);
+  const [playersAmount, setPlayersAmount] = useState(0);
 
   const questionsAmount = currentQuestion.questionsAmount || 0;
   const navigate = useNavigate();
@@ -38,6 +40,11 @@ const GameProcessAdmin = () => {
       return;
     }
 
+    const stored = sessionStorage.getItem('players');
+    const restored = stored ? new Array(JSON.parse(stored)) : [];
+    
+    setPlayersAmount(restored.length)
+    
     try {
       connectSession(token, sessionCode);
       connectRealtime(token, sessionCode);
@@ -56,10 +63,14 @@ const GameProcessAdmin = () => {
           setLeaderboardData(data.payload);
           setLeaderboardVisible(true);
         } else if (data.type === 'question') {
+          setAnswerCounter(0);
           setCurrentQuestion(data);
           setQuestionIndex(data.questionId);
           sessionStorage.setItem('currentQuestion', JSON.stringify(data));
+        } else if (data.type === 'user_answered') {
+          setAnswerCounter((prev) => prev + 1)
         }
+
       } catch (err) {
         console.error('Error processing message:', err);
         setError('Error processing game data');
@@ -78,7 +89,7 @@ const GameProcessAdmin = () => {
         wsRefSession.current.onmessage = null;
       }
     };
-  }, [connectSession, connectRealtime, wsRefSession, wsRefRealtime]);
+  }, [connectSession, connectRealtime, wsRefSession, wsRefRealtime, playersAmount]);
 
   const toNextQuestion = async (sessionCode) => {
     if (!sessionCode) {
@@ -160,7 +171,7 @@ const GameProcessAdmin = () => {
           <div className={styles['question-section']}>
             <div className={styles['question-header']}>
               <div className={styles['answer-indicator']}>
-                <span className={styles['indicator-text']}>11/17</span>
+                <span className={styles['indicator-text']}>{answerCounter}/{playersAmount}</span>
               </div>
 
               {currentQuestion.payload && (
@@ -172,7 +183,7 @@ const GameProcessAdmin = () => {
               )}
 
               <div className={styles['timer-indicator']}>
-                <span className={styles['indicator-text']}>11/17</span>
+                <span className={styles['indicator-text']}>sample</span>
               </div>
             </div>
 

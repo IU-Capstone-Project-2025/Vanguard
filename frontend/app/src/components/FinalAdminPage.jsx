@@ -9,8 +9,8 @@ const FinalAdminPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const [players, setPlayers] = React.useState(new Map());
-  
+  const [leaders, setPlayers] = useState(new Map());
+
   const endSession = async (code) => {
     try {
       setIsLoading(true);
@@ -20,7 +20,7 @@ const FinalAdminPage = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to end session with code: ${code}`);
       }
@@ -31,7 +31,7 @@ const FinalAdminPage = () => {
       sessionStorage.removeItem('currentQuestion');
       sessionStorage.removeItem('players');
       sessionStorage.removeItem('leaders');
-      
+
       navigate('/');
     } catch (error) {
       console.error('Error ending the session:', error);
@@ -43,31 +43,32 @@ const FinalAdminPage = () => {
 
   useEffect(() => {
     const storedLeaders = sessionStorage.getItem('leaders');
-    const storedPlayers = sessionStorage.getItem('players');
-    if (!storedLeaders || !storedPlayers) return;
+    const storedPlayersRaw = sessionStorage.getItem('players');
+    if (!storedLeaders || !storedPlayersRaw) return;
 
     try {
       const leaders = JSON.parse(storedLeaders);
-      const players = JSON.parse(storedPlayers);
+      const playersEntries = JSON.parse(storedPlayersRaw); // Should be [[id, name], ...]
+      const playersMap = new Map(playersEntries);
 
-      const nameMap = {};
-      players.forEach(p => {
-        if (p.name !== 'Admin') {
-          nameMap[p.id] = p.name;
-        }
-      });
+      console.log(leaders)
 
       const processed = leaders
-        .filter(l => nameMap[l.user_id])
-        .sort((a, b) => b.score - a.score)
+        .filter(l => playersMap.get(l.user_id) && playersMap.get(l.user_id) !== 'Admin')
+        .sort((a, b) => b.total_score - a.total_score)
         .slice(0, 3)
-        .map((leader, index) => ({
-          ...leader,
-          name: nameMap[leader.user_id],
-          position: index + 1,
-        }));
+        .map((leader, index) => [
+          leader.user_id,
+          {
+            name: playersMap.get(leader.user_id),
+            score: leader.total_score,
+            position: index + 1,
+          }
+        ]);
 
-      setPlayers(processed);
+      console.log(processed)
+
+      setPlayers(new Map(processed));
     } catch (err) {
       console.error('Error parsing leaders or players:', err);
       setError('Failed to load leaderboard data.');
@@ -77,17 +78,18 @@ const FinalAdminPage = () => {
   return (
     <div className={styles['final-page-container']}>
       <h1 className={styles['final-title']}>Meet the Champions!</h1>
-      
+
       {error && <div className={styles.error}>{error}</div>}
-      
+
       <div className={styles.podium}>
-        {players.length > 0 ? (
-          players
+        {[...leaders.values()].length > 0 ? (
+          [...leaders.values()]
             .sort((a, b) => a.position - b.position)
-            .map((player) => (
-              <div 
-                key={player.user_id} 
+            .map((player, idx) => (
+              <div
+                key={idx}
                 className={`${styles['podium-block']} ${styles[`position-${player.position}`]}`}
+                onClick={console.log(player)}
               >
                 <span className={styles['player-name']}>{player.name}</span>
                 <span className={styles['player-score']}>{player.score} pts</span>
@@ -97,10 +99,10 @@ const FinalAdminPage = () => {
           <div className={styles['no-players']}>No players to display</div>
         )}
       </div>
-      
+
       <div className={styles['buttons-container']}>
-        <button 
-          className={styles['final-primary-button']} 
+        <button
+          className={styles['final-primary-button']}
           onClick={() => endSession(sessionCode)}
           disabled={isLoading}
         >
