@@ -117,7 +117,8 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 					}
 
 					// Send question statistics to participant
-					responder.SendQuestionStat(board.Popular, currQuestionAnswers)
+					prevQuestion := tracker.GetQuestion(sessionId, qid-1)
+					responder.SendQuestionStat(board.Popular, currQuestionAnswers, prevQuestion.Options)
 				}
 			}
 
