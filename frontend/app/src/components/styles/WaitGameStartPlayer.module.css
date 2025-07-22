@@ -101,3 +101,70 @@
   transform: scale(1.05);
   background-color: var(--btn-hover);
 }
+
+
+@media (max-width: 768px) {
+  .wait-player-wrapper {
+    flex-direction: column;
+    padding: 4vh 4vw;
+    align-items: center;
+    gap: 4vh;
+  }
+
+  .player-left-side {
+    width: 100%;
+    height: auto;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+  }
+
+  .waiting-title {
+    font-size: 8vw;
+    margin-bottom: 4vh;
+  }
+
+  .players-grid {
+    margin:0 4vw ;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 карточки в строку */
+    gap: 3vw 4vw;
+    max-width: 100%;
+    width: 98%;
+    justify-items: center;
+  }
+
+  .player-card {
+    min-width: auto;
+    width: 100%;
+    font-size: 8vw;
+    max-height: 60px;
+    /* padding: 2vh 2vw; */
+    text-align: center;
+    max-height: none;
+  }
+
+  .player-right-side {
+    width: 90vw;
+    min-width: unset;
+    max-height: none;
+    margin-top: 1vh;
+    padding: 1vh;
+    flex-direction: column;
+    gap: 1vh;
+  }
+
+  .session-code {
+    font-size: 10vw;
+  }
+
+  .session-count {
+    font-size: 4.5vw;
+  }
+
+  .leave-btn {
+    font-size: 5vw;
+    padding: 4vw;
+    width: 100%;
+  }
+}

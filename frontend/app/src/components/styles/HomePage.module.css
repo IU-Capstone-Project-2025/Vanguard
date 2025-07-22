@@ -1,89 +1,126 @@
-
 .homepage-main-content {
+  display: flex;
+  height: 100vh;
+  background: transparent;
+  color: var(--bage);
+}
+
+.left-side {
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  position: relative;
+  text-align: center;
+  margin: 25%;
+  width: 100%;
+}
+
+.title p {
+  text-align: start;
+  font-family: Jua, sans-serif;
+  font-size: 96px;
+  color: var(--text-light);
+  margin: 0;
+}
+
+.title h1 {
+  margin-top: 0;
+  text-align: start;
+  font-family: Jua, sans-serif;
+  font-size: 96px;
+  color: var(--accent);
+}
+
+.button-group {
+  margin: 5vw 0;
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.play-button,
+.create-button {
+  background-color: var(--btn);
+  color: var(--accent);
+  border-radius: 15px;
+  padding: 1vw;
+  min-width: 10vw;
+  font-size: 36px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.play-button:hover:not(:disabled),
+.create-button:hover:not(:disabled) {
+  background-color: var(--btn-hover);
+  transform: translateY(-5px);
+}
+
+.play-button:disabled,
+.create-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.right-side {
+  width: 50%;
+}
+
+.image {
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* 📱 Мобильная адаптация */
+@media (max-width: 768px) {
+  .homepage-main-content {
     display: flex;
-    height: 100vh;
-    background:transparent;
-    color: var(--bage);
+    justify-content: center;
+    flex-direction: column;
+    height: 80vh;
+    padding: 1rem;
+  }
 
-    .left-side {
-        width: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+  .left-side {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
 
-        .title {
-            position: relative;
-            display: block;
-            text-align: center;
-            justify-items: center;
-            margin: 25% ;
-            width: 100%;
+  .title {
+    margin: 2rem 0;
+  }
 
-            p {
-                text-align: start;
-                font-family: Jua, sans-serif;
-                font-size: 96px;
-                color: var(--text-light);
-                margin: 0;
-            }
-            
-            h1 {
-                margin-top: 0;
-                text-align: start;
-                font-family: Jua, sans-serif;
-                font-size: 96px;
-                color: var(--accent);
-            }
+  .title p,
+  .title h1 {
+    text-align: center;
+    font-size: 5rem;
+  }
 
-            .button-group {
-                margin: 5vw 0;
-                display: flex;
-                justify-content: left;
-                width: 100%;
-                
-                button {
-                    background-color: var(--btn);
-                    color: var(--accent);
-                    border-radius: 15px;
-                    padding: 1vw;
-                    min-width: 10vw;
-                    margin-right:2vw;
-                    font-size: 36px;
-                    border: none;
-                    cursor: pointer;
-                    transition: transform 0.2s ease, background-color 0.2s ease;
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
-                    &:hover:not(:disabled) {
-                        background-color: var(--btn-hover);
-                        transform: translateY(-5px);
-                        box-shadow: #1c1c1c;
-                    }
+  .play-button,
+  .create-button {
+    width: 100%;
+    max-width: 300px;
+    font-size: 1.2rem;
+    padding: 1rem;
+  }
 
-                    &:disabled {
-                        opacity: 0.5;
-                        cursor: not-allowed;
-                    }
-                }
-            }
-        }
-    }
-
-    .right-side {
-        width: 50%;
-        
-        img {
-            width: 100%;
-            height: 100vh;
-            object-fit: cover;
-            object-position: center;
-        }
-        .image-container {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-    }
+  .right-side {
+    display: none;
+  }
 }

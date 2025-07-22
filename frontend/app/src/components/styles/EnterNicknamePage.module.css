@@ -77,3 +77,41 @@
     }
 
 }
+
+@media (max-width: 768px) {
+  .playgame-main-content {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5vh 5vw;
+    height: 80vh;
+  }
+
+  .playgame-main-content .title {
+    margin: 0;
+    text-align: center;
+  }
+
+  .playgame-main-content .title h1 {
+    font-size: 8vw;
+    margin-bottom: 6vh;
+    text-align: center;
+  }
+
+  .playgame-main-content .title .code-input {
+    font-size: 6vw;
+    width: 73vw;
+    padding: 4vw;
+    margin-bottom: 4vh;
+  }
+
+  .playgame-main-content .title .button-group {
+    justify-content: center;
+  }
+
+  .playgame-main-content .title .button-group button {
+    width: 80vw;
+    font-size: 6vw;
+    padding: 4vw;
+  }
+}
