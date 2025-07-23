@@ -51,10 +51,6 @@ const AuthPage = () => {
 
   return (
     <div className={styles["auth-container"]}>
-      <div className={styles["title"]}>
-        <h1>Welcome back to <br /> InnoQuiz</h1>
-      </div>
-
       <div className={styles["login-passwd-container"]}>
         <div className={styles["login-passwd-panel"]}>
           <h1>Login</h1>
