@@ -84,12 +84,12 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
           "users": [
             {
               "user_id": "alice",
+              "place": 1, // integer represents the current place in the rating
+              "previous_place": 2, // integer represents the previous place in the rating
+              "progress": "Up"/"Down"/"Same", // shows whether user's rank(place) increased/decreased/remained the same
               "total_score": 7
             },
-            {
-              "user_id": "bob",
-              "total_score": 5
-            }
+            ...
           ]
         }
     }
@@ -104,15 +104,19 @@ This document explains **when** to invoke the `/ws` endpoint, **what** data to s
         "correct": true/false,
         "payload": {
             "session_code": "ABC123",
-              "answers": {
+            "answers": {
                   "0": 8, // 8 people chose 0-th option
                   "1": 6, // 6 people chose 1-th option
                   "2": 4  // ...
-              }
-          }
+           }
+        },
+        "options": [
+          { "text": "<option 1>", "is_correct": true/false },
+          { "text": "<option 2>", "is_correct": true/false },
+          …
+        ]  
       }
-
-
+      
 <div style="background-color: transparent; border-top: 4px solid red; padding: 0;">
 </div>
 

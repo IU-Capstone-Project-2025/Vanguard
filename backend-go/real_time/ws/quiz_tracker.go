@@ -55,6 +55,19 @@ func (q *QuizTracker) GetCurrentQuestion(sessionId string) (int, *shared.Questio
 	}
 }
 
+// GetQuestion method returns the payload of the question [questionIdx] in session [sessionId]
+func (q *QuizTracker) GetQuestion(sessionId string, questionIdx int) *shared.Question {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if quiz, exists := q.tracker[sessionId]; !exists || questionIdx < 0 || questionIdx >= quiz.QuizData.Len() {
+		return nil
+	} else {
+		question := quiz.QuizData.GetQuestion(questionIdx)
+		return &question
+	}
+}
+
 // SetCurrQuestionIdx method assigns the given [questionIdx] to the session [sessionId]
 func (q *QuizTracker) SetCurrQuestionIdx(sessionId string, questionIdx int) {
 	q.mu.Lock()
