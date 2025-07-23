@@ -1,52 +1,114 @@
-/* styles/ShowLeaderBoard.module.css */
-.leaderboard-overlay {
+:root {
+  --accent: #3d2c5a;
+  --light-blue: #eaf6ff;
+  --text-light: #fff;
+}
+
+.overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  z-index: 999;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  z-index: 1000;
+  align-items: stretch;
+  height: 100vh;
+  /* background: rgba(0, 0, 0, 0.4); опционально: затемнение */
 }
 
-.leaderboard-title {
-  font-size: 4rem;
-  color: white;
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  /* padding: 2rem 1rem; */
+  /* box-sizing: border-box; */
+}
+
+.title {
   font-weight: bold;
-  margin-bottom: 2rem;
-  font-family: 'jua', sans-serif;
+  font-size: 5rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
 }
 
-.leaderboard-list {
-  margin-top: 12vh;
+.next {
+  /* margin-bottom: 2rem; */
+  padding: 1.2rem 2.8rem;
+  font-size: 2rem;
+  background-color: #e8efb9;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #3d2c5a;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.next:hover {
+  transform: translateY(-5px);
+  background-color: #d8e0a0;
+}
+
+.board {
+  background-color: white;
+  border-radius: 24px 24px 0 0;
+  padding: 2rem 8rem;
+  width: 65%;
+  height: 80%;
+  /* max-width: 700px; */
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  width: 70%;
+  margin-top: auto;
+  overflow-y: auto;
 }
 
-.leaderboard-row {
-  background: #1f1f1f;
-  color: white;
-  border-radius: 10px;
-  font-size: 1.2rem;
-  padding: 0.8rem 1.5rem;
+.row {
+  border-radius: 1rem;
   display: flex;
-  justify-content: space-between;
-  font-family: 'Fredoka', sans-serif;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 1rem 1.5rem;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--accent);
 }
 
-.leaderboard-next-button {
-  margin-top: 2rem;
-  padding: 0.5rem 1.5rem;
-  background: #1f1f1f;
-  color: white;
-  border: none;
-  font-size: 1rem;
-  border-radius: 10px;
-  cursor: pointer;
+.user-info {
+  background-color: #BFD7FF;
+  border-radius: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2rem 3rem;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.place {
   font-weight: bold;
+  font-size: 2rem;
+  margin: 0 2rem;
+  width: 2rem;
+  text-align: center;
+}
+
+.name {
+  flex-grow: 1;
+}
+
+.score {
+  margin-right: 1rem;
+}
+
+.arrow {
+  width: 30px;
+  height: 30px;
 }

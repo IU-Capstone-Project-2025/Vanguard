@@ -96,7 +96,7 @@ const WaitGameStartAdmin = () => {
     <div className={styles['wait-admin-wrapper']}>
       {showQRModal && (
         <QRCodeModal
-          code={`${BASE_URL.REACT_APP_BASE_URL}/join/${sessionCode}`} // здесь вставь нужный URL
+          code={`${BASE_URL}/join/${sessionCode}`} // здесь вставь нужный URL
           onClose={() => setShowQRModal(false)}
         />
       )}
