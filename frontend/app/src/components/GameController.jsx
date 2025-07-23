@@ -14,6 +14,7 @@ const GameController = () => {
   const { wsRefRealtime, connectRealtime, closeWsRefRealtime } = useRealtimeSocket();
   const { wsRefSession, closeWsRefSession } = useSessionSocket();
   const navigate = useNavigate();
+  const [options, setOptions] = useState([])
 
   const [question, setQuestion] = useState({
     options: [PentagonYellow, CoronaIndigo, ArrowOrange, Cookie4Blue]
@@ -69,13 +70,14 @@ const GameController = () => {
             setStage("question");
             setCorrect(false);
             break;
-
-          case "question_stat":
-            setPopularAnswers(data.payload.answers);
-            setCorrect(data.correct);
-            setStage("statistics");
-
-            setUserAnswers((prev) => {
+            
+            case "question_stat":
+              setPopularAnswers(data.payload.answers);
+              setCorrect(data.correct);
+              setOptions(data.options)
+              setStage("statistics");
+              
+              setUserAnswers((prev) => {
               const updated = [...prev, !!data.correct];
               sessionStorage.setItem("userAnswers", JSON.stringify(updated));
               return updated;
@@ -139,8 +141,10 @@ const GameController = () => {
         <ShowQuizStatistics
           stats={popularAnswers}
           correct={correct}
+          options={options}
           onClose={() => setStage("question")}
         />
+
       )}
 
       {stage === "question" && (

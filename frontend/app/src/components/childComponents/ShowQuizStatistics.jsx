@@ -7,9 +7,9 @@ import CoronaIndigo from '../assets/Corona-indigo.svg';
 import ArrowOrange from '../assets/Arrow-orange.svg';
 import Cookie4Blue from '../assets/Cookie4-blue.svg';
 
-const options = [PentagonYellow, CoronaIndigo, ArrowOrange, Cookie4Blue]
+const icons = [PentagonYellow, CoronaIndigo, ArrowOrange, Cookie4Blue];
 
-const ShowQuizStatistics = ({ stats, correct, onClose }) => {
+const ShowQuizStatistics = ({ stats, correct, onClose, options }) => {
   const headerRef = useRef(null);
 
   useEffect(() => {
@@ -27,11 +27,11 @@ const ShowQuizStatistics = ({ stats, correct, onClose }) => {
     });
   }, [correct]);
 
-  if (!stats) return null;
+  if (!stats || !options) return null;
 
-  const labels = Object.keys(stats);
+  const keys = Object.keys(stats);
   const values = Object.values(stats);
-  const max = Math.max(...values);
+  const max = Math.max(...values, 1); // защита от деления на 0
 
   return (
     <AnimatePresence>
@@ -42,45 +42,33 @@ const ShowQuizStatistics = ({ stats, correct, onClose }) => {
         exit={{ y: '-100vh' }}
         transition={{ type: 'spring', stiffness: 80 }}
       >
-        {/* <div
-          ref={headerRef}
-          className={`${styles['quiz-stats-header']} ${correct ? styles['correct'] : styles['incorrect']}`}
-        >
-          <h2 className={styles['quiz-stats-result']}>
-            {correct ? 'Correct!' : 'Incorrect!'}
-          </h2>
-        </div>
-
-        <h2 className={styles['quiz-stats-title']}>Answer Statistics</h2> */}
-
         <div className={styles['bars-container']}>
-          {labels.map((label, idx) => {
-            const heightPercent = Math.max((values[idx] / max) * 80, 10) + 20;
+          {keys.map((key, idx) => {
+            const count = stats[key];
+            const isCorrect = options?.[idx]?.is_correct;
+            const heightPercent = Math.max((count / max) * 70, 25); // минимум 25% для визуала
 
             return (
-              <div className={styles['bar-wrapper']} key={label}>
+              <div className={styles['bar-wrapper']} key={key}>
                 <motion.div
                   className={styles['bar']}
                   initial={{ height: 0 }}
                   animate={{ height: `${heightPercent}%` }}
-                  transition={{ duration: 0.8, delay: idx * 0.4, ease: 'easeOut' }}
+                  transition={{ duration: 0.8, delay: idx * 0.3 }}
                 >
                   <div className={styles['bar-icon']}>
-                    <img src={options[idx]} alt='idx'/>
+                    <img src={icons[idx % icons.length]} alt="option-icon" />
+                  </div>
+
+                  <div className={styles['bar-info']}>
+                    {isCorrect && <span className={styles['tick']}>✔</span>}
+                    <span className={styles['bar-count']}>{count}</span>
                   </div>
                 </motion.div>
-                <div className={styles['bar-feedback']}>
-                  {[...Array(values[idx])].map((_, i) => (
-                    <span key={i} className={i === 0 && correct ? styles['tick'] : styles['cross']}>
-                      {i === 0 && correct ? '✔' : '✘'}
-                    </span>
-                  ))}
-                </div>
               </div>
             );
           })}
         </div>
-
       </motion.div>
     </AnimatePresence>
   );

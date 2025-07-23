@@ -24,6 +24,8 @@ import { RealtimeWebSocketProvider } from './contexts/RealtimeWebSocketContext';
 import ConstructorPage from './components/ConstructorPage';
 import FloatingBackground from './components/background/FloatingBackground';
 
+import WithMusicLayout from './components/WithMusicLayout'
+
 function App() {
   return (
     <div className='app'>
@@ -78,26 +80,28 @@ function App() {
             </RealtimeWebSocketProvider>
           }
         />
-        <Route
-          path="/sessionAdmin/:sessionCode"
-          element={
-            <SessionWebSocketProvider>
-              <RealtimeWebSocketProvider>
-                <WaitGameStartAdmin />
-              </RealtimeWebSocketProvider>
-            </SessionWebSocketProvider>
-          }
-        />
-        <Route
-          path="/game-controller/:sessionCode"
-          element={
-            <SessionWebSocketProvider>
-              <RealtimeWebSocketProvider>
-                <GameProcessAdmin />
-              </RealtimeWebSocketProvider>
-            </SessionWebSocketProvider>
-          }
-        />
+        <Route element={<WithMusicLayout/>}>
+          <Route
+            path="/sessionAdmin/:sessionCode"
+            element={
+              <SessionWebSocketProvider>
+                <RealtimeWebSocketProvider>
+                  <WaitGameStartAdmin />
+                </RealtimeWebSocketProvider>
+              </SessionWebSocketProvider>
+            }
+          />
+          <Route
+            path="/game-controller/:sessionCode"
+            element={
+              <SessionWebSocketProvider>
+                <RealtimeWebSocketProvider>
+                  <GameProcessAdmin />
+                </RealtimeWebSocketProvider>
+              </SessionWebSocketProvider>
+            }
+          />
+        </Route>
       </Routes>
     </Router>
   </div>
