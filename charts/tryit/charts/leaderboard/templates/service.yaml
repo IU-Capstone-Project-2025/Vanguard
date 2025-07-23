@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: leaderboard
+spec:
+  selector:
+    app.kubernetes.io/name: "leaderboard"
+  ports:
+  - protocol: TCP
+    port: 8082 # Service port
+    targetPort: 8082 # Pod port

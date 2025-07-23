@@ -1,0 +1,24 @@
+image:
+  name: "${AUTH_IMAGE}"
+  pullPolicy: IfNotPresent
+replicas: 1
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  cpuUtilization: 80
+environment: prod
+env:
+  DB_URL: "${DB_URL}"
+  TEST_DB_URL: "${TEST_DB_URL}"
+  CORS_ORIGINS: "${CORS_ORIGINS}"
+  JWT_SECRET_KEY: "${AUTH_JWT_SECRET_KEY}"
+  ENVIRONMENT: "production"
+  DEBUG: "false"

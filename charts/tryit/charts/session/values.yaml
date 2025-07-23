@@ -1,0 +1,30 @@
+image:
+  name: "${SESSION_IMAGE}"
+  pullPolicy: IfNotPresent
+replicas: 1
+resources:
+  requests:
+    cpu: 75m
+    memory: 96Mi
+  limits:
+    cpu: 300m
+    memory: 192Mi
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  cpuUtilization: 80
+environment: prod
+env:
+  RABBITMQ_USER: "${RABBITMQ_USER}"
+  RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+  RABBITMQ_HOST: "rabbit"
+  RABBITMQ_PORT: "5672"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REALTIME_SERVICE_HOST: "real-time"
+  REALTIME_SERVICE_PORT: "8080"
+  SESSION_SERVICE_HOST: "0.0.0.0"
+  SESSION_SERVICE_PORT: "8081"
+  JWT_SECRET_KEY: "${GO_JWT_SECRET_KEY}"
+  ENV: "production"
