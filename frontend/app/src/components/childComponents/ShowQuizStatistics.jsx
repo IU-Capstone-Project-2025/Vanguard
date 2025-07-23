@@ -31,7 +31,7 @@ const ShowQuizStatistics = ({ stats, correct, onClose, options }) => {
 
   const keys = Object.keys(stats);
   const values = Object.values(stats);
-  const max = Math.max(...values, 1); // защита от деления на 0
+  const max = sessionStorage.getItem("playersNumber"); // защита от деления на 0
 
   return (
     <AnimatePresence>
@@ -46,7 +46,8 @@ const ShowQuizStatistics = ({ stats, correct, onClose, options }) => {
           {keys.map((key, idx) => {
             const count = stats[key];
             const isCorrect = options?.[idx]?.is_correct;
-            const heightPercent = Math.max((count / max) * 70, 25); // минимум 25% для визуала
+            // const heightPercent = Math.max((count / max) * 2000, 25); // минимум 25% для визуала
+            const heightPercent = (count / max) * 68 + 32 
 
             return (
               <div className={styles['bar-wrapper']} key={key}>

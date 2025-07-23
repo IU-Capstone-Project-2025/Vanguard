@@ -20,6 +20,7 @@ const WaitGameStartAdmin = () => {
   const handleSessionMessage = (event) => {
     try {
       const data = JSON.parse(event.data);
+      console.log('receives session Message', data)
       const newPlayers = new Map();
       for (const [userId, name] of Object.entries(data)) {
         newPlayers.set(userId, name);
