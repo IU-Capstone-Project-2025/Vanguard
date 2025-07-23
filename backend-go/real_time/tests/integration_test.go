@@ -170,6 +170,8 @@ func TestWithTestContainers(t *testing.T) {
 						require.Equal(t, ws.MessageTypeStat, stat.Type)
 						t.Log(j, i-1, quiz.Questions[i-1].Options[usersAnswers[j][i-1]], stat)
 						require.Equal(t, quiz.Questions[i-1].Options[usersAnswers[j][i-1]].IsCorrect, stat.Correct)
+						require.Equal(t, quiz.Questions[i-1].Options, stat.Options)
+						t.Log("Options match")
 						t.Log("--- Stat: ", stat.Payload)
 					}
 				}

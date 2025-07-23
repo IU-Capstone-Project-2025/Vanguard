@@ -93,7 +93,9 @@ func (q *QuizTracker) IncQuestionIdx(sessionId string) bool {
 	}
 
 	quiz.CurrQuestionIdx++
+	q.mu.Lock()
 	q.tracker[sessionId] = quiz
+	q.mu.Unlock()
 	_ = q.cache.SetQuestionIndex(sessionId, quiz.CurrQuestionIdx)
 	return true
 }
