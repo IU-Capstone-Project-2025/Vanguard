@@ -8,6 +8,7 @@ const FinalAdminPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [visibleBlocks, setVisibleBlocks] = useState([]);
 
   const [leaders, setPlayers] = useState(new Map());
 
@@ -48,10 +49,8 @@ const FinalAdminPage = () => {
 
     try {
       const leaders = JSON.parse(storedLeaders);
-      const playersEntries = JSON.parse(storedPlayersRaw); // Should be [[id, name], ...]
+      const playersEntries = JSON.parse(storedPlayersRaw);
       const playersMap = new Map(playersEntries);
-
-      console.log(leaders)
 
       const processed = leaders
         .filter(l => playersMap.get(l.user_id) && playersMap.get(l.user_id) !== 'Admin')
@@ -66,9 +65,15 @@ const FinalAdminPage = () => {
           }
         ]);
 
-      console.log(processed)
-
       setPlayers(new Map(processed));
+
+      // Анимации по таймеру
+      processed.forEach(([, leader], i) => {
+        setTimeout(() => {
+          setVisibleBlocks(prev => [...prev, leader.position]);
+        }, i * 700); // задержка 700мс между блоками
+      });
+
     } catch (err) {
       console.error('Error parsing leaders or players:', err);
       setError('Failed to load leaderboard data.');
@@ -77,7 +82,9 @@ const FinalAdminPage = () => {
 
   return (
     <div className={styles['final-page-container']}>
-      <h1 className={styles['final-title']}>Meet the Champions!</h1>
+      <h1 className={styles['final-title']}>
+        Say Hello to the <span className={styles.highlight}>Heroes</span>!
+      </h1>
 
       {error && <div className={styles.error}>{error}</div>}
 
@@ -85,16 +92,17 @@ const FinalAdminPage = () => {
         {[...leaders.values()].length > 0 ? (
           [...leaders.values()]
             .sort((a, b) => a.position - b.position)
-            .map((player, idx) => (
-              <div
-                key={idx}
-                className={`${styles['podium-block']} ${styles[`position-${player.position}`]}`}
-                onClick={console.log(player)}
-              >
-                <span className={styles['player-name']}>{player.name}</span>
-                <span className={styles['player-score']}>{player.score} pts</span>
-              </div>
-            ))
+            .map((player, idx) =>
+              visibleBlocks.includes(player.position) && (
+                <div
+                  key={idx}
+                  className={`${styles['podium-block']} ${styles[`position-${player.position}`]} ${styles['animated']}`}
+                >
+                  <span className={styles['player-name']}>{player.name}</span>
+                  <span className={styles['player-place']}>{player.position}</span>
+                </div>
+              )
+            )
         ) : (
           <div className={styles['no-players']}>No players to display</div>
         )}
