@@ -49,23 +49,25 @@ const ShowLeaderBoardComponent = ({ leaderboardData, onClose }) => {
               exit={{ y: '100vh' }}
               transition={{ type: 'spring', stiffness: 80 }}
             >
-              {leaderboardData.users?.map((user) => (
-                <div className={styles.row} key={user.user_id}>
-                  <span className={styles.place}>{user.place}</span>
-                  <div className={styles['user-info']}>
-                    <span className={styles.name}>
-                      {players.get(user.user_id) || 'Unknown Player'}
-                    </span>
-                    <span className={styles.score}>{user.total_score}</span>
-                    {user.place >= user.previous_place ? (
-                      <img src={ArrowUp} alt="Up" className={styles.arrow} />
-                    ) : user.place < user.previous_place ? (
-                      <img src={ArrowDown} alt="Down" className={styles.arrow} />
-                    ) : (
-                      <div className={styles.arrow}></div>
-                    )}
+              {leaderboardData.users
+                ?.filter((user) => players.has(user.user_id))
+                .map((user) => (
+                  <div className={styles.row} key={user.user_id}>
+                    <span className={styles.place}>{user.place}</span>
+                    <div className={styles['user-info']}>
+                      <span className={styles.name}>
+                        {players.get(user.user_id)}
+                      </span>
+                      <span className={styles.score}>{user.total_score}</span>
+                      {user.place >= user.previous_place ? (
+                        <img src={ArrowUp} alt="Up" className={styles.arrow} />
+                      ) : user.place < user.previous_place ? (
+                        <img src={ArrowDown} alt="Down" className={styles.arrow} />
+                      ) : (
+                        <div className={styles.arrow}></div>
+                      )}
+                    </div>
                   </div>
-                </div>
               ))}
             </motion.div>
           </div>

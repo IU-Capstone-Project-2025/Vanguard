@@ -90,23 +90,27 @@ const FinalAdminPage = () => {
 
       <div className={styles.podium}>
         {[...leaders.values()].length > 0 ? (
-          [...leaders.values()]
-            .sort((a, b) => a.position - b.position)
-            .map((player, idx) =>
-              visibleBlocks.includes(player.position) && (
-                <div
-                  key={idx}
-                  className={`${styles['podium-block']} ${styles[`position-${player.position}`]} ${styles['animated']}`}
-                >
-                  <span className={styles['player-name']}>{player.name}</span>
-                  <span className={styles['player-place']}>{player.position}</span>
-                </div>
-              )
-            )
+          [2, 1, 3] // порядок отображения: сначала 2-е, потом 1-е, потом 3-е
+            .map((place) => {
+              const player = [...leaders.values()].find(p => p.position === place);
+              return (
+                player &&
+                visibleBlocks.includes(player.position) && (
+                  <div
+                    key={player.position}
+                    className={`${styles['podium-block']} ${styles[`position-${player.position}`]} ${styles['animated']}`}
+                  >
+                    <span className={styles['player-name']}>{player.name}</span>
+                    <span className={styles['player-place']}>{player.position}</span>
+                  </div>
+                )
+              );
+            })
         ) : (
           <div className={styles['no-players']}>No players to display</div>
         )}
       </div>
+
 
       <div className={styles['buttons-container']}>
         <button

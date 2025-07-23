@@ -24,9 +24,11 @@
 }
 
 .bar-wrapper {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   width: 7.5%;
 
 }
@@ -38,8 +40,9 @@
   border-radius: 65px 65px 0 0;
   position: relative;
   display: flex;
-  justify-content: center;
+  justify-content: space-between  ;
   align-items: center;
+  
 
   flex-direction: column;
   overflow: visible;
@@ -48,7 +51,7 @@
 .bar-icon {
   /* position: absolute; */
   /* top: -40px; */
-  margin-top: 1rem;
+  /* margin-top: 1rem; */
   width: 80px;
   height: 80px;
 }
