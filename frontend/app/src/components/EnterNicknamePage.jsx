@@ -35,7 +35,7 @@ const PlayGamePage = () => {
 
             return await response.json();
         } catch (error) {
-            console.error("Error joining session:", error);
+            // console.error("Error joining session:", error);
             setError(error.message || "Failed to join session");
             throw error;
         } finally {

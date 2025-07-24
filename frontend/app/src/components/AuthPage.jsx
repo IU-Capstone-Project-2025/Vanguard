@@ -37,8 +37,8 @@ const AuthPage = () => {
 
         navigate("/");
       } else {
-        const data = await response.json();
-        setError(data.detail || "Login failed");
+        // const data = await response.json();
+        setError("Login failed");
       }
     } catch (err) {
       setError("Something went wrong");

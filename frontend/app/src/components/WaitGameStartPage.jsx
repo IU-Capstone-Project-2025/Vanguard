@@ -33,7 +33,7 @@ const WaitGameStartPlayer = () => {
           endSession();
         }
       } catch (err) {
-        console.error("Realtime WS error:", err);
+        // console.error("Realtime WS error:", err);
       }
     };
 
@@ -50,7 +50,7 @@ const WaitGameStartPlayer = () => {
         // console.log('players size', newPlayers.size)
         sessionStorage.setItem("playersNumber", newPlayers.size)
       } catch (err) {
-        console.error("Session WS error:", err);
+        // console.error("Session WS error:", err);
       }
     };
 

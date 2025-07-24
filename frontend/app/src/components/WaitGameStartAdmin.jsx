@@ -20,7 +20,7 @@ const WaitGameStartAdmin = () => {
   const handleSessionMessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      console.log('receives session Message', data)
+      // console.log('receives session Message', data)
       const newPlayers = new Map();
       for (const [userId, name] of Object.entries(data)) {
         newPlayers.set(userId, name);
@@ -28,7 +28,7 @@ const WaitGameStartAdmin = () => {
       sessionStorage.setItem('players', JSON.stringify([...newPlayers]));
       setPlayers(newPlayers);
     } catch (e) {
-      console.error('Invalid session message:', e);
+      // console.error('Invalid session message:', e);
     }
   };
 
@@ -39,7 +39,7 @@ const WaitGameStartAdmin = () => {
         sessionStorage.setItem('currentQuestion', JSON.stringify(data));
       }
     } catch (e) {
-      console.error('Failed to parse realtime message:', e);
+      // console.error('Failed to parse realtime message:', e);
     }
   };
 
@@ -66,7 +66,7 @@ const WaitGameStartAdmin = () => {
       sessionStorage.removeItem('currentQuestion');
       navigate('/');
     } catch (error) {
-      console.error('Error ending session:', error);
+      // console.error('Error ending session:', error);
     }
   };
 
@@ -76,7 +76,7 @@ const WaitGameStartAdmin = () => {
         method: 'GET',
       });
     } catch (e) {
-      console.error("Error kicking player:", e);
+      // console.error("Error kicking player:", e);
     }
   };
 
@@ -88,7 +88,7 @@ const WaitGameStartAdmin = () => {
       });
       navigate(`/game-controller/${sessionCode}`);
     } catch (error) {
-      console.error('Error starting game:', error);
+      // console.error('Error starting game:', error);
       setIsStarting(false);
     }
   };

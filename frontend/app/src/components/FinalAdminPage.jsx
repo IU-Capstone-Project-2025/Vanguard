@@ -36,7 +36,7 @@ const FinalAdminPage = () => {
 
       navigate('/');
     } catch (error) {
-      console.error('Error ending the session:', error);
+      // console.error('Error ending the session:', error);
       setError('Failed to end session. Please try again.');
     } finally {
       setIsLoading(false);
@@ -54,7 +54,7 @@ const FinalAdminPage = () => {
       const playersMap = new Map(playersEntries);
 
       setPlayers(playersMap)
-      console.log(playersMap)
+      // console.log(playersMap)
 
       const processed = leaders
         .filter(l => playersMap.get(l.user_id) && playersMap.get(l.user_id) !== 'Admin')
@@ -70,7 +70,7 @@ const FinalAdminPage = () => {
         ]);
 
       setLeaders(new Map(processed));
-      console.log(leaders)
+      // console.log(leaders)
 
       // Анимации по таймеру
       processed.forEach(([, leader], i) => {
@@ -80,7 +80,7 @@ const FinalAdminPage = () => {
       });
 
     } catch (err) {
-      console.error('Error parsing leaders or players:', err);
+      // console.error('Error parsing leaders or players:', err);
       setError('Failed to load leaderboard data.');
     }
   }, [setLeaders]);

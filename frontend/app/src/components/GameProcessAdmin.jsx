@@ -50,13 +50,13 @@ const GameProcessAdmin = () => {
       connectRealtime(token, sessionCode);
     } catch (err) {
       setError('Failed to connect to game server');
-      console.error('Connection error:', err);
+      // console.error('Connection error:', err);
     }
 
     const handleRealtimeMessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('Realtime message:', data);
+        // console.log('Realtime message:', data);
 
         if (data.type === 'leaderboard') {
           sessionStorage.setItem('leaders', JSON.stringify(data.payload.users));
@@ -72,7 +72,7 @@ const GameProcessAdmin = () => {
         }
 
       } catch (err) {
-        console.error('Error processing message:', err);
+        // console.error('Error processing message:', err);
         setError('Error processing game data');
       }
     };
@@ -108,7 +108,7 @@ const GameProcessAdmin = () => {
         throw new Error('Failed to start next question');
       }
     } catch (error) {
-      console.error('Error starting next question:', error);
+      // console.error('Error starting next question:', error);
       setError('Failed to advance to next question');
     } finally {
       setIsLoading(false);
@@ -130,7 +130,7 @@ const GameProcessAdmin = () => {
       
       navigate('/final');
     } catch (error) {
-      console.error('Error finishing session:', error);
+      // console.error('Error finishing session:', error);
       setError('Failed to end session properly');
     } finally {
       setIsLoading(false);
@@ -147,7 +147,7 @@ const GameProcessAdmin = () => {
       wsRefRealtime.current.send(JSON.stringify({ type: 'next_question' }));
       setLeaderboardVisible(false);
     } catch (err) {
-      console.error('Error sending next question:', err);
+      // console.error('Error sending next question:', err);
       setError('Failed to proceed to next question');
     }
   };
