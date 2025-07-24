@@ -17,7 +17,7 @@ const ShapedButton = ({ shape, text, onClick, className = '', style = {} }) => {
         const svg = svgDoc.querySelector('svg');
 
         if (!path || !svg) {
-          console.error('SVG missing required elements');
+          // console.error('SVG missing required elements');
           return;
         }
 
@@ -26,7 +26,7 @@ const ShapedButton = ({ shape, text, onClick, className = '', style = {} }) => {
           viewBox: svg.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, 1000, 1000]
         });
       } catch (error) {
-        console.error('Error loading SVG:', error);
+        // console.error('Error loading SVG:', error);
       }
     };
 

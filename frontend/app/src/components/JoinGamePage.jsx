@@ -29,7 +29,7 @@ const JoinGamePage = () => {
             }
             return true;
         } catch (error) {
-            console.error("Error joining session:", error);
+            // console.error("Error joining session:", error);
             setError("Invalid session code. Please check and try again.");
             return false;
         } finally {

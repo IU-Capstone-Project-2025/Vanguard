@@ -30,7 +30,7 @@ const GameController = () => {
   const sessionCode = sessionStorage.getItem("sessionCode");
 
   const endSession = useCallback(() => {
-    console.log(`Ending session... ${sessionCode}`);
+    // console.log(`Ending session... ${sessionCode}`);
     sessionStorage.removeItem("sessionCode");
     sessionStorage.removeItem("nickname");
     closeWsRefRealtime();
@@ -51,13 +51,13 @@ const GameController = () => {
       connectRealtime(token, sessionCode);
     } catch (err) {
       setError("Failed to connect to the game server");
-      console.error("Connection error:", err);
+      // console.error("Connection error:", err);
     }
 
     const handleRealtimeMessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("Realtime message received:", data);
+        // console.log("Realtime message received:", data);
 
         switch (data.type) {
           case "end":
@@ -93,7 +93,7 @@ const GameController = () => {
             break;
         }
       } catch (err) {
-        console.error("Error processing message:", err);
+        // console.error("Error processing message:", err);
         setError("Error processing game data");
       }
     };
@@ -128,7 +128,7 @@ const GameController = () => {
       wsRefRealtime.current.send(JSON.stringify(answerMessage));
       setStage("waiting");
     } catch (err) {
-      console.error("Error sending answer:", err);
+      // console.error("Error sending answer:", err);
       setError("Failed to submit answer");
     }
   };

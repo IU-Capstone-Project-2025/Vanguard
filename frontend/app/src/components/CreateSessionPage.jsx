@@ -30,7 +30,7 @@ const CreateSessionPage = () => {
         }
         setQuizzes(data.map(quiz => ({ id: quiz.id, title: quiz.title })));
       } catch (error) {
-        console.error("Error fetching quizzes:", error);
+        // console.error("Error fetching quizzes:", error);
         setError("Failed to load quizzes. Please try again later.");
       } finally {
         setIsLoading(false);
@@ -70,7 +70,7 @@ const CreateSessionPage = () => {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error("Error creating session:", error);
+      // console.error("Error creating session:", error);
       setError("Failed to create session. Please try again.");
       throw error;
     } finally {

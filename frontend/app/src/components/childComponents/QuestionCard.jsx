@@ -62,7 +62,7 @@ const QuestionCard = ({ question, index, onChange }) => {
       const data = await res.json();
       onChange({ ...question, image_url: data.url });
     } catch (err) {
-      console.error("Image upload failed:", err);
+      // console.error("Image upload failed:", err);
     }
   };
 
