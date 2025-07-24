@@ -62,13 +62,37 @@ const ShowQuizStatistics = ({ stats, correct, onClose, options }) => {
                   </div>
 
                   <div className={styles['bar-info']}>
-                    {isCorrect && <span className={styles['tick']}>✔</span>}
+                    {/* {isCorrect && <span className={styles['tick']}>✔</span>} */}
                     <span className={styles['bar-count']}>{count}</span>
                   </div>
                 </motion.div>
               </div>
             );
           })}
+        </div>
+
+        <div className={styles["options-container"]}>
+          {options.map((option, idx) => {
+            return (
+              <div className={styles['option-wrapper']} key={idx}>
+                <motion.div
+                  className={`${styles["option"]} ${idx % 2 === 0 ? styles.left : styles.right} ${option.is_correct ? styles.correct : '' }`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${100}%` }}
+                  transition={{ duration: 0.8, delay: idx * 0.3 }}
+                >
+                  <div className={styles['option-icon']}>
+                    <img src={icons[idx % icons.length]} alt="option-icon" />
+                  </div>
+
+                  <div className={styles['option-info']}>
+                    <span className={styles[`option-text`]}>{option.text}</span>
+                  </div>
+                </motion.div>
+              </div>
+            )
+          })
+          }
         </div>
       </motion.div>
     </AnimatePresence>

@@ -74,7 +74,7 @@ const GameController = () => {
             case "question_stat":
               setPopularAnswers(data.payload.answers);
               setCorrect(data.correct);
-              setOptions(data.options)
+              setOptions(data.options)  
               setStage("statistics");
               
               setUserAnswers((prev) => {
