@@ -77,6 +77,7 @@ func handleRead(ctx *ConnectionContext, deps HandlerDeps) {
 	defer func() {
 		// On exit, clean up
 		deps.Registry.UnregisterConnection(ctx.SessionId, ctx.UserId)
+		deps.Tracker.DeleteParticipant(ctx.SessionId, ctx.UserId)
 		fmt.Println("CLOSING GA")
 		ctx.Conn.Close()
 	}()

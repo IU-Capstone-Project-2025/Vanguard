@@ -204,3 +204,30 @@ func (c *Client) GetAllAnswers(sessionID string) (map[string][]models.UserAnswer
 
 	return result, nil
 }
+
+// DeleteParticipant removes only the Redis keys related to the specified user's answers.
+func (c *Client) DeleteParticipant(sessionId, userId string) error {
+	// Key pattern for this specific user's answers
+	pattern := fmt.Sprintf("session:%s:user:%s:answers", sessionId, userId)
+
+	// Use SCAN in case there's a wildcard (e.g. multiple answer keys per user, like per question)
+	var cursor uint64
+	var keys []string
+	for {
+		matchedKeys, nextCursor, err := c.rdb.Scan(c.ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			return err
+		}
+		keys = append(keys, matchedKeys...)
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+
+	// Delete only the user's answer keys
+	if len(keys) > 0 {
+		return c.rdb.Del(c.ctx, keys...).Err()
+	}
+	return nil
+}

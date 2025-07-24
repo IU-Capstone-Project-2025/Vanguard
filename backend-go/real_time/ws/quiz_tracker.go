@@ -49,6 +49,8 @@ func (q *QuizTracker) GetCurrentQuestion(sessionId string) (int, *shared.Questio
 
 	if quiz, exists := q.tracker[sessionId]; !exists {
 		return -1, nil
+	} else if quiz.CurrQuestionIdx == quiz.QuizData.Len() {
+		return quiz.CurrQuestionIdx, nil
 	} else {
 		question := quiz.QuizData.GetQuestion(quiz.CurrQuestionIdx)
 		return quiz.CurrQuestionIdx, &question
@@ -83,12 +85,13 @@ func (q *QuizTracker) SetCurrQuestionIdx(sessionId string, questionIdx int) {
 }
 
 // IncQuestionIdx method increments the current question index of the session [sessionId]
+// Return false, if 1-based index of current question exceeded questions amount (means quiz passed)
 func (q *QuizTracker) IncQuestionIdx(sessionId string) bool {
 	quiz, ok := q.tracker[sessionId]
 	if !ok {
 		return false
 	}
-	if quiz.CurrQuestionIdx+1 >= quiz.QuizData.Len() {
+	if quiz.CurrQuestionIdx == quiz.QuizData.Len() { // zero-based index equal to amount, means index out of range -> game already ended
 		return false
 	}
 
@@ -96,6 +99,7 @@ func (q *QuizTracker) IncQuestionIdx(sessionId string) bool {
 	q.mu.Lock()
 	q.tracker[sessionId] = quiz
 	q.mu.Unlock()
+
 	_ = q.cache.SetQuestionIndex(sessionId, quiz.CurrQuestionIdx)
 	return true
 }
@@ -137,6 +141,18 @@ func (q *QuizTracker) AddParticipant(sessionId, userId string) {
 
 	if _, ok := q.answers[sessionId][userId]; !ok {
 		q.answers[sessionId][userId] = make([]models.UserAnswer, q.tracker[sessionId].QuizData.Len()) // create array with length = the amount of questions
+	}
+}
+
+// DeleteParticipant deletes user from tracker
+func (q *QuizTracker) DeleteParticipant(sessionId, userId string) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if _, exists := q.tracker[sessionId]; exists {
+		delete(q.answers[sessionId], userId)
+
+		q.cache.DeleteParticipant(sessionId, userId)
 	}
 }
 
@@ -187,7 +203,7 @@ func (q *QuizTracker) GetLeaderboard(sessionId string) (shared.BoardResponse, er
 
 	q.mu.Unlock()
 
-	currQuestionAnswers := make([]shared.Answer, 0, len(q.answers[sessionId]))
+	currQuestionAnswers := make([]shared.Answer, 0, len(q.answers[sessionId])) // length = number of users
 	for user, answers := range q.answers[sessionId] {
 		ans := answers[qid]
 
@@ -201,9 +217,11 @@ func (q *QuizTracker) GetLeaderboard(sessionId string) (shared.BoardResponse, er
 		currQuestionAnswers = append(currQuestionAnswers, lbAns)
 	}
 
-	fmt.Println("currQuestionAnswers: ", currQuestionAnswers)
+	fmt.Printf("currQuestionAnswers: %v\n", currQuestionAnswers)
 
-	_, question := q.GetCurrentQuestion(sessionId)
+	question := q.GetQuestion(sessionId, qid)
+
+	fmt.Printf("got question with id=%d: %v\n", qid, question)
 
 	board, err := q.lb.GetResults(context.Background(), sessionId, currQuestionAnswers, len(question.Options))
 	if err != nil {
