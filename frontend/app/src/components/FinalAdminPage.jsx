@@ -10,7 +10,8 @@ const FinalAdminPage = () => {
   const navigate = useNavigate();
   const [visibleBlocks, setVisibleBlocks] = useState([]);
 
-  const [leaders, setPlayers] = useState(new Map());
+  const [leaders, setLeaders] = useState(new Map());
+  const [players, setPlayers] = useState(new Map())
 
   const endSession = async (code) => {
     try {
@@ -52,10 +53,13 @@ const FinalAdminPage = () => {
       const playersEntries = JSON.parse(storedPlayersRaw);
       const playersMap = new Map(playersEntries);
 
+      setPlayers(playersMap)
+      console.log(playersMap)
+
       const processed = leaders
         .filter(l => playersMap.get(l.user_id) && playersMap.get(l.user_id) !== 'Admin')
         .sort((a, b) => b.total_score - a.total_score)
-        .slice(0, 3)
+        // .slice(0, 3)
         .map((leader, index) => [
           leader.user_id,
           {
@@ -65,7 +69,8 @@ const FinalAdminPage = () => {
           }
         ]);
 
-      setPlayers(new Map(processed));
+      setLeaders(new Map(processed));
+      console.log(leaders)
 
       // Анимации по таймеру
       processed.forEach(([, leader], i) => {
@@ -78,7 +83,7 @@ const FinalAdminPage = () => {
       console.error('Error parsing leaders or players:', err);
       setError('Failed to load leaderboard data.');
     }
-  }, []);
+  }, [setLeaders]);
 
   return (
     <div className={styles['final-page-container']}>
@@ -111,6 +116,17 @@ const FinalAdminPage = () => {
         )}
       </div>
 
+      <div className={styles.leaderboard}>
+        {[...leaders.values()].map((player, idx) => (
+          <div className={styles['leaderboard-row']} key={player.name + idx}>
+            <span className={styles.place}>{player.position}</span>
+            <div className={styles['user-info']}>
+              <span className={styles.name}>{player.name}</span>
+              <span className={styles.score}>{player.score}</span>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <div className={styles['buttons-container']}>
         <button
