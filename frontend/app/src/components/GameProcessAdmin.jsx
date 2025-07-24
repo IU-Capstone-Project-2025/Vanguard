@@ -26,6 +26,7 @@ const GameProcessAdmin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [answerCounter, setAnswerCounter] = useState(0);
   const [playersAmount, setPlayersAmount] = useState(0);
+  const [isLastQuestion, setLastQuestion] = useState(false)
 
   const questionsAmount = currentQuestion.questionsAmount || 0;
   const navigate = useNavigate();
@@ -56,16 +57,26 @@ const GameProcessAdmin = () => {
     const handleRealtimeMessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        // console.log('Realtime message:', data);
+        console.log('Realtime message:', data);
 
         if (data.type === 'leaderboard') {
           sessionStorage.setItem('leaders', JSON.stringify(data.payload.users));
           setLeaderboardData(data.payload);
+          console.log(`** index: ${questionIndex}, amount: ${questionsAmount}`)
+          const qIndex = Number(sessionStorage.getItem('questionIndex'));
+          if (questionIndex === questionsAmount || qIndex === questionsAmount) {
+            console.log('last leaderboard received')
+            closeWsRefRealtime();
+            closeWsRefSession();
+            navigate('/final');
+          }
           setLeaderboardVisible(true);
         } else if (data.type === 'question') {
           setAnswerCounter(0);
           setCurrentQuestion(data);
-          setQuestionIndex(data.questionId);
+          setQuestionIndex(data.questionId);  
+          sessionStorage.setItem('questionIndex', data.questionId); // ← добавим  
+          // setLastQuestion(questionIndex === questionsAmount)
           sessionStorage.setItem('currentQuestion', JSON.stringify(data));
         } else if (data.type === 'user_answered') {
           setAnswerCounter((prev) => prev + 1)
@@ -121,14 +132,22 @@ const GameProcessAdmin = () => {
 
       const sessionCode = sessionStorage.getItem('sessionCode');
       await toNextQuestion(sessionCode);
+      setLastQuestion(true)
+      // await wsRefRealtime.current.onmessage
 
+      // if (leaderboardVisible) {
+        // setLeaderboardVisible(false)
       sessionStorage.removeItem('quizData');
       sessionStorage.removeItem('currentQuestion');
       
-      closeWsRefRealtime();
-      closeWsRefSession();
+      console.log(`index: ${questionIndex}, amount: ${questionsAmount}`)
+      console.log('finish session called, is last question:', isLastQuestion )
       
-      navigate('/final');
+      if (isLastQuestion) {
+        closeWsRefRealtime();
+        closeWsRefSession();
+        navigate('/final');
+      }
     } catch (error) {
       // console.error('Error finishing session:', error);
       setError('Failed to end session properly');
@@ -161,7 +180,7 @@ const GameProcessAdmin = () => {
     <div className={styles['game-process']}>
       {error && <div className={styles.error}>{error}</div>}
 
-      {leaderboardVisible && leaderboardData ? (
+      {(leaderboardVisible && !isLastQuestion)  && leaderboardData ? (
         <ShowLeaderBoardComponent
           leaderboardData={leaderboardData}
           onClose={handleLeaderboardClick} 

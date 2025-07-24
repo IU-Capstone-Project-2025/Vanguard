@@ -28,11 +28,7 @@ const FinalAdminPage = () => {
       }
 
       // Clear session storage
-      sessionStorage.removeItem('sessionCode');
-      sessionStorage.removeItem('quizData');
-      sessionStorage.removeItem('currentQuestion');
-      sessionStorage.removeItem('players');
-      sessionStorage.removeItem('leaders');
+      sessionStorage.clear()
 
       navigate('/');
     } catch (error) {

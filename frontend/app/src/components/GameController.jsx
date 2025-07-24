@@ -155,10 +155,11 @@ const GameController = () => {
               className={`${styles['controller-answer-option']} ${
                 idx === 0 || idx === 2 ? styles.left : styles.right
               }`}
+              onClick={() => handleAnswer(idx)}
             >
               <button
                 className={styles['option-button']}
-                onClick={() => handleAnswer(idx)}
+                // onClick={() => handleAnswer(idx)}
               >
                 <img src={question.options[idx]} alt={`option ${idx + 1}`} />
               </button>
