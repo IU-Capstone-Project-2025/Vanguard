@@ -95,7 +95,7 @@ const WaitGameStartPlayer = () => {
         </h1>
         <div className={styles['players-grid']}>
           {Array.from(players.entries()).map(([id, name]) => (
-            <div key={id} className={styles['player-card']}>
+            <div key={id} style={{ '--name-length': name.length }} className={styles['player-card']}>
               {name}
             </div>
           ))}
