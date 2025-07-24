@@ -2,171 +2,137 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionSocket } from '../contexts/SessionWebSocketContext';
 import { useRealtimeSocket } from '../contexts/RealtimeWebSocketContext';
-import './styles/WaitGameStartAdmin.css';
-import { API_ENDPOINTS } from '../constants/api';
+import styles from './styles/WaitGameStartAdmin.module.css';
+import { API_ENDPOINTS, BASE_URL } from '../constants/api';
+import QRCodeModal from './childComponents/QRCodeModal.jsx'; // путь подкорректируй
+
 
 const WaitGameStartAdmin = () => {
   const navigate = useNavigate();
   const { wsRefSession, connectSession, closeWsRefSession } = useSessionSocket();
   const { connectRealtime, wsRefRealtime, closeWsRefRealtime } = useRealtimeSocket();
-  const [sessionCode, setSessionCode] = useState(sessionStorage.getItem('sessionCode') || null);
+  const [sessionCode] = useState(sessionStorage.getItem('sessionCode'));
   const [players, setPlayers] = useState(new Map());
-  const [hasClickedNext, setHasClickedNext] = useState(false)
+  const [isStarting, setIsStarting] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
 
-  const extractPlayersFromMessage = (data) => {
-    setPlayers((prevPlayers) => {
-      const newPlayers = new Map(prevPlayers)
-      for (const [userId,name] of Object.entries(data)) {
-        if (!newPlayers.has(userId)) {
-          newPlayers.set(userId, name);
-        }
+
+  const handleSessionMessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      // console.log('receives session Message', data)
+      const newPlayers = new Map();
+      for (const [userId, name] of Object.entries(data)) {
+        newPlayers.set(userId, name);
       }
-      return newPlayers;
-    });
+      sessionStorage.setItem('players', JSON.stringify([...newPlayers]));
+      setPlayers(newPlayers);
+    } catch (e) {
+      // console.error('Invalid session message:', e);
+    }
+  };
+
+  const handleRealtimeMessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === 'question') {
+        sessionStorage.setItem('currentQuestion', JSON.stringify(data));
+      }
+    } catch (e) {
+      // console.error('Failed to parse realtime message:', e);
+    }
   };
 
   useEffect(() => {
     const token = sessionStorage.getItem('jwt');
     if (!token) return;
 
-    connectSession(token, (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('Received session message:', data);
-        extractPlayersFromMessage(data);
-      } catch (e) {
-        console.error('⚠️ Invalid session WS message:', event.data);
-      }
-    });
+    connectSession(token, handleSessionMessage);
+    connectRealtime(token, handleRealtimeMessage);
 
-    connectRealtime(token, (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'question') {
-          console.log('Got question:', data);
-          sessionStorage.setItem('currentQuestion', JSON.stringify(data));
-        }
-      } catch (e) {
-        console.error('⚠️ Failed to parse realtime WS message:', event.data);
-      }
-    });
-
-    wsRefRealtime.current.onclose = () => {
-      closeConnection();
-    }
-    wsRefSession.current.onclose = () => {
-      closeConnection();
-    }
+    return () => {
+      closeWsRefRealtime();
+      closeWsRefSession();
+    };
   }, [connectSession, connectRealtime]);
 
-  const closeConnection = () => {
-    closeWsRefRealtime();
-    closeWsRefSession();
-    navigate('/');
-  }
-
-  const finishSession = async (code) => {
+  const finishSession = async () => {
     try {
-      const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${code}/end`, {
+      await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/end`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
-      if (!response.ok) {
-        throw new Error(`Failed to end session with code: ${code}`);
-      }
-      console.log(`end session with code: [${code}] response:`, response);
-      // Очистка sessionStorage
       sessionStorage.removeItem('sessionCode');
       sessionStorage.removeItem('quizData');
       sessionStorage.removeItem('currentQuestion');
-      // Закрытие WebSocket соединений
-      closeConnection();
+      navigate('/');
     } catch (error) {
-      console.error('Error end the session:', error);
-    }
-    
-  }
-
-  const handleKick = async (idToRemove) => {
-    console.log(`Kick user with id [${idToRemove}]`)
-    try {
-      const queryParams = new URLSearchParams(
-        {
-          code: sessionCode,
-          userId: idToRemove
-        }
-      );
-      const response = await fetch(`${API_ENDPOINTS.SESSION}/delete-user?${queryParams}`,
-        {
-          method: 'GET',
-          'Content-Type': 'application/json'
-        }
-      )
-      if (response.status !== 200) {
-        throw new Error(`Failed to kick player with id: ${idToRemove}`);
-      }
-      console.log('Kicked player. response: ', response)
-    }  
-    catch (e) {
-      console.error("Error with kicking: ", e)
+      // console.error('Error ending session:', error);
     }
   };
 
-  const toNextQuestion = async (sessionCode) => {
-    console.log("give the next question api call in wait-admin");
-    if (!sessionCode) {
-      console.error('Session code is not available');
-      return;
-    }
+  const handleKick = async (userId) => {
     try {
-      const response = await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
+      await fetch(`${API_ENDPOINTS.SESSION}/delete-user?code=${sessionCode}&userId=${userId}`, {
+        method: 'GET',
+      });
+    } catch (e) {
+      // console.error("Error kicking player:", e);
+    }
+  };
+
+  const startGame = async () => {
+    setIsStarting(true);
+    try {
+      await fetch(`${API_ENDPOINTS.SESSION}/session/${sessionCode}/nextQuestion`, {
         method: 'POST',
       });
-      if (response.status !== 200) {
-        throw new Error('Failed to start next question');
-      }
-      console.log('Next question started', response);
+      navigate(`/game-controller/${sessionCode}`);
     } catch (error) {
-      console.error('Error starting next question:', error);
+      // console.error('Error starting game:', error);
+      setIsStarting(false);
     }
-  };
-
-  const handleStart = async (e) => {
-    e.preventDefault();
-    setHasClickedNext(true);
-    const sessionCode = sessionStorage.getItem('sessionCode');
-    await toNextQuestion(sessionCode);
-    navigate(`/game-controller/${sessionCode}`);
-  };
-
-  const handleTerminate = () => {
-    finishSession(sessionCode);
   };
 
   return (
-    <div className="wait-admin-container">
-      <div className="wait-admin-panel">
-        <h1>Now let's wait your friends <br /> Code: #{sessionCode}</h1>
-        <div className="admin-button-group">
-          <button onClick={handleStart} disabled={hasClickedNext}>▶️ Start</button>
-          <button onClick={handleTerminate}>❌ Terminate</button>
-        </div>
-        <div className="players-grid">
-          {(Array.from(players.entries())).map(([id, name]) => (
-            <div key={id + name} className="player-box">
-              <span>{name}</span>
-              {name != "Admin" &&
-              <button
-                className="kick-button"
-                onClick={() => handleKick(id)}
-                title={`Kick ${name}`}
-              >
-                ❌
-              </button>}
+    <div className={styles['wait-admin-wrapper']}>
+      {showQRModal && (
+        <QRCodeModal
+          code={`${BASE_URL}/join/${sessionCode}`} // здесь вставь нужный URL
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
+      <h1 className={styles['waiting-title']}>
+        Waiting for your awesome <span className={styles['highlight']}>crew</span>...
+      </h1>
+      
+      <div className={styles['wait-layout']}>
+        <div className={styles['players-grid']}>
+          {[...players.entries()].map(([id, name]) => (
+            <div key={id} className={styles['player-box']} onClick={() => handleKick(id)}>
+              <span style={{ '--name-length': name.length }}>{name}</span>
+              <div className={styles['tooltip']}>Click to kick user</div>
             </div>
           ))}
+        </div>
+
+        <div className={styles['right-panel']}>
+          <div className={styles['session-box']}>
+            <div className={styles['session-code']}># <strong>{sessionCode}</strong></div>
+            <div className={styles['session-count']}>👤 {players.size}/40</div>
+            <button onClick={() => setShowQRModal(true)} className={styles['start-btn']}>
+              📱 Show QR
+            </button>
+            <button onClick={finishSession} className={styles['terminate-btn']}>
+              ✖ Terminate
+            </button>
+            <button 
+              onClick={startGame} 
+              disabled={isStarting || players.size === 0}
+              className={styles['start-btn']}
+            >
+              {isStarting ? 'Starting...' : '▶ Start'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

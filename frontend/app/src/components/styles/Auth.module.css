@@ -1,0 +1,98 @@
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.title h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1.3;
+}
+
+.login-passwd-container {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.login-passwd-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.login-passwd-panel h1 {
+    font-size: 1.2rem;
+    margin: 10px 0 5px;
+}
+
+.login-passwd-input {
+    width: 250px;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #333;
+}
+
+.login-passwd-input::placeholder {
+    color: #999;
+}
+
+.submit-button,
+.signup-button {
+    width: 100%;
+    /* width: 250px; */
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-button {
+    background-color: var(--btn); /* emerald */
+    color: var(--accent);
+}
+
+.submit-button:hover {
+    background-color: var(--btn-hover);
+}
+
+.signup-question {
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+
+.signup-button {
+    background-color: var(--blue); /* blue */
+    color: var(--text-light);
+}
+
+.signup-button:hover {
+    background-color: #3b82f6;
+}
+
+.auth-error {
+    color: #f87171;
+    margin-top: 10px;
+    font-size: 0.9rem;
+    text-align: center;
+}

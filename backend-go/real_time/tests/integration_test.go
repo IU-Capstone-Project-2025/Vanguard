@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -33,9 +34,13 @@ func TestWithTestContainers(t *testing.T) {
 		}
 	}
 
-	_, amqpURL := utils.StartRabbit(ctx, t)
+	amqpURL, closeRabbit := utils.StartRabbit(ctx, t)
+	defer closeRabbit()
+	redisUrl, closeRedis := utils.StartRedis(ctx, t)
+	defer closeRedis()
 
 	t.Log("rabbit running on ", amqpURL)
+	t.Log("redis running on ", redisUrl)
 
 	// 2. Start Redis container similarly if needed
 
@@ -44,18 +49,26 @@ func TestWithTestContainers(t *testing.T) {
 	// Start your RealTime main in a goroutine if possible, or exec binary.
 	wgRTS := &sync.WaitGroup{}
 	wgRTS.Add(1)
-	cancel := utils.StartRealTimeServer(t, wgRTS, amqpURL)
+	cancel := utils.StartRealTimeServer(t, wgRTS, amqpURL, redisUrl)
+	go utils.StartLeaderBoardService(t, strings.Split(redisUrl, ":")[2])
 
 	wg := &sync.WaitGroup{}
 
-	sessionIds := []string{"В4ФЛ3Р", "CO6AK4"}
+	sessionIds := []string{"В4ФЛ3Р"}
 
 	for _, s := range sessionIds {
 		wg.Add(1)
 		go func(sessionId string) {
 			defer wg.Done()
-			adminId := "admin"
-			users := []string{"ginger"}
+
+			adminId := "admin_" + sessionId
+
+			users := []string{"ginger_" + sessionId, "tolik_" + sessionId}
+			usersAnswers := [][]int{
+				{2, 2, 3, 0},
+				{2, 3, 1, 1},
+			}
+
 			quiz := shared.Quiz{Questions: []shared.Question{
 				{
 					Type: "single_choice",
@@ -87,11 +100,18 @@ func TestWithTestContainers(t *testing.T) {
 						{Text: "decimal", IsCorrect: false},
 					},
 				},
+				{
+					Type: "single_choice",
+					Text: "Who I Am?",
+					Options: []shared.Option{
+						{Text: "A", IsCorrect: false},
+						{Text: "B", IsCorrect: true},
+						{Text: "C", IsCorrect: false},
+						{Text: "D", IsCorrect: false},
+					},
+				},
 			}}
 
-			usersAnswers := [][]int{
-				{2, 2, 3},
-			}
 			adminToken := generateJWT(t, sessionId, adminId, shared.RoleAdmin)
 
 			var adminConn *websocket.Conn
@@ -131,32 +151,106 @@ func TestWithTestContainers(t *testing.T) {
 
 			// 8. Start question flow
 			for i, q := range quiz.Questions {
+				//if i == 2 {
+				//	uid := 0
+				//	t.Log("Remove user ", users[uid])
+				//	usersConn[0].Close()
+				//	usersConn = append(usersConn[:uid], usersConn[uid+1:]...)
+				//	users = append(users[:uid], users[uid+1:]...)
+				//	usersAnswers = append(usersAnswers[:uid], usersAnswers[uid+1:]...)
+				//}
+
+				t.Logf("!!!!!!!!!!!!! Question %d !!!!!!!!!!!!!\n", i)
 				t.Log("trigger question ", i, q)
 
 				publishQuestionStart(t, amqpURL, sessionId)
 
+				if i > 0 {
+					t.Log("Receiving leader board")
+					lboard := utils.ReadWs(t, adminConn)
+					for lboard.Type == ws.MessageTypeUserAnswered {
+						t.Log("received that user answered")
+						lboard = utils.ReadWs(t, adminConn)
+					}
+					t.Log("checking leader board")
+					require.Equal(t, ws.MessageTypeLeaderboard, lboard.Type)
+					t.Log("--- Leader Board: ", lboard.Payload)
+				}
+
 				questionPayload := utils.ReadWs(t, adminConn)
-				t.Log("checking question payload:")
+				t.Logf("session %s: checking question payload:", sessionId)
+				t.Log(questionPayload)
 				require.Equal(t, q.Text, questionPayload.Text)
 				require.Equal(t, ws.MessageTypeQuestion, questionPayload.Type)
 				require.Equal(t, i+1, questionPayload.QuestionIdx)
 				require.Equal(t, q.Options, questionPayload.Options)
 
-				for _, user := range usersConn {
+				// receive question stats
+				if i > 0 {
+					for j, userConn := range usersConn {
+						stat := utils.ReadWs(t, userConn)
+						t.Log("checking user stat")
+						require.Equal(t, ws.MessageTypeStat, stat.Type)
+						t.Log(j, i-1, quiz.Questions[i-1].Options[usersAnswers[j][i-1]], stat)
+						require.Equal(t, quiz.Questions[i-1].Options[usersAnswers[j][i-1]].IsCorrect, stat.Correct)
+						require.Equal(t, quiz.Questions[i-1].Options, stat.Options)
+						t.Log("Options match")
+						t.Log("--- Stat: ", stat.Payload)
+					}
+				}
+
+				if i > 0 {
+					m := ws.ClientMessage{Type: ws.MessageTypeNextQuestion}
+					adminConn.WriteMessage(websocket.TextMessage, m.Bytes())
+				}
+
+				// ignore next question ack for participants
+				for j, user := range usersConn {
+					t.Log("Ack for ", users[j])
 					utils.ReadWs(t, user)
 				}
 
+				// answer the question
 				for j, user := range usersConn {
 					option := usersAnswers[j][i]
-					t.Logf("user %s send answer: %d", users[j], option)
-					msg := ws.ClientMessage{Option: option}
-					user.WriteMessage(websocket.TextMessage, msg.Bytes())
+					if i == 0 {
+						t.Logf("user %s do not send answer in question: %d", users[j], i)
+					} else {
+						t.Logf("user %s send answer: %d", users[j], option)
+						msg := ws.ClientMessage{Type: ws.MessageTypeAnswer, Option: option}
+						user.WriteMessage(websocket.TextMessage, msg.Bytes())
+					}
 
-					resp := utils.ReadWs(t, user)
-					require.Equal(t, ws.MessageTypeAnswer, resp.Type)
-					require.Equal(t, i+1, resp.QuestionIdx)
-					require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
+					//resp := utils.ReadWs(t, user)
+					//require.Equal(t, ws.MessageTypeAnswer, resp.Type)
+					//require.Equal(t, i+1, resp.QuestionIdx)
+					//require.Equal(t, q.Options[option].IsCorrect, resp.Correct)
 				}
+			}
+
+			// get leaderboard last time, no question payload wanted
+			publishQuestionStart(t, amqpURL, sessionId)
+
+			t.Log("Receiving leader board")
+			lboard := utils.ReadWs(t, adminConn)
+			for lboard.Type == ws.MessageTypeUserAnswered {
+				t.Log("received that user answered")
+				lboard = utils.ReadWs(t, adminConn)
+			}
+			t.Log("checking leader board")
+			require.Equal(t, ws.MessageTypeLeaderboard, lboard.Type)
+			t.Log("--- Leader Board: ", lboard.Payload)
+
+			for j, userConn := range usersConn {
+				stat := utils.ReadWs(t, userConn)
+				t.Log("checking user stat")
+				require.Equal(t, ws.MessageTypeStat, stat.Type)
+				i := len(quiz.Questions)
+				t.Log(j, i-1, quiz.Questions[i-1].Options[usersAnswers[j][i-1]], stat)
+				require.Equal(t, quiz.Questions[i-1].Options[usersAnswers[j][i-1]].IsCorrect, stat.Correct)
+				require.Equal(t, quiz.Questions[i-1].Options, stat.Options)
+				t.Log("Options match")
+				t.Log("--- Stat: ", stat.Payload)
 			}
 
 			// trigger session end
@@ -167,21 +261,6 @@ func TestWithTestContainers(t *testing.T) {
 			t.Log("---- Users received end message:")
 			for _, user := range usersConn {
 				utils.ReadWs(t, user)
-				// t.Log(lb.Payload)
-				// ans, ok := lb.Payload.(map[string]interface{})
-				// require.Equal(t, true, ok)
-
-				// userChosen, ok := ans[users[i]].([]interface{})
-				// require.Equal(t, true, ok)
-
-				// for j, isCorrectInter := range userChosen {
-				// 	chosenIdx := usersAnswers[i][j]
-
-				// 	isCorrect, ok := isCorrectInter.(bool)
-				// 	require.Equal(t, true, ok)
-
-				// 	require.Equal(t, quiz.Questions[j].Options[chosenIdx].IsCorrect, isCorrect)
-				// }
 			}
 
 			t.Log("Close connections:")

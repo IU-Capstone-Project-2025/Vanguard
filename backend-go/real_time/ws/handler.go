@@ -39,12 +39,6 @@ type ConnectionContext struct {
 // Starts a goroutine running handleRead to process incoming messages
 func NewWebSocketHandler(deps HandlerDeps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO:
-		//   - If token is missing or invalid, respond with appropriate HTTP status (e.g., 400/401) and return early.
-		//   - On extractTokenData error, write an HTTP error or close the connection instead of only logging.
-		//   - On upgrader.Upgrade error, write log and return so no further processing.
-		//   - Ensure that after Upgrade, if token parsing failed, the connection is closed.
-
 		// Extracts the "token" from URL query. If missing, it should reject the request
 		tokenString := r.URL.Query().Get("token")
 		if tokenString == "" {
@@ -84,6 +78,10 @@ func NewWebSocketHandler(deps HandlerDeps) http.HandlerFunc {
 			log.Printf("Failed to register connection: %v", err)
 			conn.Close()
 			return
+		}
+
+		if token.UserType == shared.RoleParticipant {
+			deps.Tracker.AddParticipant(token.SessionId, token.UserId)
 		}
 
 		// Send a welcome message

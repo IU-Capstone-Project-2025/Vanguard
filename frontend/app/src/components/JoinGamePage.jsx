@@ -1,99 +1,116 @@
-import React, {useEffect, useRef} from "react";
-import './styles/styles.css'
-import {useNavigate} from "react-router-dom";
-import {useState} from "react";
-import Cookies from "js-cookie";
+import React, { useEffect, useRef, useState } from "react";
+import styles from './styles/JoinGamePage.module.css';
+import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from '../constants/api';
+import nicknameIcon from './assets/nickname-page.svg';
 
 const JoinGamePage = () => {
     const [code, setCode] = useState("");
-    const navigate = useNavigate()
-    const realTimeWsRef = useRef(null);
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+    const inputRef = useRef(null);
 
-    // 🎯 POST-запрос к /api/session/join
-    const joinSession = async (sessionCode, userName) => {
-        console.log("Joining session with code:", sessionCode, "and username:", userName);
+    const joinSession = async (sessionCode) => {
+        try {
+            setIsLoading(true);
+            const response = await fetch(`${API_ENDPOINTS.SESSION}/validate`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "code": sessionCode
+                }),
+            });
 
-        // Проверка на наличие кода с символом '#'
-        const response = await fetch(`${API_ENDPOINTS.SESSION}/join`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "code": sessionCode,
-                "userName": userName
-            }),
-        });
-        if (response.code === 400) {
-            console.error("❌ Error joining session:", response.statusText);
-            alert("Failed to join session. Please check the code and try again.");
-            return;
+            if (!response.ok) {
+                throw new Error("Invalid session code");
+            }
+            return true;
+        } catch (error) {
+            // console.error("Error joining session:", error);
+            setError("Invalid session code. Please check and try again.");
+            return false;
+        } finally {
+            setIsLoading(false);
         }
-        const data = await response.json();
-        return data; // возвращает объект вида: {"serverWsEndpoint": "string","jwt":"string", "sessionId":"string"}
-
     };
+
     useEffect(() => {
-        console.log("code updated:", code);
-    }, [code]);
+        inputRef.current?.focus();
+    }, []);
 
     const handlePlay = async () => {
-        if (code) {
-            console.log("code updated:", code);
-            const sessionData = await joinSession(code, sessionStorage.getItem("nickname"))
-            if (!sessionData || !sessionData.sessionId) {
-                console.error("❌ Failed to join session or session ID is missing");
-                alert("Failed to join session. Please check the code and try again.");
-                return;
-            }
-            sessionStorage.setItem('sessionCode', code); // Store the session code in session storage
-            sessionStorage.setItem('jwt', sessionData.jwt);
-            navigate(`/wait/${code}`); // Navigate to the waiting page with the session code
+        if (!code.trim()) {
+            setError("Please enter a session code");
+            return;
+        }
+
+        const isValid = await joinSession(code);
+        if (isValid) {
+            sessionStorage.setItem('sessionCode', code);
+            navigate('/enter-nickname');
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handlePlay();
         }
     };
 
     return (
-        <div className="joingame-main-content">
-            <div className="left-side">
-                <div className="title">
+        <div className={styles['joingame-main-content']}>
+            <div className={styles['left-side']}>
+                <div className={styles.title}>
                     <h1>
-                        Ask your quiz creator for a code
+                        Got a <span className={styles.code}>code</span>?
+                        <br/>
+                        Time to jump in!
                     </h1>
                     <input
                         type="text"
-                        placeholder="enter a code here"
+                        ref={inputRef}
+                        placeholder="Enter a code here"
                         value={code}
                         onChange={(e) => {
                             const value = e.target.value.toUpperCase();
-                            if (/^[A-Z0-9]*$/.test(value)){
+                            if (/^[A-Z0-9]*$/.test(value)) {
                                 setCode(value);
-                        }}} // Remove '#' and convert to uppercase
+                                setError(null);
+                            }
+                        }}
+                        onKeyDown={handleKeyDown}
                         required
                         autoFocus
-                        pattern="^[A-Z0-9]+$" // Ensure only alphanumeric characters are
-                        className="code-input"
+                        pattern="^[A-Z0-9]+$"
+                        className={styles['code-input']}
                     />
-                    <div className="button-group">
-                        <button id="play"
-                                className="play-button"
-                                onClick={
-                                    (e) => {
-                                        handlePlay();
-                                        e.preventDefault();
-                                    }
-                                }
+                    {error && <div className={styles.error}>{error}</div>}
+                    <div className={styles['button-group']}>
+                        <button
+                            id="play"
+                            className={styles['play-button']}
+                            onClick={handlePlay}
+                            disabled={isLoading}
                         >
-                            <span>Play</span>
+                            {isLoading ? "Joining..." : <span>Play</span>}
                         </button>
                     </div>
                 </div>
             </div>
-            <div className="right-side">
-
+            <div className={styles['right-side']}>
+                <div className={styles['right-side-content']}>
+                    <img 
+                        src={nicknameIcon} 
+                        alt="Nickname icon" 
+                        className={styles['nickname-icon']}
+                    />
+                </div>
             </div>
         </div>
-    )
+    );
 };
 
 export default JoinGamePage;

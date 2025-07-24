@@ -1,0 +1,38 @@
+.shaped-button-wrapper {
+  display: inline-block;
+  width: 100px; /* обязательно — можно переопределять */
+  height: 100px;
+  position: relative;
+}
+
+.shaped-button {
+  width: 100%;
+  height: 100%;
+  background-color: var(--light-orange);
+  color: var(--dark);
+  border: none;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  clip-path: none; /* убирается, будет через style */
+  -webkit-clip-path: none;
+  transition: transform 0.2s ease;
+  overflow: hidden;
+}
+
+.shaped-button:hover {
+  transform: scale(1.05);
+}
+
+.hidden-svg {
+  width: 0;
+  height: 0;
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}

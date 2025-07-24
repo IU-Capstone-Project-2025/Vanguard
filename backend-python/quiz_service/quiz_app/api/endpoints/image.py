@@ -7,14 +7,16 @@ from shared.schemas.image import ImageUploadResponse
 from quiz_app.services.image_service import S3ImageService
 from quiz_app.core.dependencies import get_image_service
 
-router = APIRouter(prefix="/images", tags=["images"])
+router = APIRouter(prefix="/api/images", tags=["images"])
 
 
 @router.post(
     "/upload",
-    response_model=ImageUploadResponse,
     summary="Upload an image to S3",
-    description="Upload an image to S3 and get a url of uploaded image",
+    description="Uploads an image file to the S3-compatible storage bucket. Supported formats: JPEG, PNG, GIF.",
+    response_model=ImageUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    response_description="Public URL of the uploaded image",
     responses={
         201: {"description": "Image successfully uploaded", "content": {
             "application/json": {"example": {"url": "https://storage.yandexcloud.net/tryit/uploads/uuid.png"}}
@@ -33,9 +35,13 @@ async def upload_image(
 
 @router.delete(
     "/",
+    summary="Delete Image from S3",
+    description="Deletes an uploaded image from S3 storage using its full public URL.",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_description="Image deleted successfully",
     responses={
         204: {"description": "Image successfully deleted"},
+        400: {"description": "Invalid image URL"},
         404: {"description": "Image not found"},
         500: {"description": "Internal server error during deletion"}
     }

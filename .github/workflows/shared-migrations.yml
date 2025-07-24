@@ -18,12 +18,18 @@ jobs:
   build-push:
     runs-on: ubuntu-latest
     env:
-      IMAGE_SHA: ${{ vars.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:${{ github.sha }}
       IMAGE_LATEST: ${{ vars.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Set short SHA and image name
+      id: set-short-sha
+      run: |
+        SHORT_SHA="${GITHUB_SHA::7}"
+        echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+        echo "IMAGE_SHA=${{ vars.DOCKERHUB_USERNAME }}/${{ inputs.service-name }}:$SHORT_SHA" >> $GITHUB_ENV
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2

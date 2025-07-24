@@ -1,26 +1,47 @@
 services:
+  postgres:
+    ports: []
+
+  redis:
+    ports: []
+
   rabbitmq:
+    ports: []
     volumes:
       - /tmp/definitions.json:/etc/rabbitmq/definitions.json:ro
       - /tmp/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-    environment:
-      RABBITMQ_LOAD_DEFINITIONS: "true"
-      RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
 
   migrator:
     image: ${MIGRATOR_IMAGE}
+    ports: []
+    environment:
+      ENVIRONMENT: "production"
 
   auth:
     image: ${AUTH_IMAGE}
+    ports: []
+    environment:
+      ENVIRONMENT: "production"
+      DEBUG: "false"
 
   quiz:
     image: ${QUIZ_IMAGE}
+    ports: []
+    environment:
+      ENVIRONMENT: "production"
+      DEBUG: "false"
 
   real-time:
     image: ${REALTIME_IMAGE}
+    ports: []
 
   session:
     image: ${SESSION_IMAGE}
+    ports: []
+
+  leaderboard:
+    image: ${LEADERBOARD_IMAGE}
+    ports: []
 
   frontend:
     image: ${FRONTEND_IMAGE}
@@ -30,7 +51,6 @@ services:
       - "443:443"
     volumes:
       - /tmp/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
-      - /app/node_modules
       - /opt/certbot/www:/var/www/certbot:rw
       - /opt/certbot/conf:/etc/letsencrypt:rw
     command: >
@@ -41,6 +61,8 @@ services:
       done &
       nginx -g 'daemon off;'
       "
+    depends_on:
+      - grafana
 
   certbot:
     image: certbot/certbot:v4.1.1
@@ -49,3 +71,37 @@ services:
       - /opt/certbot/www:/var/www/certbot:rw
       - /opt/certbot/conf:/etc/letsencrypt:rw
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+  prometheus:
+    volumes:
+      - /tmp/monitoring/prometheus:/etc/prometheus
+
+  grafana:
+    volumes:
+      - /tmp/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - /tmp/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      GF_SERVER_DOMAIN: grafana.tryit.selnastol.ru
+      GF_SERVER_ROOT_URL: https://grafana.tryit.selnastol.ru
+    ports: []
+
+  alertmanager:
+    volumes:
+      - /tmp/monitoring/alertmanager:/etc/alertmanager
+
+  loki:
+    volumes:
+      - /tmp/monitoring/loki:/etc/loki
+    environment:
+      S3_REGION: ${S3_REGION}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
+      S3_BUCKET_LOG: ${S3_BUCKET_LOG}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+    command:
+    - '-config.file=/etc/loki/config.yml' # better to use config-s3.yml in prod 
+    - '-config.expand-env=true'
+
+  promtail:
+    volumes:
+      - /tmp/monitoring/promtail:/etc/promtail

@@ -15,4 +15,4 @@ COPY auth_service/auth_app ./auth_app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "auth_app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "auth_app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

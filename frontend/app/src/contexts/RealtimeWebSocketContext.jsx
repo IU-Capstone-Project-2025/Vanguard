@@ -26,11 +26,11 @@ export const RealtimeWebSocketProvider = ({ children }) => {
       `${API_ENDPOINTS.REALTIME_WS}?token=${token}`
     );
 
-    ws.onopen = () => console.log('✅ Realtime WebSocket connected');
+    // ws.onopen = () => // console.log('✅ Realtime WebSocket connected');
     ws.onmessage = onMessage;
-    ws.onerror = (e) => console.error('⚠️ Realtime WebSocket error:', e);
+    // ws.onerror = (e) => // console.error('⚠️ Realtime WebSocket error:', e);
     ws.onclose = () => {
-      console.warn('ℹ️ Realtime WebSocket closed');
+      // console.warn('ℹ️ Realtime WebSocket closed');
     };
 
     wsRefRealtime.current = ws;

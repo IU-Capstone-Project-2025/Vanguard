@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"time"
 	"xxx/real_time/config"
 	"xxx/shared"
 )
@@ -21,8 +22,8 @@ var upgrader = websocket.Upgrader{
 
 // ConnectionContext stores necessary data of user after successful WebSocket connection.
 type ConnectionContext struct {
-	Conn      *websocket.Conn // the connection tunnel with user
-	UserId    string          // unique ID of the connected user
+	Conn      *SafeConn // the connection tunnel with user
+	UserId    string    // unique ID of the connected user
 	UserName  string
 	SessionId string          // session ID of the session user joined in
 	Role      shared.UserRole // the role of the user within the session
@@ -69,18 +70,8 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 		registry.RegisterSession(token.SessionId)
 
 		// Register this connection
-		if err := registry.RegisterConnection(token.SessionId, token.UserId, token.UserName, conn); err != nil {
-			registry.logger.Error("WsHandler error to register connection",
-				"SessionId", token.SessionId,
-				"UserId", token.UserId,
-				"UserName", token.UserName,
-				"err", err)
-			conn.Close()
-			return
-		}
-
 		ctx := &ConnectionContext{
-			Conn:      conn,
+			Conn:      &SafeConn{Conn: conn},
 			UserId:    token.UserId,
 			UserName:  token.UserName,
 			SessionId: token.SessionId,
@@ -99,9 +90,14 @@ func NewWebSocketHandler(registry *ConnectionRegistry) http.HandlerFunc {
 	}
 }
 
+type SafeConn struct {
+	Conn  *websocket.Conn
+	Mutex sync.Mutex
+}
+
 type ConnectionRegistry struct {
 	mu          sync.RWMutex
-	connections map[string]map[string]*websocket.Conn
+	connections map[string]map[string]*SafeConn
 	rooms       map[string]map[string]string
 	logger      *slog.Logger
 }
@@ -109,7 +105,7 @@ type ConnectionRegistry struct {
 // NewConnectionRegistry initializes the ConnectionRegistry
 func NewConnectionRegistry(log *slog.Logger) *ConnectionRegistry {
 	return &ConnectionRegistry{
-		connections: make(map[string]map[string]*websocket.Conn),
+		connections: make(map[string]map[string]*SafeConn),
 		rooms:       make(map[string]map[string]string),
 		logger:      log,
 	}
@@ -120,7 +116,7 @@ func (r *ConnectionRegistry) RegisterSession(sessionID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, exists := r.connections[sessionID]; !exists {
-		r.connections[sessionID] = make(map[string]*websocket.Conn)
+		r.connections[sessionID] = make(map[string]*SafeConn)
 		r.rooms[sessionID] = make(map[string]string)
 	}
 }
@@ -142,7 +138,7 @@ func (r *ConnectionRegistry) RegisterConnection(sessionID, userID, userName stri
 	if !exists {
 		return fmt.Errorf("session %s not found", sessionID)
 	}
-	sessions[userID] = conn
+	sessions[userID] = &SafeConn{Conn: conn}
 	rooms, exists := r.rooms[sessionID]
 	if !exists {
 		return fmt.Errorf("session %s not found", sessionID)
@@ -154,11 +150,16 @@ func (r *ConnectionRegistry) RegisterConnection(sessionID, userID, userName stri
 // UnregisterConnection removes joined user connection, (e.g., on user disconnect)
 func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	e1 := false
 	e2 := false
 	if sessions, exists1 := r.connections[sessionID]; exists1 {
 		e1 = true
+		if sessions[userID] != nil && sessions[userID].Conn != nil {
+			sessions[userID].Mutex.Lock()
+			_ = sessions[userID].Conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, "user left"))
+			sessions[userID].Mutex.Unlock()
+			sessions[userID].Conn.Close()
+		}
 		delete(sessions, userID)
 	}
 	if rooms, exists2 := r.rooms[sessionID]; exists2 {
@@ -166,23 +167,33 @@ func (r *ConnectionRegistry) UnregisterConnection(sessionID, userID string) bool
 		delete(rooms, userID)
 	}
 	if e1 == true && e2 == true {
+		r.logger.Info("UnregisterConnection", "session", sessionID, "user", userID)
+		r.mu.Unlock()
+		handleDelete(sessionID, userID, r)
 		return true
 	}
+	r.mu.Unlock()
 	return false
 }
 
 // GetConnections gets a snapshot copy of connections to avoid holding lock during WriteMessage
-func (r *ConnectionRegistry) GetConnections(sessionID string) []*websocket.Conn {
+func (r *ConnectionRegistry) GetConnections(sessionID string) []*SafeConn {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var conns []*websocket.Conn
+	var conns []*SafeConn
 	if sessions, exists := r.connections[sessionID]; exists {
 		for _, c := range sessions {
 			conns = append(conns, c)
 		}
 	}
 	return conns
+}
+
+func (r *ConnectionRegistry) GetConnectionById(sessionID, UserId string) *SafeConn {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.connections[sessionID][UserId]
 }
 
 func (r *ConnectionRegistry) GetRooms(sessionID string) map[string]string {
@@ -224,43 +235,85 @@ func extractTokenData(tokenString string) (*shared.UserToken, error) {
 	return claims, nil
 }
 
-// Всем юзерам он должен отправить свое имя, а себе должен отправить и свое имя и весь список
 func handleRead(ctx *ConnectionContext, reg *ConnectionRegistry) {
-	err := reg.RegisterConnection(ctx.SessionId, ctx.UserId, ctx.UserName, ctx.Conn)
+	err := reg.RegisterConnection(ctx.SessionId, ctx.UserId, ctx.UserName, ctx.Conn.Conn)
 	if err != nil {
-		reg.logger.Error("WsHandler handleRead error to register connection")
+		reg.logger.Error("WsHandler handleRead error to register connection", "UserId", ctx.UserId,
+			"userName", ctx.UserName,
+			"error", err)
 		return
 	}
+	UserConn := reg.GetConnectionById(ctx.SessionId, ctx.UserId)
+	UserConn.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	UserConn.Conn.SetPongHandler(func(string) error {
+		UserConn.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			UserConn.Mutex.Lock()
+			err := UserConn.Conn.WriteMessage(websocket.PingMessage, nil)
+			UserConn.Mutex.Unlock()
+			if err != nil {
+				reg.logger.Info("Ping failed, closing connection", "userId", ctx.UserId)
+				return
+			}
+			<-ticker.C
+		}
+	}()
 	reg.logger.Info("ws connected to user", "userId", ctx.UserId, "userName", ctx.UserName)
+
 	m := reg.GetRooms(ctx.SessionId)
-	con := reg.connections[ctx.SessionId][ctx.UserId]
 	jsonData, err := json.Marshal(m)
 	if err != nil {
 		reg.logger.Error("WsHandler handleRead error to marshal json", err)
 		return
 	}
-	if len(m) > 0 {
-		fmt.Println(m)
-		err = con.WriteMessage(websocket.TextMessage, jsonData)
+	for _, conn := range reg.GetConnections(ctx.SessionId) {
+		conn.Mutex.Lock()
+		err := conn.Conn.WriteMessage(websocket.TextMessage, jsonData)
+		conn.Mutex.Unlock()
 		if err != nil {
-			reg.logger.Error("WsHandler handleRead error to write json", err)
+			reg.logger.Error("WsHandler handleRead error to write json", "err", err)
+			continue
 		}
 	}
-	for _, conn := range reg.GetConnections(ctx.SessionId) {
-		message := make(map[string]string)
-		message[ctx.UserId] = ctx.UserName
-		jsonData, err = json.Marshal(message)
+	for {
+		_, _, err := UserConn.Conn.ReadMessage()
 		if err != nil {
-			reg.logger.Error("WsHandler handleRead error to marshal json",
-				"err", err)
-			return
+			reg.logger.Info("Connection closed", "userId", ctx.UserId, "err", err)
+			break
 		}
-		if conn != ctx.Conn {
-			err = conn.WriteMessage(websocket.TextMessage, jsonData)
-			if err != nil {
-				reg.logger.Error("WsHandler handleRead error to write json", "err", err)
-			}
-			reg.logger.Info("ws sends to all", "message", message)
+	}
+
+	reg.UnregisterConnection(ctx.SessionId, ctx.UserId)
+}
+
+func handleDelete(sessionID, userID string, reg *ConnectionRegistry) {
+	reg.logger.Info("ws admin delete user, or user close conn", "userId", userID, "SessionId", sessionID)
+	fmt.Println("about to get rooms")
+	rooms := reg.GetRooms(sessionID)
+	fmt.Println("rooms gotten:", rooms)
+	m := reg.GetRooms(sessionID)
+	jsonData, err := json.Marshal(m)
+	if err != nil {
+		reg.logger.Error("WsHandler handleRead error to marshal json", err)
+		return
+	}
+	for _, conn := range reg.GetConnections(sessionID) {
+		conn.Mutex.Lock()
+		err := conn.Conn.WriteMessage(websocket.TextMessage, jsonData)
+		conn.Mutex.Unlock()
+		if err != nil {
+			reg.logger.Error("WsHandler handleRead error to write json", "err", err,
+				"userId", userID,
+				"SessionId", sessionID,
+				"data", jsonData,
+			)
+			continue
 		}
+		reg.logger.Info("ws send message to user", "userId", userID)
 	}
 }

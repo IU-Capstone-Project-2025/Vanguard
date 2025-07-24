@@ -1,0 +1,114 @@
+{
+  "title": "Real-Time Service Dashboard",
+  "panels": [
+    {
+      "title": "WebSocket Connections",
+      "type": "graph",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "sum(websocket_active_connections{service=\"realtime\"})",
+          "legendFormat": "Total Active"
+        },
+        {
+          "expr": "sum(rate(websocket_connection_attempts_total{service=\"realtime\", status=\"success\"}[5m]))",
+          "legendFormat": "New Connections/s"
+        }
+      ]
+    },
+    {
+      "title": "Connection Status",
+      "type": "piechart",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "sum by(status) (rate(websocket_connection_attempts_total{service=\"realtime\"}[5m]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+
+    {
+      "title": "Message Throughput",
+      "type": "graph",
+      "gridPos": {"x": 0, "y": 6, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "sum(rate(websocket_messages_sent_total{service=\"realtime\"}[5m]))",
+          "legendFormat": "Sent"
+        },
+        {
+          "expr": "sum(rate(websocket_messages_received_total{service=\"realtime\"}[5m]))",
+          "legendFormat": "Received"
+        }
+      ]
+    },
+    {
+      "title": "Message Processing Time",
+      "type": "heatmap",
+      "gridPos": {"x": 12, "y": 6, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(websocket_message_processing_seconds{service=\"realtime\"}[5m])))"
+        }
+      ]
+    },
+
+    {
+      "title": "Active Sessions",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 12, "w": 6, "h": 4},
+      "targets": [
+        {
+          "expr": "sessions_in_progress{service=\"realtime\"}"
+        }
+      ]
+    },
+    {
+      "title": "Session Events",
+      "type": "graph",
+      "gridPos": {"x": 6, "y": 12, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "sum by(event_type) (rate(session_events_processed_total{service=\"realtime\"}[5m]))",
+          "legendFormat": "{{event_type}}"
+        }
+      ]
+    },
+
+    {
+      "title": "Quiz Answers",
+      "type": "graph",
+      "gridPos": {"x": 0, "y": 18, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "rate(quiz_answers_submitted_total{service=\"realtime\"}[5m])",
+          "legendFormat": "Answers/s"
+        }
+      ]
+    },
+
+    {
+      "title": "Error Breakdown",
+      "type": "bargauge",
+      "gridPos": {"x": 12, "y": 18, "w": 12, "h": 6},
+      "targets": [
+        {
+          "expr": "sum by(reason) (rate(websocket_message_errors_total{service=\"realtime\"}[5m]))",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "query": "label_values(websocket_active_connections, service)",
+        "current": {"value": "realtime"}
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "refresh": "1m"
+}

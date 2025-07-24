@@ -1,54 +1,50 @@
-import React from "react";
-import { useState } from "react";
-import {QRCodeSVG} from "qrcode.react";
-import { useParams } from "react-router-dom";
-import "./styles/AskToJoinSession.css"; // we'll style separately
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { useParams, useNavigate } from "react-router-dom";
+import styles from './styles/AskToJoinSession.module.css';
+
 import { BASE_URL } from '../constants/api';
 
 const AskToJoinSession = () => {
-  // Mocked backend data
   const { sessionCode } = useParams();
-  const [joinLink, setJoinLink] = React.useState(`${BASE_URL}/join/${sessionCode}`);
+  const [joinLink] = useState(`${BASE_URL}/wait/${sessionCode}`);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
-
-
   const handleCopyClick = async () => {
-        try {
-            await navigator.clipboard.writeText(joinLink);
-            setCopied(true);
-            setTimeout(() => {
-                setCopied(false);
-            }, 2000); // Hide message after 2 seconds
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-        }
-    };
+    try {
+      await navigator.clipboard.writeText(joinLink);
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (err) {
+      // console.error('Failed to copy text: ', err);
+    }
+  };
 
   const handlePlayClick = () => {
-      navigate(`/sessionAdmin/${sessionCode}`);
+    navigate(`/sessionAdmin/${sessionCode}`);
   };
 
   return (
-    <div className="ask-join-container">
-      <div className="ask-left">
-        <div className="ask-title">
-            <h1>It's your code<br />for joining</h1>
-            <div className="join-code">
-                <span onClick={handleCopyClick}>
-                    #{sessionStorage.getItem("sessionCode")}
-                </span>
-                <span>
-                    {copied && <p>Link copied!</p>}
-                </span>
-                </div>
-            <button className="play-button" onClick={handlePlayClick}>▶ Play</button>
+    <div className={styles["ask-join-container"]}>
+      <div className={styles["ask-left"]}>
+        <div className={styles["ask-title"]}>
+          <h1>It's your code<br />for joining</h1>
+          <div className={styles["join-code"]}>
+            <span onClick={handleCopyClick}>
+              #{sessionStorage.getItem("sessionCode")}
+            </span>
+            <span>
+              {copied && <p>Link copied!</p>}
+            </span>
+          </div>
+          <button className={styles["play-button"]} onClick={handlePlayClick}>▶ Play</button>
         </div>
       </div>
-      <div className="ask-right">
-        <div className="qr-wrapper">
+      <div className={styles["ask-right"]}>
+        <div className={styles["qr-wrapper"]}>
           <QRCodeSVG value={joinLink} size={480} />
         </div>
       </div>
@@ -56,4 +52,4 @@ const AskToJoinSession = () => {
   );
 };
 
-export default AskToJoinSession;
+export default AskToJoinSession
