@@ -59,9 +59,9 @@ const ShowLeaderBoardComponent = ({ leaderboardData, onClose }) => {
                         {players.get(user.user_id)}
                       </span>
                       <span className={styles.score}>{user.total_score}</span>
-                      {user.place >= user.previous_place ? (
+                      {user.progress === "Up" ? (
                         <img src={ArrowUp} alt="Up" className={styles.arrow} />
-                      ) : user.place < user.previous_place ? (
+                      ) : user.progress === "Down" ? (
                         <img src={ArrowDown} alt="Down" className={styles.arrow} />
                       ) : (
                         <div className={styles.arrow}></div>
