@@ -20,6 +20,7 @@ const WaitGameStartAdmin = () => {
   const handleSessionMessage = (event) => {
     try {
       const data = JSON.parse(event.data);
+      console.log('receives session Message', data)
       const newPlayers = new Map();
       for (const [userId, name] of Object.entries(data)) {
         newPlayers.set(userId, name);
@@ -96,7 +97,7 @@ const WaitGameStartAdmin = () => {
     <div className={styles['wait-admin-wrapper']}>
       {showQRModal && (
         <QRCodeModal
-          code={`${BASE_URL.REACT_APP_BASE_URL}/join/${sessionCode}`} // здесь вставь нужный URL
+          code={`${BASE_URL}/join/${sessionCode}`} // здесь вставь нужный URL
           onClose={() => setShowQRModal(false)}
         />
       )}

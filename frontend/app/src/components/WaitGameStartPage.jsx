@@ -47,6 +47,8 @@ const WaitGameStartPlayer = () => {
           }
         }
         setPlayers(newPlayers);
+        // console.log('players size', newPlayers.size)
+        sessionStorage.setItem("playersNumber", newPlayers.size)
       } catch (err) {
         console.error("Session WS error:", err);
       }

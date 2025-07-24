@@ -8,8 +8,10 @@ const FinalAdminPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [visibleBlocks, setVisibleBlocks] = useState([]);
 
-  const [leaders, setPlayers] = useState(new Map());
+  const [leaders, setLeaders] = useState(new Map());
+  const [players, setPlayers] = useState(new Map())
 
   const endSession = async (code) => {
     try {
@@ -48,15 +50,16 @@ const FinalAdminPage = () => {
 
     try {
       const leaders = JSON.parse(storedLeaders);
-      const playersEntries = JSON.parse(storedPlayersRaw); // Should be [[id, name], ...]
+      const playersEntries = JSON.parse(storedPlayersRaw);
       const playersMap = new Map(playersEntries);
 
-      console.log(leaders)
+      setPlayers(playersMap)
+      console.log(playersMap)
 
       const processed = leaders
         .filter(l => playersMap.get(l.user_id) && playersMap.get(l.user_id) !== 'Admin')
         .sort((a, b) => b.total_score - a.total_score)
-        .slice(0, 3)
+        // .slice(0, 3)
         .map((leader, index) => [
           leader.user_id,
           {
@@ -66,38 +69,63 @@ const FinalAdminPage = () => {
           }
         ]);
 
-      console.log(processed)
+      setLeaders(new Map(processed));
+      console.log(leaders)
 
-      setPlayers(new Map(processed));
+      // Анимации по таймеру
+      processed.forEach(([, leader], i) => {
+        setTimeout(() => {
+          setVisibleBlocks(prev => [...prev, leader.position]);
+        }, i * 700); // задержка 700мс между блоками
+      });
+
     } catch (err) {
       console.error('Error parsing leaders or players:', err);
       setError('Failed to load leaderboard data.');
     }
-  }, []);
+  }, [setLeaders]);
 
   return (
     <div className={styles['final-page-container']}>
-      <h1 className={styles['final-title']}>Meet the Champions!</h1>
+      <h1 className={styles['final-title']}>
+        Say Hello to the <span className={styles.highlight}>Heroes</span>!
+      </h1>
 
       {error && <div className={styles.error}>{error}</div>}
 
       <div className={styles.podium}>
         {[...leaders.values()].length > 0 ? (
-          [...leaders.values()]
-            .sort((a, b) => a.position - b.position)
-            .map((player, idx) => (
-              <div
-                key={idx}
-                className={`${styles['podium-block']} ${styles[`position-${player.position}`]}`}
-                onClick={console.log(player)}
-              >
-                <span className={styles['player-name']}>{player.name}</span>
-                <span className={styles['player-score']}>{player.score} pts</span>
-              </div>
-            ))
+          [2, 1, 3] // порядок отображения: сначала 2-е, потом 1-е, потом 3-е
+            .map((place) => {
+              const player = [...leaders.values()].find(p => p.position === place);
+              return (
+                player &&
+                visibleBlocks.includes(player.position) && (
+                  <div
+                    key={player.position}
+                    className={`${styles['podium-block']} ${styles[`position-${player.position}`]} ${styles['animated']}`}
+                  >
+                    <span className={styles['player-name']}>{player.name}</span>
+                    <span className={styles['player-place']}>{player.position}</span>
+                  </div>
+                )
+              );
+            })
         ) : (
           <div className={styles['no-players']}>No players to display</div>
         )}
+      </div>
+
+      <div className={styles.leaderboard}>
+        {[...leaders.values()].map((player, idx) => (
+          <div className={styles['leaderboard-row']} key={player.name + idx}>
+            <span className={styles.place}>{player.position}</span>
+            <div className={styles['user-info']}>
+              <span className={styles.name}>{player.name}</span>
+              <span className={styles.score}>{player.score}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className={styles['buttons-container']}>

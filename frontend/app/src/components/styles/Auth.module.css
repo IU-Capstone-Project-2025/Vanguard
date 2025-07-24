@@ -4,7 +4,6 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: linear-gradient(135deg, #667eea, #764ba2);
     color: #fff;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -69,12 +68,12 @@
 }
 
 .submit-button {
-    background-color: #34d399; /* emerald */
-    color: #fff;
+    background-color: var(--btn); /* emerald */
+    color: var(--accent);
 }
 
 .submit-button:hover {
-    background-color: #10b981;
+    background-color: var(--btn-hover);
 }
 
 .signup-question {
@@ -83,8 +82,8 @@
 }
 
 .signup-button {
-    background-color: #60a5fa; /* blue */
-    color: #fff;
+    background-color: var(--blue); /* blue */
+    color: var(--text-light);
 }
 
 .signup-button:hover {
