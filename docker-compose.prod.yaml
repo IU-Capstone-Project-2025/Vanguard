@@ -8,8 +8,8 @@ services:
   rabbitmq:
     ports: []
     volumes:
-      - /tmp/definitions.json:/etc/rabbitmq/definitions.json:ro
-      - /tmp/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./deploy/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./deploy/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
 
   migrator:
     image: ${MIGRATOR_IMAGE}
@@ -50,7 +50,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /tmp/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
       - /opt/certbot/www:/var/www/certbot:rw
       - /opt/certbot/conf:/etc/letsencrypt:rw
     command: >
@@ -74,12 +74,12 @@ services:
 
   prometheus:
     volumes:
-      - /tmp/monitoring/prometheus:/etc/prometheus
+      - ./deploy/monitoring/prometheus:/etc/prometheus
 
   grafana:
     volumes:
-      - /tmp/monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - /tmp/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       GF_SERVER_DOMAIN: grafana.tryit.selnastol.ru
       GF_SERVER_ROOT_URL: https://grafana.tryit.selnastol.ru
@@ -87,11 +87,11 @@ services:
 
   alertmanager:
     volumes:
-      - /tmp/monitoring/alertmanager:/etc/alertmanager
+      - ./deploy/monitoring/alertmanager:/etc/alertmanager
 
   loki:
     volumes:
-      - /tmp/monitoring/loki:/etc/loki
+      - ./deploy/monitoring/loki:/etc/loki
     environment:
       S3_REGION: ${S3_REGION}
       S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
@@ -104,4 +104,4 @@ services:
 
   promtail:
     volumes:
-      - /tmp/monitoring/promtail:/etc/promtail
+      - ./deploy/monitoring/promtail:/etc/promtail
