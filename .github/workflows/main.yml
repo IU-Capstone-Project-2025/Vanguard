@@ -322,6 +322,11 @@ jobs:
     - name: Install envsubst
       run: sudo apt-get install -y gettext-base
 
+    - name: Prepare deployment dir
+      run: |
+        ssh -p $SSH_PORT $SSH_USER@$SSH_HOST \
+          "mkdir -p ~/deploy && sudo rm -rf ~/deploy/*"
+
     - name: Upload configs to VM
       env:
         RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
@@ -331,8 +336,8 @@ jobs:
       run: |
         envsubst < ./rabbit/definitions.template.json > /tmp/definitions.json
         envsubst < ./monitoring/alertmanager/config.template.yml > ./monitoring/alertmanager/config.yml
-        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf /tmp/definitions.json $SSH_USER@$SSH_HOST:/tmp/
-        scp -P $SSH_PORT -r ./monitoring $SSH_USER@$SSH_HOST:/tmp/
+        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf /tmp/definitions.json $SSH_USER@$SSH_HOST:~/deploy/
+        scp -P $SSH_PORT -r ./monitoring $SSH_USER@$SSH_HOST:~/deploy/
 
     - name: Deploy with Docker Compose
       run: |
