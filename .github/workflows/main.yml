@@ -318,7 +318,7 @@ jobs:
     - name: Prepare deployment dir
       run: |
         ssh -p $SSH_PORT $SSH_USER@$SSH_HOST \
-          "mkdir -p ~/deploy && sudo rm -rf ~/deploy/*"
+          "mkdir -p /tmp/deploy && sudo rm -rf /tmp/deploy/*"
 
     - name: Upload configs to VM
       env:
@@ -329,8 +329,8 @@ jobs:
       run: |
         envsubst < ./rabbit/definitions.template.json > /tmp/definitions.json
         envsubst < ./monitoring/alertmanager/config.template.yml > ./monitoring/alertmanager/config.yml
-        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf /tmp/definitions.json $SSH_USER@$SSH_HOST:~/deploy/
-        scp -P $SSH_PORT -r ./monitoring $SSH_USER@$SSH_HOST:~/deploy/
+        scp -P $SSH_PORT ./frontend/nginx.prod.conf ./rabbit/rabbitmq.conf /tmp/definitions.json $SSH_USER@$SSH_HOST:/tmp/deploy/
+        scp -P $SSH_PORT -r ./monitoring $SSH_USER@$SSH_HOST:/tmp/deploy/
 
     - name: Deploy with Docker Compose
       run: |
