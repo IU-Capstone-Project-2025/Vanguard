@@ -275,13 +275,6 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan -p $SSH_PORT $SSH_HOST >> ~/.ssh/known_hosts
 
-    - name: Create Docker SSH context
-      run: |
-        docker context create remote \
-          --docker "host=ssh://$SSH_USER@$SSH_HOST:$SSH_PORT" \
-          || echo "context exists"
-        docker context use remote
-
     - name: Create .env file
       run: |
         cat <<EOF > deploy.env
@@ -341,7 +334,13 @@ jobs:
 
     - name: Deploy with Docker Compose
       run: |
-        docker compose \
+        docker context create remote \
+          --docker "host=ssh://$SSH_USER@$SSH_HOST:$SSH_PORT" \
+          || echo "context exists"
+
+        docker context ls
+
+        docker --context remote compose \
           -f docker-compose.yaml \
           -f docker-compose.prod.yaml \
           --env-file deploy.env \
