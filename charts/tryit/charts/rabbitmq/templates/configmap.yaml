@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+data:
+  rabbitmq.conf: |
+    load_definitions = /etc/rabbitmq/definitions.json
+
+  definitions.json: |
+    {
+      "vhosts": [
+        {
+          "name": "/"
+        }
+      ],
+      "users": [
+        {
+          "name": "{{ .Values.env.RABBITMQ_DEFAULT_USER }}",
+          "password": "{{ .Values.env.RABBITMQ_DEFAULT_PASS }}",
+          "tags": "administrator"
+        }
+      ],
+      "permissions": [
+        {
+          "user": "{{ .Values.env.RABBITMQ_DEFAULT_USER }}",
+          "vhost": "/",
+          "configure": ".*",
+          "write": ".*",
+          "read": ".*"
+        }
+      ],
+      "exchanges": [
+        {
+          "name": "session.events",
+          "vhost": "/",
+          "type": "topic",
+          "durable": true,
+          "auto_delete": false,
+          "internal": false,
+          "arguments": {}
+        }
+      ]
+    }

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: {{ .Values.image.name }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: POSTGRES_USER
+            value: "{{ .Values.env.POSTGRES_USER }}"
+          - name: POSTGRES_PASSWORD
+            value: "{{ .Values.env.POSTGRES_PASSWORD }}"
+          - name: POSTGRES_DB
+            value: "{{ .Values.env.POSTGRES_DB }}"
+          - name: TZ
+            value: "{{ .Values.env.TZ }}"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "pg_isready -U {{ .Values.env.POSTGRES_USER }} -d {{ .Values.env.POSTGRES_DB }}"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.storage.size }}
+      storageClassName: {{ .Values.storage.className }}

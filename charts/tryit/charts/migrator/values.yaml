@@ -1,0 +1,8 @@
+image:
+  name: "${MIGRATOR_IMAGE}"
+  pullPolicy: IfNotPresent
+env:
+  DB_URL: "${DB_URL}"
+  TEST_DB_URL: "${TEST_DB_URL}"
+  CORS_ORIGINS: "${CORS_ORIGINS}"
+  JWT_SECRET_KEY: "${AUTH_JWT_SECRET_KEY}"

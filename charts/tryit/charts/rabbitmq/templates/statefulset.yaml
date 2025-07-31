@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: {{ .Values.image.name }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: RABBITMQ_LOAD_DEFINITIONS
+            value: "{{ .Values.env.RABBITMQ_LOAD_DEFINITIONS }}"
+          - name: RABBITMQ_DEFINITIONS_FILE
+            value: "{{ .Values.env.RABBITMQ_DEFINITIONS_FILE }}"
+          - name: RABBITMQ_DEFAULT_USER
+            value: "{{ .Values.env.RABBITMQ_DEFAULT_USER }}"
+          - name: RABBITMQ_DEFAULT_PASS
+            value: "{{ .Values.env.RABBITMQ_DEFAULT_PASS }}"
+        ports:
+          - containerPort: 5672
+          - containerPort: 15672
+        volumeMounts:
+          - name: config
+            mountPath: /etc/rabbitmq
+          - name: rabbitmq-data
+            mountPath: /var/lib/rabbitmq
+        readinessProbe:
+          exec:
+            command: ["rabbitmqctl", "status"]
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
+        livenessProbe:
+          exec:
+            command: ["rabbitmqctl", "status"]
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+      volumes:
+        - name: config
+          configMap:
+            name: rabbitmq-config
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: {{ .Values.storage.size }}
+      storageClassName: {{ .Values.storage.className }}

@@ -1,0 +1,21 @@
+image:
+  name: rabbitmq:3-management
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+storage:
+  size: 1Gi
+  className: ""
+
+env:
+  RABBITMQ_LOAD_DEFINITIONS: "true"
+  RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
+  RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+  RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}

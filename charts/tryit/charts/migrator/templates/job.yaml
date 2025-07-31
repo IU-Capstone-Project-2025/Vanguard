@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  labels:
+    app: db-migrate
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded # before-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        app: db-migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrator
+          image: {{ .Values.image.name }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DB_URL
+              value: "{{ .Values.env.DB_URL }}"
+            - name: TEST_DB_URL
+              value: "{{ .Values.env.TEST_DB_URL }}"
+            - name: CORS_ORIGINS
+              value: "{{ .Values.env.CORS_ORIGINS }}"
+            - name: JWT_SECRET_KEY
+              value: "{{ .Values.env.JWT_SECRET_KEY }}"
