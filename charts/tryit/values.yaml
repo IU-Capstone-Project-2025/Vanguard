@@ -1,0 +1,289 @@
+auth:
+  enabled: true
+  image:
+    name: "${AUTH_IMAGE}"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8000
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 80
+  environment: prod
+  env:
+    POSTGRES_USER: "${POSTGRES_USER}"
+    POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    POSTGRES_DB: "${POSTGRES_DB}"
+    POSTGRES_TBL: "refresh_tokens"
+    DB_URL: "${DB_URL}"
+    TEST_DB_URL: "${TEST_DB_URL}"
+    CORS_ORIGINS: "${CORS_ORIGINS}"
+    JWT_SECRET_KEY: "${AUTH_JWT_SECRET_KEY}"
+    ENVIRONMENT: "production"
+    DEBUG: "false"
+
+frontend:
+  enabled: true
+  image:
+    name: "${FRONTEND_IMAGE}"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 4
+    cpuUtilization: 60
+    memoryUtilization: 70
+  environment: prod
+  ingress:
+    enabled: true
+    host: tryit.selnastol.ru
+  nginx:
+    workerProcesses: "auto"
+    workerConnections: "1024"
+    clientMaxBodySize: "20M"
+    gzip: "on"
+    staticCacheExpires: "1d"
+    proxyConnectTimeout: "75s"
+    proxySendTimeout: "60s"
+    proxyReadTimeout: "60s"
+    websocketTimeout: "3600s"
+    proxyBufferSize: "16k"
+    proxyBuffers: "4 32k"
+    upstreams:
+      "/api/auth/": "auth:8000/api/"
+      "/api/quiz/": "quiz:8000/api/"
+      "/api/session/": "session:8081/"
+      "/api/session/ws": "session:8081/ws"
+      "/api/realtime/ws": "real-time:8080/ws"
+      "/api/leaderboard/": "leaderboard:8082/"
+
+leaderboard:
+  enabled: true
+  image:
+    name: "${LEADERBOARD_IMAGE}"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8082
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 85
+  environment: prod
+  env:
+    RABBITMQ_USER: "${RABBITMQ_USER}"
+    RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+    RABBITMQ_HOST: "rabbit"
+    RABBITMQ_PORT: "5672"
+    REDIS_HOST: "redis"
+    REDIS_PORT: "6379"
+    REALTIME_SERVICE_HOST: "real-time"
+    REALTIME_SERVICE_PORT: "8080"
+    SESSION_SERVICE_HOST: "session"
+    SESSION_SERVICE_PORT: "8081"
+    LEADERBOARD_SERVICE_HOST: "0.0.0.0"
+    LEADERBOARD_SERVICE_PORT: "8082"
+    JWT_SECRET_KEY: "${GO_JWT_SECRET_KEY}"
+    ENV: "production"
+
+migrator:
+  enabled: true
+  image:
+    name: "${MIGRATOR_IMAGE}"
+    pullPolicy: IfNotPresent
+  env:
+    DB_URL: "${DB_URL}"
+    TEST_DB_URL: "${TEST_DB_URL}"
+    CORS_ORIGINS: "${CORS_ORIGINS}"
+    JWT_SECRET_KEY: "${AUTH_JWT_SECRET_KEY}"
+
+postgres:
+  enabled: true
+  image:
+    name: postgres:15-alpine
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  storage:
+    size: 1Gi
+    className: ""
+  env:
+    POSTGRES_USER: "${POSTGRES_USER}"
+    POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    POSTGRES_DB: "${POSTGRES_DB}"
+    TZ: "UTC"
+
+quiz:
+  enabled: true
+  image:
+    name: "${QUIZ_IMAGE}"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8000
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 80
+  environment: prod
+  env:
+    POSTGRES_USER: "${POSTGRES_USER}"
+    POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    POSTGRES_DB: "${POSTGRES_DB}"
+    POSTGRES_TBL: "refresh_tokens"
+    DB_URL: ${DB_URL}
+    TEST_DB_URL: ${TEST_DB_URL}
+    CORS_ORIGINS: ${CORS_ORIGINS}
+    JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY}
+    S3_REGION: ${S3_REGION}
+    S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
+    S3_BUCKET: ${S3_BUCKET}
+    AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+    MAX_IMAGE_SIZE: 5242880 # 5MB
+    ENVIRONMENT: "production"
+    DEBUG: "false"
+
+rabbitmq:
+  enabled: true
+  image:
+    name: rabbitmq:3.13-alpine
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  storage:
+    size: 1Gi
+    className: ""
+  env:
+    RABBITMQ_LOAD_DEFINITIONS: "true"
+    RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
+    RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+    RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+
+real-time:
+  enabled: true
+  image:
+    name: "${REALTIME_IMAGE}"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8080
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 4
+    cpuUtilization: 75
+  environment: prod
+  env:
+    RABBITMQ_USER: "${RABBITMQ_USER}"
+    RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+    RABBITMQ_HOST: "rabbit"
+    RABBITMQ_PORT: "5672"
+    REDIS_HOST: "redis"
+    REDIS_PORT: "6379"
+    REALTIME_SERVICE_HOST: "0.0.0.0"
+    REALTIME_SERVICE_PORT: "8080"
+    LEADERBOARD_SERVICE_HOST: "leaderboard"
+    LEADERBOARD_SERVICE_PORT: "8082"
+    JWT_SECRET_KEY: "${GO_JWT_SECRET_KEY}"
+    ENV: "production"
+
+redis:
+  enabled: true
+  image:
+    name: redis:7-alpine
+    pullPolicy: IfNotPresent
+  service:
+    port: 6379
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+session:
+  enabled: true
+  image:
+    name: "${SESSION_IMAGE}"
+    pullPolicy: IfNotPresent
+  service:
+    port: 8081
+  replicas: 1
+  resources:
+    requests:
+      cpu: 75m
+      memory: 96Mi
+    limits:
+      cpu: 300m
+      memory: 192Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 80
+  environment: prod
+  env:
+    RABBITMQ_USER: "${RABBITMQ_USER}"
+    RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"
+    RABBITMQ_HOST: "rabbit"
+    RABBITMQ_PORT: "5672"
+    REDIS_HOST: "redis"
+    REDIS_PORT: "6379"
+    REALTIME_SERVICE_HOST: "real-time"
+    REALTIME_SERVICE_PORT: "8080"
+    SESSION_SERVICE_HOST: "0.0.0.0"
+    SESSION_SERVICE_PORT: "8081"
+    JWT_SECRET_KEY: "${GO_JWT_SECRET_KEY}"
+    ENV: "production"

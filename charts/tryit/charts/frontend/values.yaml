@@ -1,0 +1,51 @@
+enabled: true
+
+image:
+  name: "${FRONTEND_IMAGE}"
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 4
+  cpuUtilization: 60
+  memoryUtilization: 70
+
+environment: prod
+
+ingress:
+  enabled: true
+  host: tryit.selnastol.ru
+
+nginx:
+  workerProcesses: "auto"
+  workerConnections: "1024"
+  clientMaxBodySize: "20M"
+  gzip: "on"
+  staticCacheExpires: "1d"
+
+  proxyConnectTimeout: "75s"
+  proxySendTimeout: "60s"
+  proxyReadTimeout: "60s"
+  websocketTimeout: "3600s"
+
+  proxyBufferSize: "16k"
+  proxyBuffers: "4 32k"
+
+  upstreams:
+    "/api/auth/": "auth:8000/api/"
+    "/api/quiz/": "quiz:8000/api/"
+    "/api/session/": "session:8081/"
+    "/api/session/ws": "session:8081/ws"
+    "/api/realtime/ws": "real-time:8080/ws"
+    "/api/leaderboard/": "leaderboard:8082/"

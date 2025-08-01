@@ -1,14 +1,16 @@
+enabled: true
+
 image:
-  name: rabbitmq:3-management
+  name: rabbitmq:3.13-alpine
   pullPolicy: IfNotPresent
 
 resources:
   requests:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 50m
+    memory: 128Mi
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 300m
+    memory: 256Mi
 
 storage:
   size: 1Gi

@@ -1,7 +1,14 @@
+enabled: true
+
 image:
   name: "${QUIZ_IMAGE}"
   pullPolicy: IfNotPresent
+
+service:
+  port: 8000
+
 replicas: 1
+
 resources:
   requests:
     cpu: 100m
@@ -9,13 +16,20 @@ resources:
   limits:
     cpu: 500m
     memory: 256Mi
+
 hpa:
   enabled: true
   minReplicas: 1
   maxReplicas: 3
   cpuUtilization: 80
+
 environment: prod
+
 env:
+  POSTGRES_USER: "${POSTGRES_USER}"
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+  POSTGRES_DB: "${POSTGRES_DB}"
+  POSTGRES_TBL: "refresh_tokens"
   DB_URL: ${DB_URL}
   TEST_DB_URL: ${TEST_DB_URL}
   CORS_ORIGINS: ${CORS_ORIGINS}

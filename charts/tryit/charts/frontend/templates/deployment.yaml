@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "frontend-{{ .Release.Name }}"
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: "frontend"
+    app.kubernetes.io/instance: "{{ .Release.Name }}"
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    app.kubernetes.io/managed-by: "{{ .Release.Service }}"
+    app.kubernetes.io/part-of: "tryit"
+    app.kubernetes.io/env: "{{ .Values.environment | default "prod" }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  revisionHistoryLimit: 12
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "frontend"
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "frontend"
+    spec:
+      initContainers:
+      - name: wait-for-auth
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z auth 8000; do echo "Waiting for auth service..."; sleep 2; done; echo "Auth service ready."']
+      - name: wait-for-quiz
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z quiz 8000; do echo "Waiting for quiz service..."; sleep 2; done; echo "Quiz service ready."']
+      - name: wait-for-leaderboard
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z leaderboard 8082; do echo "Waiting for leaderboard service..."; sleep 2; done; echo "Leaderboard service ready."']
+      - name: wait-for-session
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z session 8081; do echo "Waiting for session service..."; sleep 2; done; echo "Session service ready."']
+      - name: wait-for-real-time
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z real-time 8080; do echo "Waiting for real-time service..."; sleep 2; done; echo "Real-time service ready."']
+      containers:
+      - name: "frontend"
+        image: "{{ .Values.image.name }}"
+        imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        ports:
+        - containerPort: 80
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: nginx.conf
+          readOnly: true
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          items:
+          - key: nginx.conf
+            path: nginx.conf

@@ -7,5 +7,5 @@ spec:
     app.kubernetes.io/name: "leaderboard"
   ports:
   - protocol: TCP
-    port: 8082 # Service port
-    targetPort: 8082 # Pod port
+    port: {{ .Values.service.port }}
+    targetPort: 8082

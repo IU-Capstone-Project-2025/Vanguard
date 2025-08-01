@@ -28,7 +28,6 @@ spec:
             value: "{{ .Values.env.RABBITMQ_DEFAULT_PASS }}"
         ports:
           - containerPort: 5672
-          - containerPort: 15672
         volumeMounts:
           - name: config
             mountPath: /etc/rabbitmq

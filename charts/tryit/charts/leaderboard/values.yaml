@@ -1,7 +1,14 @@
+enabled: true
+
 image:
   name: "${LEADERBOARD_IMAGE}"
   pullPolicy: IfNotPresent
+
+service:
+  port: 8082
+
 replicas: 1
+
 resources:
   requests:
     cpu: 50m
@@ -9,12 +16,15 @@ resources:
   limits:
     cpu: 200m
     memory: 128Mi
+
 hpa:
   enabled: true
   minReplicas: 1
   maxReplicas: 3
   cpuUtilization: 85
+
 environment: prod
+
 env:
   RABBITMQ_USER: "${RABBITMQ_USER}"
   RABBITMQ_PASSWORD: "${RABBITMQ_PASSWORD}"

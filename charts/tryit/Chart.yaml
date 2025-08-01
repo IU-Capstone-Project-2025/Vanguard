@@ -1,0 +1,51 @@
+apiVersion: v2
+name: tryit
+description: A Helm chart for the tryit application
+type: application
+version: 0.1.0
+appVersion: "latest"
+
+dependencies:
+  - name: rabbitmq
+    version: "0.1.0"
+    repository: "file://./charts/rabbitmq"
+    condition: rabbitmq.enabled
+  - name: redis
+    version: "0.1.0"
+    repository: "file://./charts/redis"
+    condition: redis.enabled
+  - name: postgres
+    version: "0.1.0"
+    repository: "file://./charts/postgres"
+    condition: postgres.enabled
+
+  - name: migrator
+    version: "0.1.0"
+    repository: "file://./charts/migrator"
+    condition: migrator.enabled
+
+  - name: auth
+    version: "0.1.0"
+    repository: "file://./charts/auth"
+    condition: auth.enabled
+  - name: quiz
+    version: "0.1.0"
+    repository: "file://./charts/quiz"
+    condition: quiz.enabled
+  - name: leaderboard
+    version: "0.1.0"
+    repository: "file://./charts/leaderboard"
+    condition: leaderboard.enabled
+  - name: session
+    version: "0.1.0"
+    repository: "file://./charts/session"
+    condition: session.enabled
+  - name: real-time
+    version: "0.1.0"
+    repository: "file://./charts/real-time"
+    condition: real-time.enabled
+
+  - name: frontend
+    version: "0.1.0"
+    repository: "file://./charts/frontend"
+    condition: frontend.enabled

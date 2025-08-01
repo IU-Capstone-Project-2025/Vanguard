@@ -31,6 +31,13 @@ spec:
         prometheus.io/port: "8000"
         prometheus.io/scrape: "true"
     spec:
+      initContainers:
+      - name: wait-for-migrator-completion
+        image: postgres:15-alpine
+        command: ['sh', '-c', 'until psql -h postgres -U {{ .Values.env.POSTGRES_USER }} -d {{ .Values.env.POSTGRES_DB }} -c "SELECT 1 FROM {{ .Values.env.POSTGRES_TBL }} LIMIT 1"; do echo "Waiting for migrator to complete database schema initialization..."; sleep 5; done; echo "Database schema ready."']
+        env:
+          - name: PGPASSWORD
+            value: "{{ .Values.env.POSTGRES_PASSWORD }}"
       containers:
       - name: "auth"
         image: "{{ .Values.image.name }}"

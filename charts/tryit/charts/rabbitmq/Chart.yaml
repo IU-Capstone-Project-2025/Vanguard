@@ -3,4 +3,4 @@ name: rabbitmq
 description: RabbitMQ Helm chart for tryit application
 type: application
 version: 0.1.0
-appVersion: "3-management"
+appVersion: "3.13-alpine"
