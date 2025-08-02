@@ -13,4 +13,6 @@ type Cache interface {
 
 	RecordAnswer(sessionID, userID string, question int, answer models.UserAnswer) error
 	GetAllAnswers(sessionId string) (map[string][]models.UserAnswer, error)
+
+	DeleteParticipant(sessionId, userId string) error
 }

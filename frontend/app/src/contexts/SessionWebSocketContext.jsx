@@ -26,11 +26,11 @@ export const SessionWebSocketProvider = ({ children }) => {
       `${API_ENDPOINTS.SESSION_WS}?token=${token}`
     );
 
-    ws.onopen = () => console.log('✅ Session WebSocket connected');
+    // ws.onopen = () => console.log('✅ Session WebSocket connected');
     ws.onmessage = onMessage;
-    ws.onerror = (e) => console.error('⚠️ Session WebSocket error:', e);
+    // ws.onerror = (e) => console.error('⚠️ Session WebSocket error:', e);
     ws.onclose = () => {
-      console.warn('ℹ️ Session WebSocket closed');
+      // console.warn('ℹ️ Session WebSocket closed');
     };
 
     wsRefSession.current = ws;

@@ -33,7 +33,7 @@ const WaitGameStartPlayer = () => {
           endSession();
         }
       } catch (err) {
-        console.error("Realtime WS error:", err);
+        // console.error("Realtime WS error:", err);
       }
     };
 
@@ -47,8 +47,10 @@ const WaitGameStartPlayer = () => {
           }
         }
         setPlayers(newPlayers);
+        // console.log('players size', newPlayers.size)
+        sessionStorage.setItem("playersNumber", newPlayers.size)
       } catch (err) {
-        console.error("Session WS error:", err);
+        // console.error("Session WS error:", err);
       }
     };
 
@@ -93,7 +95,7 @@ const WaitGameStartPlayer = () => {
         </h1>
         <div className={styles['players-grid']}>
           {Array.from(players.entries()).map(([id, name]) => (
-            <div key={id} className={styles['player-card']}>
+            <div key={id} style={{ '--name-length': name.length }} className={styles['player-card']}>
               {name}
             </div>
           ))}

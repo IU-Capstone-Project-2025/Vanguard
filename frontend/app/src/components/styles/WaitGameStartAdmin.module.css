@@ -91,11 +91,12 @@
 }
 
 .player-box span {
-  font-size: 2rem;
+  /*font-size: 2rem;*/
+  font-size: clamp(1rem, 1.5rem - (var(--name-length) - 12) * 0.15rem, 1.5rem);
   text-align: center;
   white-space: nowrap;
   text-overflow: ellipsis;
-  overflow: hidden;
+  /*overflow: hidden;*/
   flex-grow: 1;
   max-width: 100%;
 }

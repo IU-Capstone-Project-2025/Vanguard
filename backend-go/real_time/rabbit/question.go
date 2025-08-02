@@ -84,15 +84,15 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 			sessionId = strings.Split(d.RoutingKey, ".")[1]
 			fmt.Printf("------ in consumer for %sid found sessionId %sid\n", s, sessionId)
 
-			tracker.IncQuestionIdx(sessionId)
+			isQuizRunning := tracker.IncQuestionIdx(sessionId)
 
-			qid, question := tracker.GetCurrentQuestion(sessionId)
-			questionsAmount := tracker.GetQuizLen(sessionId)
-
-			if qid == questionsAmount { // zero-based index equal to amount, means index out of range -> game already ended
+			if !isQuizRunning { // end game
 				responder.SendGameEnd()
 				continue
 			}
+
+			qid, question := tracker.GetCurrentQuestion(sessionId)
+			questionsAmount := tracker.GetQuizLen(sessionId)
 
 			fmt.Println("next question triggered: ", qid, "in session ", sessionId)
 
@@ -122,8 +122,10 @@ func (r *RealTimeRabbit) ConsumeQuestionStart(
 				}
 			}
 
-			responder.SendQuestionPayload(qid+1, // 1-based index
-				questionsAmount, *question)
+			if question != nil {
+				responder.SendQuestionPayload(qid+1, // 1-based index
+					questionsAmount, *question)
+			}
 
 			// send ack for participants immediately after sending a question only for very first question
 			// since further it will be sent when Admin requests it (check message.go/handleRead)

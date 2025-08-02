@@ -40,7 +40,7 @@ const QuizStorePage = () => {
       }
       setQuizzes(data);
     } catch (error) {
-      console.error(error);
+      // console.error(error);
     }
   };
 
@@ -73,7 +73,7 @@ const QuizStorePage = () => {
       sessionStorage.setItem('jwt', response.jwt);
       navigate(`/sessionAdmin/${response.sessionId}`);
     } catch (error) {
-      console.error("Error starting quiz:", error);
+      // console.error("Error starting quiz:", error);
     }
   };
 

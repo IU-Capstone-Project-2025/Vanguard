@@ -25,4 +25,10 @@ class JsonFormatter(logging.Formatter):
         if record.exc_info:
             log_record["exception"] = self.formatException(record.exc_info)
 
-        return json.dumps(log_record)
+        return json.dumps(log_record, default=self._json_fallback)
+
+    @staticmethod
+    def _json_fallback(obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return str(obj)

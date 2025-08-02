@@ -1,5 +1,4 @@
 .register-container {
-  background-color: #d6894b;
   height: 100vh;
   display: flex;
   justify-content: center;
@@ -7,14 +6,16 @@
 }
 
 .register-box {
-  background-color: #fff7ed;
-  padding: 40px;
-  border-radius: 8px;
-  width: 320px;
+  background-color: rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .register-title {
-  font-family: "Comic Sans MS", sans-serif;
+  color: var(--accent);
+  text-align: center;
   margin-bottom: 20px;
 }
 
@@ -25,23 +26,33 @@
 }
 
 .register-input {
-  padding: 10px;
-  font-size: 16px;
-  background-color: #4a4a4a;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  width: 250px;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #333;
 }
 
 .register-button {
-  padding: 10px;
-  font-size: 16px;
-  background-color: black;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  margin-top: 10px;
-  cursor: pointer;
+  width: 100%;
+    /* width: 250px; */
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  background-color: var(--btn); /* emerald */
+  color: var(--accent);
+}
+
+.register-button:hover {
+  background-color: var(--btn-hover);
 }
 
 .register-error {
