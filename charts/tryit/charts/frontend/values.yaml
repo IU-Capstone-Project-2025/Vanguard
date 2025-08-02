@@ -28,8 +28,6 @@ ingress:
   host: tryit.selnastol.ru
 
 nginx:
-  workerProcesses: "auto"
-  workerConnections: "1024"
   clientMaxBodySize: "20M"
   gzip: "on"
   staticCacheExpires: "1d"

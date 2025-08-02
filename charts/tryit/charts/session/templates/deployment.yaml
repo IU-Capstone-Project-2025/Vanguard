@@ -34,10 +34,10 @@ spec:
       initContainers:
       - name: wait-for-rabbitmq
         image: busybox:1.36
-        command: ['sh', '-c', 'until nc -z rabbitmq 5672; do echo "Waiting for RabbitMQ to be ready..."; sleep 2; done; echo "RabbitMQ is ready."']
+        command: ['sh', '-c', 'until nc -z {{ .Values.env.RABBITMQ_HOST }} {{ .Values.env.RABBITMQ_PORT }}; do echo "Waiting for RabbitMQ to be ready..."; sleep 2; done; echo "RabbitMQ is ready."']
       - name: wait-for-redis
         image: busybox:1.36
-        command: ['sh', '-c', 'until nc -z redis 6379; do echo "Waiting for Redis to be ready..."; sleep 2; done; echo "Redis is ready."']
+        command: ['sh', '-c', 'until nc -z {{ .Values.env.REDIS_HOST }} {{ .Values.env.REDIS_PORT }}; do echo "Waiting for Redis to be ready..."; sleep 2; done; echo "Redis is ready."']
       containers:
       - name: "session"
         image: "{{ .Values.image.name }}"
